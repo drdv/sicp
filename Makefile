@@ -1,0 +1,2 @@
+tex:
+	tectonic notes.tex

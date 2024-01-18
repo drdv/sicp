@@ -1,0 +1,70 @@
+\documentclass[12pt,a4paper]{article}
+
+% ================================================================================
+
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\minimize}[1]{\mathop{\mbox{minimize}}_{#1} \ \ }
+\newcommand{\maximize}[1]{\mathop{\mbox{maximize}}_{#1} \ \ }
+\newcommand{\st}[0]{\mbox{subject to} \ \ }
+\newcommand\cc[1]{\texttt{#1}}
+\newcommand{\abs}[1]{\left|#1\right|}
+
+% ================================================================================
+
+\usepackage{array}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage[sans]{dsfont}
+\usepackage{bbm}
+\usepackage{amsmath,bm}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{eurosym}
+\usepackage{bbold}
+\usepackage[top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry}
+
+\def\UrlBreaks{\do\/\do-}  % https://tex.stackexchange.com/a/561193
+
+\usepackage[toc,page]{appendix}
+
+\usepackage[breakable]{tcolorbox}
+\DeclareRobustCommand{\mybox}[2][gray!20]{
+  \begin{tcolorbox}[
+      breakable,
+      left=0pt,
+      right=0pt,
+      top=0pt,
+      bottom=0pt,
+      colback=#1,
+      colframe=#1,
+      width=\dimexpr\textwidth\relax,
+      enlarge left by=0mm,
+      boxsep=5pt,
+      arc=0pt,outer arc=0pt,
+    ]
+    #2
+  \end{tcolorbox}
+}
+
+\begin{document}
+
+\section{Lecture 1A: Overview and Introduction to Lisp}
+
+Harold Abelson
+
+\begin{itemize}
+\item It is very easy to confuse the essence of what you are doing with the tools that
+  you use.
+\item To compute $\sqrt{x}$ we can make a guess $G$ and update it using $G \leftarrow
+  f(G) = \left(0.5G + 0.5\frac{x}{G}\right)$. The solution $G^{\star} = \sqrt{x}$, is a
+  fixed point of $f$.
+\item Black-box abstraction.
+\end{itemize}
+
+
+\nocite{*}
+\bibliographystyle{ieeetr}
+\bibliography{bib}
+
+\end{document}
