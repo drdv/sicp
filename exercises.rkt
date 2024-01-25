@@ -387,10 +387,63 @@
     (define (f.iter a0 a1 a2 n)
       (if (= n 0)
           a0
+          ;; a2 <- 3*a0 + 2*a1 + a2
+          ;; a1 <- a2
+          ;; a0 <- a1
           (f.iter a1 a2 (+ (* 3 a0) (* 2 a1) a2) (- n 1))))
-    (f.iter 0 1 2 n))
+    (if (< n 3)
+        n
+        (f.iter 0 1 2 n)))
 
-  (check-equal? (f.v2 10) 1892))
+  (check-equal? (f.v2 10) 1892)
+  (check-equal? (f.v2 -2) -2))
+
+(module Exercise/1.12 sicp
+  (#%require rackunit)
+  (display "============= Exercise 1.12 =============\n")
+
+  (define (pascal-triangle.v1 row-numb verbose)
+    (define (pascal-triangle-next-row current-row row-counter)
+      (define (sum-pairs row)
+        (cond [(> (length row) 1) (cons (+ (car row) (car (cdr row)))
+                                        (sum-pairs (cdr row)))]
+              [else nil]))
+
+      (cond [verbose (display current-row) (newline)])
+      (let [(next-row (append (cons 1 (sum-pairs current-row))
+                              (list 1)))]
+        (cond [(= row-counter row-numb)
+               next-row]
+              [else (pascal-triangle-next-row next-row (+ row-counter 1))])))
+
+    (cond [(< row-numb 1) nil]
+          [(= row-numb 1) (list 1)]
+          [else (pascal-triangle-next-row (list 1) 2)]))
+
+  (check-equal? (pascal-triangle.v1 0 #f) '())
+  (check-equal? (pascal-triangle.v1 1 #f) '(1))
+  (check-equal? (pascal-triangle.v1 2 #f) '(1 1))
+  (check-equal? (pascal-triangle.v1 3 #f) '(1 2 1))
+  (check-equal? (pascal-triangle.v1 4 #f) '(1 3 3 1))
+  (check-equal? (pascal-triangle.v1 5 #f) '(1 4 6 4 1))
+  (check-equal? (pascal-triangle.v1 6 #f) '(1 5 10 10 5 1))
+
+  (define (pascal-triangle.v2 row-numb col-numb)
+    (if (or (= col-numb 1) (= col-numb row-numb))
+        1
+        (+ (pascal-triangle.v2 (- row-numb 1)
+                               (- col-numb 1))
+           (pascal-triangle.v2 (- row-numb 1)
+                               col-numb)))
+    )
+
+  (check-equal? (list (pascal-triangle.v2 6 1)
+                      (pascal-triangle.v2 6 2)
+                      (pascal-triangle.v2 6 3)
+                      (pascal-triangle.v2 6 4)
+                      (pascal-triangle.v2 6 5)
+                      (pascal-triangle.v2 6 6)) '(1 5 10 10 5 1))
+  )
 
 (#%require
  'Exercise/1.2
@@ -404,7 +457,8 @@
  'Exercise/1.9
  'Exercise/1.10
  'Section/1.2.2
- 'Exercise/1.11)
+ 'Exercise/1.11
+ 'Exercise/1.12)
 
 ;; (module mitko racket
 ;;   (provide f1)
