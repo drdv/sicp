@@ -49,19 +49,87 @@
 
 \begin{document}
 
-\section{Lecture 1A: Overview and Introduction to Lisp}
+\section{Exercise 1.13}
 
-Harold Abelson
+\subsection{Proof 1}
+
+The second-order difference equation $F_k = F_{k-1} + F_{k-2}$ can be represented as two
+first-order equations (where $n \geq 2$)
+\begin{align*}
+  \underbrace{\begin{bmatrix} F_{k-1} \\ F_k \end{bmatrix}}_{x_{k+1}} =
+  \underbrace{\begin{bmatrix} 0 & 1 \\ 1 & 1 \end{bmatrix}}_{A}
+  \underbrace{\begin{bmatrix} F_{k-2} \\ F_{k-1} \end{bmatrix}}_{x_k}.
+\end{align*}
+Hence, $x_{n}$ depends on the initial condition $x_0 = (F_0, F_1) = (0, 1)$ as follows
+\begin{align} \label{eq.initial-condition}
+  x_n = A^nx_0.
+\end{align}
+The eigenvalues of $A$ are~\footnote{We have to find $\lambda$ such that $\cc{det}(A - \lambda I) = 0$.}
+\begin{align*}
+  \lambda_1 = \frac{1 + \sqrt{5}}{2}, \quad \lambda_2 = \frac{1 - \sqrt{5}}{2},
+\end{align*}
+with corresponding eigenvectors~\footnote{Found by solving equations $(A - \lambda_i
+I)q_i = 0$ (and normalizing).}
+\begin{align*}
+  q_1 = \frac{1}{n_1}\begin{bmatrix} 1 \\ \lambda_1 \end{bmatrix}, \quad
+  q_2 = \frac{1}{n_2}\begin{bmatrix} 1 \\ \lambda_2 \end{bmatrix},
+\end{align*}
+where $n_k = \norm{q_k} = \sqrt{1 + \lambda_k^2}$. Using
+\begin{align*}
+  Q = \begin{bmatrix}q1 & q2\end{bmatrix}, \quad
+    \Lambda = \begin{bmatrix} \lambda_1 & 0 \\ 0 & \lambda_2 \end{bmatrix}
+\end{align*}
+we can perform a similarity transform (note that $Q$ is an orthogonal matrix)
+\begin{align*}
+  x_{k+1} = \underbrace{Q\Lambda Q^T}_{A} x_k,
+\end{align*}
+Hence, we can express~\eqref{eq.initial-condition} as (note that $(Q\Lambda Q^T)(Q\Lambda Q^T) = (Q\Lambda^2 Q^T)$)
+\begin{align*}
+  x_{n}
+  = Q\Lambda^n \underbrace{Q^T x_0}_{\tilde{x}_0}
+  = \frac{\lambda_1}{n_1}q_1\lambda_1^n + \frac{\lambda_2}{n_2}q_2\lambda_2^n,
+\end{align*}
+where $\tilde{x}_0 = (\lambda_1/n_1, \lambda_2/n_2)$ can be seen as the initial
+conditions after the similarity transform. Therefore, we can express the $n$-th
+Fibonacci number as the first component of $x_{n}$
+\begin{align*}
+  F_n
+  &= \frac{\lambda_1}{n_1^2}\lambda_1^n + \frac{\lambda_2}{n_2^2}\lambda_2^n \\
+  &= \frac{1 + \sqrt{5}}{5 + \sqrt{5}}\lambda_1^n + \frac{1 - \sqrt{5}}{5 - \sqrt{5}}\lambda_2^n
+  = \frac{\sqrt{5}\lambda_1^n - \sqrt{5}\lambda_2^n}{5} \\
+  &= \frac{\lambda_1^n - \lambda_2^n}{\sqrt{5}}.
+\end{align*}
+
+Note that $|\lambda_2^n| < 1$ for any $n > 0$ and hence, dividing by $\sqrt{5} > 2$
+leads to a number smaller than $1/2$. Therefore, $F_n$ is the closest integer to
+$\lambda_1^n / \sqrt{5}$.
+
+\subsection{Proof 2 (by induction)}
 
 \begin{itemize}
-\item It is very easy to confuse the essence of what you are doing with the tools that
-  you use.
-\item To compute $\sqrt{x}$ we can make a guess $G$ and update it using $G \leftarrow
-  f(G) = \left(0.5G + 0.5\frac{x}{G}\right)$. The solution $G^{\star} = \sqrt{x}$, is a
-  fixed point of $f$.
-\item Black-box abstraction.
+\item for $n = 0$ we have $F_0 = \frac{\lambda_1^{0} - \lambda_2^{0}}{\sqrt{5}} = 0$
+\item for $n = 1$ we have $F_1 = \frac{\lambda_1^{1} - \lambda_2^{1}}{\sqrt{5}} = 1$
+\item next, assume that $F_{n-2} = \frac{\lambda_1^{n-2} - \lambda_2^{n-2}}{\sqrt{5}}$
+  and $F_{n-1} = \frac{\lambda_1^{n-1} - \lambda_2^{n-1}}{\sqrt{5}}$, we have to prove
+  that $F_{n} = F_{n-1} + F_{n-2} = \frac{\lambda_1^{n} - \lambda_2^{n}}{\sqrt{5}}$:
 \end{itemize}
+\begin{align*}
+  \lambda_1^{n-2} - \lambda_2^{n-2} + \lambda_1^{n-1} - \lambda_2^{n-1}
+  &= \lambda_1^{n-2} + \lambda_1^{n-1} - (\lambda_2^{n-2} + \lambda_2^{n-1}) \\
+  &= \lambda_1^n\lambda_1^{-1}\underbrace{(\lambda_1^{-1} + 1)}_{\lambda_1} - \lambda_2^n\lambda_2^{-1}\underbrace{(\lambda_2^{-1} + 1)}_{\lambda_2} \\
+  &= \lambda_1^n - \lambda_2^n,
+\end{align*}
+where we have used that $\lambda_i - \frac{1}{\lambda_i} = 1$ (for $i=1,2$). This is the
+case because $\lambda_1$ and $\lambda_2$ are eigenvalues of $A$
+(see~\eqref{eq.initial-condition}) and hence they satisfy its characteristic equation
+$\cc{det}(A - \lambda I) = 0$ (\emph{i.e.,} $\lambda^2 - \lambda -1 = 0$).
 
+\section{Quotes}
+
+\begin{itemize}
+\item (Lecture 1A) It is very easy to confuse the essence of what you are doing with the
+  tools that you use.
+\end{itemize}
 
 \nocite{*}
 \bibliographystyle{ieeetr}

@@ -321,6 +321,7 @@
 
 (module Section/1.2.2 sicp
   (#%require rackunit)
+  (#%provide count-change)
   (display "============= Section 1.2.2 =============\n")
 
   ;; ----------------------------------------------------------
@@ -442,7 +443,98 @@
                       (pascal-triangle.v2 6 3)
                       (pascal-triangle.v2 6 4)
                       (pascal-triangle.v2 6 5)
-                      (pascal-triangle.v2 6 6)) '(1 5 10 10 5 1))
+                      (pascal-triangle.v2 6 6)) '(1 5 10 10 5 1)))
+
+(module Exercise/1.13 sicp
+  (#%require rackunit)
+  (display "============= Exercise 1.13 =============\n")
+  ;; See latex note
+  )
+
+(module Exercise/1.14 sicp
+  (#%require rackunit
+             (only (submod ".." Section/1.2.2) count-change)
+             (only racket format for in-range))
+  (#%provide logb)
+  (display "============= Exercise 1.14 =============\n")
+
+  (check-equal? (count-change 11 '(50 25 10 5 1)) 4)
+
+  (define (count-change-display amount coins verbose)
+    (define (count-change-display-helper amount coins offset)
+      (set! numb-calls (+ numb-calls 1))
+      (if verbose
+          (display
+           (format "[~a]~a(cc ~a ~a)\n"
+                   (if (= amount 0) "*" " ")
+                   offset
+                   amount
+                   (length coins))))
+      (define new-offset (string-append offset "  "))
+      (cond [(= amount 0) 1]
+            [(or (< amount 0)
+                 (= (length coins) 0)) 0]
+            [else
+             (+ (count-change-display-helper amount (cdr coins) new-offset)
+                (count-change-display-helper (- amount (car coins)) coins new-offset))]))
+
+    (define numb-calls 0)
+    (count-change-display-helper amount coins "")
+    numb-calls)
+
+  (define (logb b n)
+    ;; log_b(n) = ln(n)/ln(b)
+    (/ (log n) (log b)))
+
+  (count-change-display 11 '(50 25 10 5 1) #t)
+  (for ([coins '((1)
+                 (1 1)
+                 (1 1 1)
+                 (1 1 1 1)
+                 (1 1 1 1 1))])
+    (display (format "========== ~a coin ==========\n" (length coins)))
+    (for ([k '(5 10 50)])
+      (let [(n (count-change-display k coins #f))]
+        (display (format "~a: ~a (~a)\n" k n (logb k n)))))
+    )
+
+  ;; note: the number of iterations depends on the order of coins
+  ;; e.g., '(1 5) vs. '(5 1)
+  ;;
+  ;; 1. The space is the number of stacks we have to keep, i.e., the depth of the
+  ;; recursion. In the worst case we would have to express the amount in terms of the
+  ;; smallest coin (which is 1) so the depth is proportional to the amount.
+  ;;
+  ;; 2. Intuitively we should have O(amount^5). It seems to me that we can compute an
+  ;; upper bound for the number of steps by using '(1 1 1 1 1) as coins. Probably as we
+  ;; increase the amount, the power would get closer to 5 but it takes a lot of time.
+  )
+
+(module Exercise/1.15 sicp
+  (#%require rackunit
+             (only racket format)
+             (only (submod ".." Exercise/1.14) logb))
+  (display "============= Exercise 1.15 =============\n")
+
+  (define (cube x) (* x x x))
+  (define (p x) (- (* 3 x) (* 4 (cube x))))
+  (define (sine angle iter)
+    (display (format "[~a] angle: ~a\n" iter angle))
+    (if (not (> (abs angle) 0.1))
+        angle
+        (p (sine (/ angle 3.0) (+ iter 1)))))
+
+  ;; At every call of sine, the angle is divided by 3 so the number of steps is
+  ;; determined by the condition: angle / 3^k <= 0.1, from which we get
+  ;; 3^k = angle / 0.1, and hence log_3(angle / 0.1)
+  (sine 12.15 0)
+  (format "[angle: 12.15] iter: ~a\n" (ceiling (logb 3 (/ 12.15 0.1))))
+  ;; in terms of space, we need one stack per invocation (note that this is not tail
+  ;; recursive due to the application of the function p)
+
+  ;; test something else
+  (sine 500.0 0)
+  (format "[angle: 500.0] iter: ~a\n" (ceiling (logb 3 (/ 500.0 0.1))))
   )
 
 (#%require
@@ -458,34 +550,7 @@
  'Exercise/1.10
  'Section/1.2.2
  'Exercise/1.11
- 'Exercise/1.12)
-
-;; (module mitko racket
-;;   (provide f1)
-;;   (define (f1)
-;;     1)
-;;   (module* test #f
-;;     (provide f2)
-;;     (define (f2)
-;;     2)
-;;     (f1)
-;;     ))
-
-;; (define mitko (make-hash))
-;; (hash-set! mitko "key1" 11)
-;; (hash-ref mitko "key2")
-
-
-
-;; (#%require (only (submod "." mitko) f1))
-
-;; (#%require (only 'mitko f1))
-
-;; (#%require (only (submod 'mitko test) f2))  ;; WOW this actually works
-
-
-;; (f2)
-;; (only (submod "." mitko) f1)
-
-;; Modules
-;; https://stackoverflow.com/a/36460362
+ 'Exercise/1.12
+ 'Exercise/1.13
+ 'Exercise/1.14
+ 'Exercise/1.15)
