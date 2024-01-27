@@ -580,6 +580,33 @@
   (check-equal? (fast-expt-iterative.v1 5 21 1 1) 476837158203125)
   (check-equal? (fast-expt-iterative.v2 5 21 1 1) 476837158203125))
 
+(module Exercise/1.17 sicp
+  (#%require rackunit
+             (only racket format raise))
+  (display "============= Exercise 1.17 =============\n")
+
+  (define (mult.v1 a b)
+    (cond [(or (= a 0) (= b 0)) 0]
+          [else (+ a (mult.v1 a (- b 1)))]))
+
+  (check-equal? (mult.v1 5 7) 35)
+
+  (define (mult.v2 a b acc)
+    (define (double x) (* 2 x))
+    (define (halve x)
+      (if (even? x)
+          (/ x 2)
+          (raise "Cannot halve an odd integer.")))
+    (cond [(or (= a 0) (= b 0)) acc]
+          [(even? b) (mult.v2 (double a) (halve b) acc)]
+          [else (mult.v2 a (- b 1) (+ acc a))]))
+
+  (check-equal? (mult.v2 5 0 0) 0)
+  (check-equal? (mult.v2 5 1 0) 5)
+  ;; 5 * 9 = 5 + 5 * 8 = 5 + 10 * 4 = 5 + 20 * 2 = 5 + 40 * 1 = 45
+  (check-equal? (mult.v2 5 9 0) 45)
+  (check-equal? (mult.v2 5 10 0) 50))
+
 (#%require
  'Exercise/1.2
  'Exercise/1.3
@@ -597,4 +624,5 @@
  'Exercise/1.13
  'Exercise/1.14
  'Exercise/1.15
- 'Exercise/1.16)
+ 'Exercise/1.16
+ 'Exercise/1.17)
