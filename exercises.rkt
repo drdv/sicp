@@ -537,6 +537,49 @@
   (format "[angle: 500.0] iter: ~a\n" (ceiling (logb 3 (/ 500.0 0.1))))
   )
 
+(module Exercise/1.16 sicp
+  (#%require rackunit
+             (only racket format))
+  (display "============= Exercise 1.16 =============\n")
+
+  (define (show even-or-odd iter n b a)
+    (display
+     (format "(~a)[~a]: ~a = ~a*~a^~a\n"
+             even-or-odd iter (* a (expt b n)) a b n)))
+
+  (define (square x) (* x x))
+  (define (fast-expt-recursive b n iter)
+    (cond [(= n 0) 1]
+          [(even? n)
+           (show "E" iter n b 1)
+           (square (fast-expt-recursive b (/ n 2) (+ iter 1)))]
+          [else
+           (show "O" iter n b 1)
+           (* b (fast-expt-recursive b (- n 1) (+ iter 1)))]))
+
+  ;; 1 * 2^16 = 1*(2^2)^8 = (2^2)^2 * (2^2)^(8-1)
+  (define (fast-expt-iterative.v1 b n a iter)
+    (cond [(= n 0) a]
+          [(even? n)
+           (show "E" iter n b a)
+           (fast-expt-iterative.v1 (square b) (- (/ n 2) 1) (* a (square b)) (+ iter 1))]
+          [else
+           (show "O" iter n b a)
+           (fast-expt-iterative.v1 b (- n 1) (* a b) (+ iter 1))]))
+
+  (define (fast-expt-iterative.v2 b n a iter)
+    (cond [(= n 0) a]
+          [(even? n)
+           (show "E" iter n b a)
+           (fast-expt-iterative.v2 (square b) (/ n 2) a (+ iter 1))]
+          [else
+           (show "O" iter n b a)
+           (fast-expt-iterative.v2 b (- n 1) (* a b) (+ iter 1))]))
+
+  (check-equal? (fast-expt-recursive 5 21 1) 476837158203125)
+  (check-equal? (fast-expt-iterative.v1 5 21 1 1) 476837158203125)
+  (check-equal? (fast-expt-iterative.v2 5 21 1 1) 476837158203125))
+
 (#%require
  'Exercise/1.2
  'Exercise/1.3
@@ -553,4 +596,5 @@
  'Exercise/1.12
  'Exercise/1.13
  'Exercise/1.14
- 'Exercise/1.15)
+ 'Exercise/1.15
+ 'Exercise/1.16)
