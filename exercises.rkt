@@ -648,6 +648,48 @@
 
   (check-equal? (fib 10) 55))
 
+(module Exercise/1.20 sicp
+  (#%require rackunit
+             (only racket format))
+  (display "============= Exercise 1.20 =============\n")
+
+  (define (show a b)
+    (display (format "[~a] a: ~a, b: ~a\n" (modulo a b) a b)))
+
+  (define (gcd a b)
+    (if (not (= b 0)) (show a b))
+    (if (= b 0)
+        a
+        (gcd b (remainder a b))))
+
+  (gcd 206 40)
+  ;; applicative order: 4 evaluations (as there are 4 iterations)
+  ;; normal order:
+  ;; --------------------------------------------------------------
+  ;; (gcd 206 40)
+  ;; (if (= 40 0) ...)
+  ;; --------------------------------------------------------------
+  ;; (gcd 40 (remainder 206 40))
+  ;; (if (= (remainder 206 40) 0) ...) [1] => (if (= 6 0) ...)
+  ;; --------------------------------------------------------------
+  ;; (gcd (remainder 206 40)
+  ;;      (remainder 40 (remainder 206 40)))
+  ;; (if (= (remainder 40 (remainder 206 40)) 0) ...) [2] => (if (= 4 0) ...)
+  ;; --------------------------------------------------------------
+  ;; (gcd (remainder 40 (remainder 206 40))
+  ;;      (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))
+  ;; (if (= (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) 0) ...) [4] => (if (= 2 0) ...)
+  ;; --------------------------------------------------------------
+  ;; (gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))
+  ;;      (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))
+  ;; (if (= (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))) 0) ...) [7] => (if (= 0 0) ...)
+  ;; --------------------------------------------------------------
+  ;; (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) [4] => DONE
+  ;;
+  ;; (+ 1 2 4 7 4) -> 18 evaluations of (remainder ...)
+  )
+
+
 (#%require
  'Exercise/1.2
  'Exercise/1.3
@@ -668,4 +710,5 @@
  'Exercise/1.16
  'Exercise/1.17
  'Exercise/1.18
- 'Exercise/1.19)
+ 'Exercise/1.19
+ 'Exercise/1.20)
