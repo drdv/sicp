@@ -124,6 +124,32 @@ case because $\lambda_1$ and $\lambda_2$ are eigenvalues of $A$
 (see~\eqref{eq.initial-condition}) and hence they satisfy its characteristic equation
 $\cc{det}(A - \lambda I) = 0$ (\emph{i.e.,} $\lambda^2 - \lambda -1 = 0$).
 
+\section{Exercise 1.19}
+
+Transformation:
+\begin{align*}
+  a &\leftarrow bq + a(p + q) \\
+  b &\leftarrow bp + aq.
+\end{align*}
+Applying twice:
+\begin{align*}
+  a
+  &\leftarrow (bp + aq)q + (bq + ap + aq)p + (bq + ap + aq)q \\
+  &\leftarrow bpq + aq^2 + bpq + ap^2 + apq + bq^2 + apq + aq^2 \\
+  &\leftarrow bpq + bpq + bq^2 + aq^2  + ap^2 + apq + apq + aq^2 \\
+  &\leftarrow b(q^2 + 2pq) + a(p^2 + 2pq + 2q^2) \\
+  %
+  b
+  &\leftarrow (bp + aq)p + (bq + ap + aq)q \\
+  &\leftarrow bp^2 + apq + bq^2 + apq + aq^2 \\
+  &\leftarrow b(p^2 + q^2) + a(q^2 + 2pq).
+\end{align*}
+Hence
+\begin{align*}
+  p^{'} &= p^2 + q^2 \\
+  q^{'} &= q^2 + 2pq.
+\end{align*}
+
 \section{Quotes}
 
 \begin{itemize}

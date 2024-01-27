@@ -583,6 +583,7 @@
 (module Exercise/1.17 sicp
   (#%require rackunit
              (only racket format raise))
+  (#%provide mult.v2)
   (display "============= Exercise 1.17 =============\n")
 
   (define (mult.v1 a b)
@@ -591,21 +592,61 @@
 
   (check-equal? (mult.v1 5 7) 35)
 
-  (define (mult.v2 a b acc)
+  (define (show even-or-odd a b acc)
+    (display
+     (format "[~a]: ~a = ~a+~a*~a\n"
+             even-or-odd (+ acc (* a b)) acc a b)))
+
+  (define (mult.v2 a b acc verbose)
     (define (double x) (* 2 x))
     (define (halve x)
       (if (even? x)
           (/ x 2)
           (raise "Cannot halve an odd integer.")))
     (cond [(or (= a 0) (= b 0)) acc]
-          [(even? b) (mult.v2 (double a) (halve b) acc)]
-          [else (mult.v2 a (- b 1) (+ acc a))]))
+          [(even? b)
+           (if verbose (show "E" a b acc))
+           (mult.v2 (double a) (halve b) acc verbose)]
+          [else
+           (if verbose (show "O" a b acc))
+           (mult.v2 a (- b 1) (+ acc a) verbose)]))
 
-  (check-equal? (mult.v2 5 0 0) 0)
-  (check-equal? (mult.v2 5 1 0) 5)
+  (check-equal? (mult.v2 5 0 0 #f) 0)
+  (check-equal? (mult.v2 5 1 0 #f) 5)
   ;; 5 * 9 = 5 + 5 * 8 = 5 + 10 * 4 = 5 + 20 * 2 = 5 + 40 * 1 = 45
-  (check-equal? (mult.v2 5 9 0) 45)
-  (check-equal? (mult.v2 5 10 0) 50))
+  (check-equal? (mult.v2 5 9 0 #t) 45)
+  (check-equal? (mult.v2 5 10 0 #f) 50))
+
+(module Exercise/1.18 sicp
+  (#%require rackunit
+             (only (submod ".." Exercise/1.17) mult.v2))
+  (display "============= Exercise 1.18 =============\n")
+  ;; I implemented Exercise 1.17 taking into account the conditions of Exercise 1.18
+  (check-equal? (mult.v2 5 9 0 #t) 45)
+  )
+
+(module Exercise/1.19 sicp
+  (#%require rackunit)
+  (display "============= Exercise 1.19 =============\n")
+
+  (define (fib n)
+    (fib-iter 1 0 0 1 n))
+
+  (define (fib-iter a b p q count)
+    (cond ((= count 0) b)
+          ((even? count)
+           (fib-iter a
+                     b
+                     (+ (* p p) (* q q)); compute p'
+                     (+ (* q q) (* 2 p q) ) ; compute q'
+                     (/ count 2)))
+          (else (fib-iter (+ (* b q) (* a q) (* a p))
+                          (+ (* b p) (* a q))
+                          p
+                          q
+                          (- count 1)))))
+
+  (check-equal? (fib 10) 55))
 
 (#%require
  'Exercise/1.2
@@ -625,4 +666,6 @@
  'Exercise/1.14
  'Exercise/1.15
  'Exercise/1.16
- 'Exercise/1.17)
+ 'Exercise/1.17
+ 'Exercise/1.18
+ 'Exercise/1.19)
