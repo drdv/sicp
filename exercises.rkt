@@ -689,26 +689,70 @@
   ;; (+ 1 2 4 7 4) -> 18 evaluations of (remainder ...)
   )
 
+(module Exercise/1.21 sicp
+  (#%require rackunit)
+  (#%provide smallest-divisor)
+  (display "============= Exercise 1.21 =============\n")
 
-(#%require
- 'Exercise/1.2
- 'Exercise/1.3
- 'Exercise/1.4
- 'Exercise/1.5
- (only 'Exercise/1.6 sqrt-v1)
- (only 'Exercise/1.7 sqrt-v2)
- 'Exercise/1.8
- 'Section/1.2.1
- 'Exercise/1.9
- 'Exercise/1.10
- 'Section/1.2.2
- 'Exercise/1.11
- 'Exercise/1.12
- 'Exercise/1.13
- 'Exercise/1.14
- 'Exercise/1.15
- 'Exercise/1.16
- 'Exercise/1.17
- 'Exercise/1.18
- 'Exercise/1.19
- 'Exercise/1.20)
+  (define (smallest-divisor n)
+    (define (find-divisor n test-divisor)
+      (define (square n) (* n n))
+      (define (divides? a b) (= (remainder b a) 0))
+      (cond ((> (square test-divisor) n) n)
+            ((divides? test-divisor n) test-divisor)
+            (else (find-divisor n (+ test-divisor 1)))))
+
+    (find-divisor n 2))
+
+  (check-equal? (smallest-divisor 199) 199)
+  (check-equal? (smallest-divisor 1999) 1999)
+  (check-equal? (smallest-divisor 19999) 7))
+
+(module Exercise/1.22 sicp
+  (#%require rackunit
+             (only math/number-theory prime?)
+             (only (submod ".." Exercise/1.21) smallest-divisor))
+  (display "============= Exercise 1.22 =============\n")
+
+  (define (timed-prime-test n)
+    (define (start-prime-test n start-time)
+      (define (report-prime elapsed-time)
+        (display " *** ")
+        (display elapsed-time)
+        #t)
+      (define (prime? n)
+        (= n (smallest-divisor n)))
+      (if (prime? n)
+          (report-prime (- (runtime) start-time))
+          #f))
+    (newline)
+    (display n)
+    (start-prime-test n (runtime)))
+
+  ;; I stop once the given number of primes have been found
+  (define (serch-for-primes lb numb-primes)
+    (let ((n (if (even? lb) (+ lb 1) lb)))
+      (if (= numb-primes 0)
+          (display "\n=== END ===\n")
+          (if (timed-prime-test n)
+              (serch-for-primes (+ n 2) (- numb-primes 1))
+              (serch-for-primes (+ n 2) numb-primes)))))
+
+  (serch-for-primes 1000 3)
+  (serch-for-primes 10000 3)
+  (serch-for-primes 100000 3)
+  (serch-for-primes 1000000 3)
+  (serch-for-primes 10000000 3)
+
+  ;; ============================
+  ;; the times I observe:
+  ;; ============================
+  ;;       1000: ~1
+  ;;     10_000: ~3
+  ;;    100_000: ~9
+  ;;  1_000_000: ~28
+  ;; 10_000_000: ~82
+  ;; ============================
+  ;; there is a sqrt(10) factor
+  ;; ============================
+  )
