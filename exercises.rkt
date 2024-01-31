@@ -710,8 +710,8 @@
 
 (module Exercise/1.22 sicp
   (#%require rackunit
-             (only math/number-theory prime?)
              (only (submod ".." Exercise/1.21) smallest-divisor))
+  (#%provide timed-prime-test)
   (display "============= Exercise 1.22 =============\n")
 
   (define (timed-prime-test n)
@@ -744,6 +744,7 @@
   (serch-for-primes 1000000 3)
   (serch-for-primes 10000000 3)
 
+
   ;; ============================
   ;; the times I observe:
   ;; ============================
@@ -755,4 +756,115 @@
   ;; ============================
   ;; there is a sqrt(10) factor
   ;; ============================
+  )
+
+(module Exercise/1.23 sicp
+  (#%require rackunit
+             (only racket format for)
+             (only (submod ".." Exercise/1.21) smallest-divisor))
+  (display "============= Exercise 1.23 =============\n")
+
+  (define (smallest-divisor-optimized n)
+    (define (find-divisor n test-divisor)
+      (define (next numb)
+        (if (= numb 2) 3 (+ numb 2)))
+      (define (square n) (* n n))
+      (define (divides? a b) (= (remainder b a) 0))
+      (cond ((> (square test-divisor) n) n)
+            ((divides? test-divisor n) test-divisor)
+            (else (find-divisor n (next test-divisor)))))
+    (find-divisor n 2))
+
+  (define (smallest-divisor-optimized-no-extra-function n)
+    (define (find-divisor n test-divisor)
+      (define (square n) (* n n))
+      (define (divides? a b) (= (remainder b a) 0))
+      (cond ((> (square test-divisor) n) n)
+            ((divides? test-divisor n) test-divisor)
+            (else (find-divisor n (if (= test-divisor 2) 3 (+ test-divisor 2))))))
+
+    (find-divisor n 2))
+
+  ;; ---------------------------------------------
+  ;; Instead of displaying the time return it
+  ;; ---------------------------------------------
+  (define (timed-prime-test n)
+    (define (start-prime-test n start-time)
+      (define (prime? n)
+        (= n (smallest-divisor n)))
+      (if (prime? n)
+          (- (runtime) start-time)
+          0))
+    (start-prime-test n (runtime)))
+
+  (define (timed-prime-test-optimized n)
+    (define (start-prime-test n start-time)
+      (define (prime? n)
+        (= n (smallest-divisor-optimized n)))
+      (if (prime? n)
+          (- (runtime) start-time)
+          0))
+    (start-prime-test n (runtime)))
+
+  (define (timed-prime-test-optimized-no-extra-function n)
+    (define (start-prime-test n start-time)
+      (define (prime? n)
+        (= n (smallest-divisor-optimized-no-extra-function n)))
+      (if (prime? n)
+          (- (runtime) start-time)
+          0))
+    (start-prime-test n (runtime)))
+  ;; ---------------------------------------------
+
+  (define (run-multiple-times n f prime-number output)
+    (cond [(= n 0) (apply + output)]
+          [else
+           (run-multiple-times (- n 1) f prime-number (append output (list (f prime-number))))]))
+
+  (define prime-numbers '(1009 1013 1019 10007 10009 10037 100003 100019 100043 1000003 1000033 1000037 10000019 10000079 10000103))
+
+  (let ([numb-evals 1000])
+    (for ([prime-number prime-numbers])
+      (display
+       (format "~a: ~a" prime-number
+               (/ (/ (run-multiple-times
+                      numb-evals
+                      timed-prime-test
+                      prime-number
+                      '())
+                     (/ numb-evals 1.0))
+                  (/ (run-multiple-times
+                      numb-evals
+                      timed-prime-test-optimized
+                      prime-number
+                      '())
+                     (/ numb-evals 1.0)))))
+      (newline)))
+
+  ;; inlined version
+  (let ([numb-evals 1000])
+    (for ([prime-number prime-numbers])
+      (display
+       (format "~a: ~a" prime-number
+               (/ (/ (run-multiple-times
+                      numb-evals
+                      timed-prime-test
+                      prime-number
+                      '())
+                     (/ numb-evals 1.0))
+                  (/ (run-multiple-times
+                      numb-evals
+                      timed-prime-test-optimized-no-extra-function
+                      prime-number
+                      '())
+                     (/ numb-evals 1.0)))))
+      (newline)))
+
+  ;; So I observe a speedup but less than twice (close to 1.6 times). We halve the
+  ;; number of iterations and I didn't expect that the extra function call would have
+  ;; such a signifficant influence (especially because "next" is super simple). In the
+  ;; second test, where "next" is inlined we see that the ratio is almost 2 for large
+  ;; prime numbers. This means that the function call itself (with its additional stack)
+  ;; is the reason. The additional if and equality comparison seem to influence mainly
+  ;; the time for small numbers.
   )
