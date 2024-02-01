@@ -463,7 +463,7 @@
 (module Exercise/1.14 sicp
   (#%require rackunit
              (only (submod ".." Section/1.2.2) count-change)
-             (only racket format for in-range))
+             (only racket format for in-range set!))
   (#%provide logb)
   (display "============= Exercise 1.14 =============\n")
 
@@ -875,8 +875,7 @@
   )
 
 (module Exercise/1.24 sicp
-  (#%require rackunit
-             (only racket format for in-range)
+  (#%require (only racket format for in-range)
              (only (submod ".." Exercise/1.22) prime-numbers)
              (only (submod ".." common-utils) run-n-times))
   (display "============= Exercise 1.24 =============\n")
@@ -968,3 +967,101 @@
   ;; 1M: (/ 7.0 27) => 0.26
   ;; This might explain the remaining difference.
   )
+
+(module Exercise/1.25 sicp
+  (#%require (only racket format))
+  (display "============= Exercise 1.25 =============\n")
+
+  (define (square x)
+    (* x x))
+
+  (define (expmod base exp m)
+    (cond ((= exp 0) 1)
+          ((even? exp)
+           (let ([z (square (expmod base (/ exp 2) m))])
+             (display (format "[E] ~a\n" z))
+             (remainder z m)))
+          (else
+           (let ([z (expmod base (- exp 1) m)])
+             (display (format "[O] ~a\n" z))
+             (remainder (* base z) m)))))
+
+  ;; same as fast-expt-iterative.v2 without the show
+  (define (fast-expt b n a)
+    (cond [(= n 0) a]
+          [(even? n)
+           (fast-expt (square b) (/ n 2) a)]
+          [else
+           (fast-expt b (- n 1) (* a b))]))
+
+  (let ([x 2]
+        [n 1000])
+    (expmod x n n)
+    (let ([z (fast-expt x n 1)])
+      (display (format "~a\n" z))
+      (remainder z n)))
+
+  ;; the largest number we have to deal with in expmod e.g., for 2^1000 is 817216
+  ;; while in fast-expt it is astronomical and has 302 digits -> (ceiling (* 1000 (logb 10 2)))
+  ;; so for larger powers we would have to store huge numbers (note that not all languages can
+  ;; handle such numbers like python and racket). See footnote 46 on page 68.
+  )
+
+(module Exercise/1.26 sicp
+  (#%require rackunit
+             (only racket format for set!))
+  (display "============= Exercise 1.26 =============\n")
+
+  ;; the version of Louis Reasoner has complexity O(log(2^n)) = O(n*log(2)) = O(n),
+  ;; note that the linear recursion becomes tree recursion with two branches at each step.
+  ;; The following test confirms this by counting number of iterations:
+
+  (define (expmod-linear base exp m)
+    (set! numb-calls (+ numb-calls 1))
+    (define (square x)
+      (* x x))
+    (cond ((= exp 0) 1)
+          ((even? exp)
+           (let ([z (square (expmod-linear base (/ exp 2) m))])
+             (remainder z m)))
+          (else
+           (let ([z (expmod-linear base (- exp 1) m)])
+             (remainder (* base z) m)))))
+
+  (define (expmod-tree base exp m)
+    (set! numb-calls (+ numb-calls 1))
+    (cond ((= exp 0) 1)
+          ((even? exp)
+           (let ([z (* (expmod-tree base (/ exp 2) m)
+                       (expmod-tree base (/ exp 2) m))])
+             (remainder z m)))
+          (else
+           (let ([z (expmod-tree base (- exp 1) m)])
+             (remainder (* base z) m)))))
+
+  (define numb-calls 0) ;; FIXME: there must be a better way to do this
+  (define (test-f f n)
+    (set! numb-calls 0)
+    (f 2 n n)
+    numb-calls)
+
+  (define (logb b n)
+    ;; log_b(n) = ln(n)/ln(b)
+    (/ (log n) (log b)))
+
+  (define n-to-test '(10 100 1000 10000 100000 1000000))
+  (display "-------------------------------------\n")
+  (display "expmod-linear\n")
+  (display "-------------------------------------\n")
+  (for ([n n-to-test])
+    (let ([z (test-f expmod-linear n)])
+      (display (format "[~a] ~a (~a)\n" n z (/ z (logb 2 n))))))
+  (display "-------------------------------------\n")
+  (display "expmod-tree\n")
+  (display "-------------------------------------\n")
+  (for ([n n-to-test])
+    (let ([z (test-f expmod-tree n)])
+      (display (format "[~a] ~a (~a)\n" n z (/ z (* n 1.0)))))))
+
+;; FIXME: add a submodule for the tests so that they are not run when
+;; I import something from a previous exercise.
