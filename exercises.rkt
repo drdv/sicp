@@ -4,7 +4,11 @@
 ;; (#%require (only racket module))
 
 (module common-utils sicp
-  (#%provide run-n-times)
+  (#%provide square
+             run-n-times)
+
+  (define (square x)
+    (* x x))
 
   (define (run-n-times n func args output)
     (cond [(= n 0) (apply + output)]
@@ -12,70 +16,81 @@
            (run-n-times (- n 1) func args (append output (list (apply func args))))]))
   )
 
-;; -------------------------------------------
-;; Exercise 1.2
-;; -------------------------------------------
-(module Exercise/1.2 sicp
-  (#%require rackunit)
-  (display "============= Exercise 1.2 =============\n")
+(module Exercise/1.1 sicp
+  (#%require rackunit
+             (only racket module+))
 
-  (define (exercise-1.2)
+  (define a 3)
+  (define b (+ a 1))
+
+  (module+ test
+    (check-equal? 10 10)
+    (check-equal? (+ 5 3 4) 12)
+    (check-equal? (- 9 1) 8)
+    (check-equal? (/ 6 2) 3)
+    (check-equal? (+ (* 2 4) (- 4 6)) 6)
+    (check-equal? (+ a b (* a b)) 19)
+    (check-false (= a b))
+    (check-equal? (if (and (> b a) (< b (* a b))) b a) 4)
+    (check-equal? (cond ((= a 4) 6)
+                        ((= b 4) (+ 6 7 a))
+                        (else 25)) 16)
+    (check-equal? (+ 2 (if (> b a) b a)) 6)
+    (check-equal? (* (cond ((> a b) a)
+                           ((< a b) b)
+                           (else -1))
+                     (+ a 1)) 16)))
+
+(module Exercise/1.2 sicp
+  (#%require rackunit
+             (only racket module+))
+
+  (define (an-expression)
     (/ (+ 5 4 (- 2 (- 3 (+ 6 4/5))))
        (* 3 (- 6 2) (- 2 7))))
 
-  (check-equal? (exercise-1.2) (/ (- 37) 150)))
+  (module+ test
+    (check-equal? (an-expression) (/ (- 37) 150))))
 
-;; -------------------------------------------
-;; Exercise 1.3
-;; -------------------------------------------
 (module Exercise/1.3 sicp
   (#%require
    rackunit
-   (only racket foldl sort module format))
-  (display "============= Exercise 1.3 =============\n")
+   (only racket module+ foldl sort)
+   (only (submod ".." common-utils) square))
 
-  (define (exercise-1.3.v1 x y z)
-    (define (square x)
-      (* x x))
+  (define (sum-squares.v1 x y z)
     (- (+ (square x) (square y) (square z))
        (square (min x y z))))
 
-  ;; there seems to be a conflict between the list defined in SICP and the sort procedure
-  ;; (define (exercise-1.3.v2 x y z)
-  ;;   (foldl + 0
-  ;;          (map (lambda (x) (* x x))
-  ;;               (cdr (sort (list x y z) <)))))
+  (module+ test
+    (check-equal? (sum-squares.v1 9 5 7) 130))
 
-  (check-equal? (exercise-1.3.v1 9 5 7) 130)
-  ;; (check-equal? (exercise-1.3.v2 9 5 7) 130)
+  (define (sum-squares.v2 x y z)
+    (foldl + 0
+           (map (lambda (x) (* x x))
+                (cdr (sort (list x y z) <)))))
+
+  (module+ test-disabled
+    ;; FIXME: there seems to be a conflict between the list defined in SICP and the
+    ;; sort procedure (I get the same error even if I use cons to define the list)
+    (check-equal? (sum-squares.v2 9 5 7) 130))
   )
 
-;; -------------------------------------------
-;; Exercise 1.4
-;; -------------------------------------------
 (module Exercise/1.4 sicp
-  (display "============= Exercise 1.4 =============\n")
   ;; Solution:
   ;; (if (> b 0) + -) returns - if b <= 0 so the result is a + |b|
   )
 
-;; -------------------------------------------
-;; Exercise 1.5
-;; -------------------------------------------
 (module Exercise/1.5 sicp
-  (display "============= Exercise 1.5 =============\n")
   ;; Solution:
   ;; applicative-order evaluation: enter in an infinite recursion
   ;; normal-order evaluation: return 0
   )
 
-;; -------------------------------------------
-;; Exercise 1.6
-;; -------------------------------------------
 (module Exercise/1.6 sicp
-  (#%require rackunit)
+  (#%require rackunit
+             (only racket module+))
   (#%provide tolerance sqrt-v1)
-  (display "============= Exercise 1.6 =============\n")
 
   (define tolerance 0.0001)
 
@@ -94,27 +109,23 @@
           (sqrt-recursive (improve guess x) x)))
     (sqrt-recursive 1.0 x))
 
-  (check-within (* (sqrt-v1 2) (sqrt-v1 2)) 2 tolerance)
+  (module+ test
+    (check-within (* (sqrt-v1 2) (sqrt-v1 2)) 2 tolerance))
 
-  ;; (define (new-if predicate then-clause else-clause)
-  ;;   (cond (predicate then-clause)
-  ;;         (else else-clause)))
+  (define (new-if predicate then-clause else-clause)
+    (cond (predicate then-clause)
+          (else else-clause)))
   ;; Solution:
   ;; Note that new-if is a procedure and all of its arguments are evaluated
   ;; i.e., there is no short-circuit so even if the guess is good-enough, the
   ;; second argument would be evaluated leading to an infinite loop.
   )
 
-;; -------------------------------------------
-;; Exercise 1.7
-;; -------------------------------------------
 (module Exercise/1.7 sicp
   (#%require
    rackunit
-   (only racket format)
-   (only (submod ".." Exercise/1.6) sqrt-v1 tolerance sqrt-v1))
-  (#%provide sqrt-v2)
-  (display "============= Exercise 1.7 =============\n")
+   (only racket module+ format)
+   (only (submod ".." Exercise/1.6) sqrt-v1 tolerance))
 
   (define (sqrt-v2 x)
     (define (sqrt-recursive old-guess guess x)
@@ -129,18 +140,17 @@
           (sqrt-recursive guess (improve guess x) x)))
     (sqrt-recursive 0.0 1.0 x))
 
-  (display (format "computation terminates: ~a\n" (sqrt-v2 999999999999999999999999999999999999)))
-  ;; due to loss of numerical precision sqrt-v1 might diverge with the above number
-  (display (format "inaccurate: ~a\n" (* (sqrt-v1 0.0001) (sqrt-v1 0.0001))))
-  (display (format "accurate  : ~a\n" (* (sqrt-v2 0.0001) (sqrt-v2 0.0001)))))
+  (module+ test
+    (display (format "computation terminates: ~a\n" (sqrt-v2 999999999999999999999999999999999999)))
 
-;; -------------------------------------------
-;; Exercise 1.8
-;; -------------------------------------------
+    ;; due to loss of numerical precision sqrt-v1 might diverge with the above number
+    (display (format "inaccurate: ~a\n" (* (sqrt-v1 tolerance) (sqrt-v1 tolerance))))
+    (display (format "accurate  : ~a\n" (* (sqrt-v2 tolerance) (sqrt-v2 tolerance))))))
+
 (module Exercise/1.8 sicp
-  (#%require rackunit)
-  (#%require (only (submod ".." Exercise/1.6) tolerance))
-  (display "============= Exercise 1.8 =============\n")
+  (#%require rackunit
+             (only racket module+)
+             (only (submod ".." Exercise/1.6) tolerance))
 
   (define (cube-root x)
     (define (cbrt-recursive old-guess guess)
@@ -154,25 +164,25 @@
           guess
           (cbrt-recursive guess (improve guess))))
     (cbrt-recursive 0.0 1.0))
-  (check-within (* (cube-root 9) (cube-root 9) (cube-root 9)) 9 tolerance))
 
-;; -------------------------------------------
-;; Section 1.2.1
-;; -------------------------------------------
+  (module+ test
+    (check-within (* (cube-root 9) (cube-root 9) (cube-root 9)) 9 tolerance)))
+
 (module Section/1.2.1 sicp
-  (#%require rackunit)
-  (display "============= Section 1.2.1 =============\n")
+  (#%require rackunit
+             (only racket module+))
 
   ;; linear recursive process
   ;; 1. the amount of information required to keep is proportional to n
-  ;; 2. number of steps is linear to n
+  ;; 2. number of steps is linear in n
   ;; 3. actual implementation requires the use of an auxiliary date structure (a stack)
   (define (factorial-v1 n)
     (if (= n 1)
         1
         (* n (factorial-v1 (- n 1)))))
 
-  (check-equal? (factorial-v1 5) 120)
+  (module+ test
+    (check-equal? (factorial-v1 5) 120))
 
   ;; linear iterative process
   ;; 1. a fixed number of state variables is required
@@ -187,7 +197,8 @@
            (* product counter))))
     (factorial-helper 1 1))
 
-  (check-equal? (factorial-v2 5) 120)
+  (module+ test
+    (check-equal? (factorial-v2 5) 120))
 
   (define (factorial-v3 n)
     (define (factorial-helper acc n)
@@ -196,7 +207,8 @@
           (factorial-helper (* n acc) (- n 1))))
     (factorial-helper 1 n))
 
-  (check-equal? (factorial-v3 5) 120)
+  (module+ test
+    (check-equal? (factorial-v3 5) 120))
 
   ;; note the difference between
   ;; iterative process vs. iterative procedure
@@ -211,45 +223,46 @@
   ;; can be considered as sintactic sugar.
   )
 
-;; -------------------------------------------
-;; Exercise 1.9
-;; -------------------------------------------
 (module Exercise/1.9 sicp
-  (#%require rackunit)
-  (display "============= Exercise 1.9 =============\n")
+  (#%require rackunit
+             scribble/srcdoc
+             (only racket module+))
 
   (define (plus.rec a b)
     (if (= a 0)
         b
         (inc (plus.rec (dec a) b))))
 
+  (module+ test
+    (check-equal? (plus.rec 4 5) 9)
+    ;; recursive process
+    ;; (plus.rec 4 5)
+    ;; (inc (plus.rec 3 5))
+    ;; (inc (inc (plus.rec 2 5)))
+    ;; (int (inc (inc (plus.rec 1 5))))
+    ;; (int (int (inc (inc (plus.rec 0 5))))) ;; end expanding, start contracting
+    ;; (int (int (inc (inc 5))))
+    ;; (int (int (inc 6)))
+    ;; (int (int 7))
+    ;; (int 8)
+    ;; 9
+    )
+
   (define (plus.iter a b)
     (if (= a 0)
         b
         (plus.iter (dec a) (inc b))))
 
-  (check-equal? (plus.rec 4 5) 9)
-  ;; recursive process
-  ;; (plus.rec 4 5)
-  ;; (inc (plus.rec 3 5))
-  ;; (inc (inc (plus.rec 2 5)))
-  ;; (int (inc (inc (plus.rec 1 5))))
-  ;; (int (int (inc (inc (plus.rec 0 5))))) ;; end expanding, start contracting
-  ;; (int (int (inc (inc 5))))
-  ;; (int (int (inc 6)))
-  ;; (int (int 7))
-  ;; (int 8)
-  ;; 9
-
-  (check-equal? (plus.iter 4 5) 9)
-  ;; iterative process (implemented using a recursive procedure)
-  ;; (plus.iter 4 5)
-  ;; (plus.iter 3 6)
-  ;; (plus.iter 2 7)
-  ;; (plus.iter 1 8)
-  ;; (plus.iter 0 9)
-  ;; 9
-  )
+  (module+ test
+    (check-equal? (plus.iter 4 5) 9)
+    ;; iterative process (implemented using a recursive procedure)
+    ;; (plus.iter 4 5)
+    ;; (plus.iter 3 6)
+    ;; (plus.iter 2 7)
+    ;; (plus.iter 1 8)
+    ;; (plus.iter 0 9)
+    ;; 9
+    ))
 
 ;; -------------------------------------------
 ;; Exercise 1.10
@@ -1150,3 +1163,33 @@
 
 ;; FIXME: add a submodule for the tests so that they are not run when
 ;; I import something from a previous exercise.
+
+;; (module mitko sicp
+;;   (#%require (only racket module+))
+;;   (#%provide f1)
+;;   (display "mitko\n")
+
+;;   (define (f1)
+;;     1)
+
+;;   (module+ test1
+;;     (display "mitko:test1\n")
+
+;;     (f1)
+;;     )
+
+;;   (module+ test1
+;;     (display "mitko:test2\n")
+
+;;     (f1)
+;;     )
+;;   )
+
+;; (module mitko1 sicp
+;;   (#%require (only racket module+)
+;;              (only (submod ".." mitko) f1))
+
+;;   (display "mitko1\n")
+
+
+;;   )
