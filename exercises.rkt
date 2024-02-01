@@ -1063,5 +1063,47 @@
     (let ([z (test-f expmod-tree n)])
       (display (format "[~a] ~a (~a)\n" n z (/ z (* n 1.0)))))))
 
+(module Exercise/1.27 sicp
+  (#%require rackunit
+             (only racket format for)
+             (only (submod ".." Exercise/1.21) smallest-divisor))
+  (display "============= Exercise 1.27 =============\n")
+
+  (define carmichael-numbers '(561 1105 1729 2465 2821 6601))
+
+  (define (expmod base exp m)
+    (define (square x)
+      (* x x))
+    (cond ((= exp 0) 1)
+          ((even? exp)
+           (let ([z (square (expmod base (/ exp 2) m))])
+             (remainder z m)))
+          (else
+           (let ([z (expmod base (- exp 1) m)])
+             (remainder (* base z) m)))))
+
+  (define (fermat-test-exhaustive n)
+    (define (try-it a)
+      (cond [(= a n) #t]
+            [(not (= (expmod a n n) a)) #f]
+            [else (try-it (+ a 1))]))
+    (try-it 2))
+
+  (define (test-carmichael-numbers func numbers)
+    (cond [(= (length numbers) 0) #t]
+          [(not (func (car numbers))) #f]
+          [else (test-carmichael-numbers func (cdr numbers))]))
+
+  (define (prime? n)
+    (= n (smallest-divisor n)))
+
+  (check-true (test-carmichael-numbers fermat-test-exhaustive carmichael-numbers))
+  (check-false (test-carmichael-numbers fermat-test-exhaustive
+                                        (append carmichael-numbers (list 9))))
+
+  ;; of course a real test gives false for each carmichael number
+  (for ([n carmichael-numbers])
+    (check-false (test-carmichael-numbers prime? (list n)))))
+
 ;; FIXME: add a submodule for the tests so that they are not run when
 ;; I import something from a previous exercise.
