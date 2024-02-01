@@ -89,7 +89,8 @@
 
 (module Exercise/1.6 sicp
   (#%require rackunit
-             (only racket module+))
+             (only racket module+)
+             (only (submod ".." common-utils) square))
   (#%provide tolerance sqrt-v1)
 
   (define tolerance 0.0001)
@@ -101,8 +102,6 @@
           (/ (+ a b) 2.0))
         (average guess (/ x guess)))
       (define (good-enough? guess x)
-        (define (square a)
-          (* a a))
         (< (abs (- (square guess) x)) tolerance))
       (if (good-enough? guess x)
           guess
@@ -150,13 +149,12 @@
 (module Exercise/1.8 sicp
   (#%require rackunit
              (only racket module+)
+             (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.6) tolerance))
 
   (define (cube-root x)
     (define (cbrt-recursive old-guess guess)
       (define (improve guess)
-        (define (square a)
-          (* a a))
         (/ (+ (/ x (square guess)) (* 2 guess)) 3))
       (define (good-enough? old-guess guess)
         (< (abs (- old-guess guess)) tolerance))
@@ -225,7 +223,6 @@
 
 (module Exercise/1.9 sicp
   (#%require rackunit
-             scribble/srcdoc
              (only racket module+))
 
   (define (plus.rec a b)
@@ -264,87 +261,89 @@
     ;; 9
     ))
 
-;; -------------------------------------------
-;; Exercise 1.10
-;; -------------------------------------------
 (module Exercise/1.10 sicp
   (#%require
    rackunit
-   (only racket format))
-  (display "============= Exercise 1.10 =============\n")
+   racket/trace
+   (only racket module+ format))
 
-  (define (A x y)
-    (cond ((= y 0) 0)
-          ((= x 0) (* 2 y))
-          ((= y 1) 2)
-          (else (A (- x 1)
-                   (A x (- y 1))))))
+  (module+ test
+    ;; I have to define A in the test module because I want to use (trace A) later
+    (define (A x y)
+      (cond ((= y 0) 0)
+            ((= x 0) (* 2 y))
+            ((= y 1) 2)
+            (else (A (- x 1)
+                     (A x (- y 1))))))
 
-  (display (format "(A 1 10): ~a\n" (A 1 10)))
-  (display (format "(A 2 4): ~a\n" (A 2 4)))
-  (display (format "(A 3 3): ~a\n" (A 3 3)))
+    (define (f n) (A 0 n))
+    (define (g n) (A 1 n))
+    (define (h n) (A 2 n))
 
-  (define (f n) (A 0 n))
-  (define (g n) (A 1 n))
-  (define (h n) (A 2 n))
+    (display (format "(A 1 10): ~a\n" (A 1 10)))
+    (display (format "(A 2 4): ~a\n" (A 2 4)))
+    (display (format "(A 3 3): ~a\n" (A 3 3))))
 
-  ;; (A 0 n)
-  ;; (* 2 n)
-  ;; f(n) = 2*n
-  (let* ([x 4]
-         [y (f x)])
-    (display (format "(f ~a): ~a\n" x y))
-    (check-equal? y (* 2 x)))
+  (module+ test
+    ;; (A 0 n)
+    ;; (* 2 n)
+    ;; f(n) = 2*n
+    (let* ([x 4]
+           [y (f x)])
+      (display (format "(f ~a): ~a\n" x y))
+      (check-equal? y (* 2 x))))
 
-  ;; (A 1 3)
-  ;; (A 0 (A 1 2)) -> (f (g (- n 1)))
-  ;; (A 0 (A 0 (A 1 1)))
-  ;; (A 0 (A 0 2))
-  ;; (A 0 (* 2 2))
-  ;; (expt 2 n)
-  ;; g(n) = 2^n
-  (let* ([n 4]
-         [y (g n)])
-    (display (format "(g ~a): ~a\n" n y))
-    (check-equal? y (expt 2 n))
-    (check-equal? y (f (g (- n 1)))))
+  (module+ test
+    ;; (A 1 3)
+    ;; (A 0 (A 1 2)) -> (f (g (- n 1)))
+    ;; (A 0 (A 0 (A 1 1)))
+    ;; (A 0 (A 0 2))
+    ;; (A 0 (* 2 2))
+    ;; (expt 2 n)
+    ;; g(n) = 2^n
+    (let* ([n 4]
+           [y (g n)])
+      (display (format "(g ~a): ~a\n" n y))
+      (check-equal? y (expt 2 n))
+      (check-equal? y (f (g (- n 1))))))
 
-  ;; (A 2 4)
-  ;; (A 1 (A 2 3)) -> (g (h (- n 1)))
-  ;; (A 1 (A 1 (A 2 2)))
-  ;; (A 1 (A 1 (A 1 (A 2 1))))
-  ;; (A 1 (A 1 (A 1 2)))
-  ;; (expt 2 (expt 2 (expt 2 2)))
+  (module+ test
+    ;; (A 2 4)
+    ;; (A 1 (A 2 3)) -> (g (h (- n 1)))
+    ;; (A 1 (A 1 (A 2 2)))
+    ;; (A 1 (A 1 (A 1 (A 2 1))))
+    ;; (A 1 (A 1 (A 1 2)))
+    ;; (expt 2 (expt 2 (expt 2 2)))
 
-  ;; 2^1
-  ;; 2^2
-  ;; 2^(2^2)
-  ;; 2^(2^(2^2))
-  ;; h(n) = 2^h(n-1)
-  (define (expt-recursive n)
-    (if (= n 1)
-        2
-        (expt 2 (expt-recursive (- n 1)))))
+    ;; 2^1
+    ;; 2^2
+    ;; 2^(2^2)
+    ;; 2^(2^(2^2))
+    ;; h(n) = 2^h(n-1)
+    (define (expt-recursive n)
+      (if (= n 1)
+          2
+          (expt 2 (expt-recursive (- n 1)))))
 
-  (let* ([n 4] ;; don't use more than n = 4
-         [y (h n)])
-    (display (format "(h ~a): ~a" n y))
-    (newline)
-    (check-equal? y (expt-recursive n))
-    (check-equal? y (g (h (- n 1)))))
+    (let* ([n 4] ;; don't use more than n = 4
+           [y (h n)])
+      (display (format "(h ~a): ~a" n y))
+      (newline)
+      (check-equal? y (expt-recursive n))
+      (check-equal? y (g (h (- n 1))))))
 
-  ;; we can generate the trace automatically
-  ;; (#%require racket/trace)
-  ;; (trace A)
-  ;; (A 1 5)
-  ;; (untrace A)
-  ;; (A 1 5)
-  )
+  (module+ test
+    ;; we can generate the trace automatically
+    (trace A)
+    (A 1 5)
+    (untrace A)
+    (A 1 5)
+    ))
 
 (module Section/1.2.2 sicp
-  (#%require rackunit)
+  (#%require rackunit
+             (only racket module+))
   (#%provide count-change)
-  (display "============= Section 1.2.2 =============\n")
 
   ;; ----------------------------------------------------------
   ;; Fibonacci sequence (tree recursion)
@@ -355,7 +354,8 @@
           [else (+ (fib.v1 (- n 1))
                    (fib.v1 (- n 2)))]))
 
-  (check-equal? (fib.v1 10) 55)
+  (module+ test
+    (check-equal? (fib.v1 10) 55))
 
   ;; ----------------------------------------------------------
   ;; Fibonacci sequence (iterative process)
@@ -373,7 +373,8 @@
     (fib-iter 0 1 n)
     )
 
-  (check-equal? (fib.v2 10) 55)
+  (module+ test
+    (check-equal? (fib.v2 10) 55))
 
   ;; ----------------------------------------------------------
   ;; Count change (tree recursion)
@@ -385,11 +386,12 @@
           [else (+ (count-change amount (cdr coins))
                    (count-change (- amount (car coins)) coins))]))
 
-  (check-equal? (count-change 100 '(50 25 10 5 1)) 292))
+  (module+ test
+    (check-equal? (count-change 100 '(50 25 10 5 1)) 292)))
 
 (module Exercise/1.11 sicp
-  (#%require rackunit)
-  (display "============= Exercise 1.11 =============\n")
+  (#%require rackunit
+             (only racket module+))
 
   ;; ----------------------------------------------------------
   ;; recursive process
@@ -401,7 +403,8 @@
            (* 2 (f.v1 (- n 2)))
            (* 3 (f.v1 (- n 3))))))
 
-  (check-equal? (f.v1 10) 1892)
+  (module+ test
+    (check-equal? (f.v1 10) 1892))
 
   ;; ----------------------------------------------------------
   ;; iterative process
@@ -418,12 +421,13 @@
         n
         (f.iter 0 1 2 n)))
 
-  (check-equal? (f.v2 10) 1892)
-  (check-equal? (f.v2 -2) -2))
+  (module+ test
+    (check-equal? (f.v2 10) 1892)
+    (check-equal? (f.v2 -2) -2)))
 
 (module Exercise/1.12 sicp
-  (#%require rackunit)
-  (display "============= Exercise 1.12 =============\n")
+  (#%require rackunit
+             (only racket module+))
 
   (define (pascal-triangle.v1 row-numb verbose)
     (define (pascal-triangle-next-row current-row row-counter)
@@ -443,13 +447,14 @@
           [(= row-numb 1) (list 1)]
           [else (pascal-triangle-next-row (list 1) 2)]))
 
-  (check-equal? (pascal-triangle.v1 0 #f) '())
-  (check-equal? (pascal-triangle.v1 1 #f) '(1))
-  (check-equal? (pascal-triangle.v1 2 #f) '(1 1))
-  (check-equal? (pascal-triangle.v1 3 #f) '(1 2 1))
-  (check-equal? (pascal-triangle.v1 4 #f) '(1 3 3 1))
-  (check-equal? (pascal-triangle.v1 5 #f) '(1 4 6 4 1))
-  (check-equal? (pascal-triangle.v1 6 #f) '(1 5 10 10 5 1))
+  (module+ test
+    (check-equal? (pascal-triangle.v1 0 #f) '())
+    (check-equal? (pascal-triangle.v1 1 #f) '(1))
+    (check-equal? (pascal-triangle.v1 2 #f) '(1 1))
+    (check-equal? (pascal-triangle.v1 3 #f) '(1 2 1))
+    (check-equal? (pascal-triangle.v1 4 #f) '(1 3 3 1))
+    (check-equal? (pascal-triangle.v1 5 #f) '(1 4 6 4 1))
+    (check-equal? (pascal-triangle.v1 6 #f) '(1 5 10 10 5 1)))
 
   (define (pascal-triangle.v2 row-numb col-numb)
     (if (or (= col-numb 1) (= col-numb row-numb))
@@ -460,27 +465,27 @@
                                col-numb)))
     )
 
-  (check-equal? (list (pascal-triangle.v2 6 1)
-                      (pascal-triangle.v2 6 2)
-                      (pascal-triangle.v2 6 3)
-                      (pascal-triangle.v2 6 4)
-                      (pascal-triangle.v2 6 5)
-                      (pascal-triangle.v2 6 6)) '(1 5 10 10 5 1)))
+  (module+ test
+    (check-equal? (list (pascal-triangle.v2 6 1)
+                        (pascal-triangle.v2 6 2)
+                        (pascal-triangle.v2 6 3)
+                        (pascal-triangle.v2 6 4)
+                        (pascal-triangle.v2 6 5)
+                        (pascal-triangle.v2 6 6))
+                  '(1 5 10 10 5 1))))
 
 (module Exercise/1.13 sicp
-  (#%require rackunit)
-  (display "============= Exercise 1.13 =============\n")
-  ;; See latex note
+  ;; See latex note.
   )
 
 (module Exercise/1.14 sicp
   (#%require rackunit
              (only (submod ".." Section/1.2.2) count-change)
-             (only racket format for in-range set!))
+             (only racket module+ format for in-range set!))
   (#%provide logb)
-  (display "============= Exercise 1.14 =============\n")
 
-  (check-equal? (count-change 11 '(50 25 10 5 1)) 4)
+  (module+ test
+    (check-equal? (count-change 11 '(50 25 10 5 1)) 4))
 
   (define (count-change-display amount coins verbose)
     (define (count-change-display-helper amount coins offset)
@@ -508,35 +513,33 @@
     ;; log_b(n) = ln(n)/ln(b)
     (/ (log n) (log b)))
 
-  (count-change-display 11 '(50 25 10 5 1) #t)
-  (for ([coins '((1)
-                 (1 1)
-                 (1 1 1)
-                 (1 1 1 1)
-                 (1 1 1 1 1))])
-    (display (format "========== ~a coin ==========\n" (length coins)))
-    (for ([k '(5 10 50)])
-      (let [(n (count-change-display k coins #f))]
-        (display (format "~a: ~a (~a)\n" k n (logb k n)))))
-    )
+  (module+ test
+    (count-change-display 11 '(50 25 10 5 1) #t)
+    (for ([coins '((1)
+                   (1 1)
+                   (1 1 1)
+                   (1 1 1 1)
+                   (1 1 1 1 1))])
+      (display (format "========== ~a coin ==========\n" (length coins)))
+      (for ([k '(5 10 50)])
+        (let [(n (count-change-display k coins #f))]
+          (display (format "~a: ~a (~a)\n" k n (logb k n))))))
 
-  ;; note: the number of iterations depends on the order of coins
-  ;; e.g., '(1 5) vs. '(5 1)
-  ;;
-  ;; 1. The space is the number of stacks we have to keep, i.e., the depth of the
-  ;; recursion. In the worst case we would have to express the amount in terms of the
-  ;; smallest coin (which is 1) so the depth is proportional to the amount.
-  ;;
-  ;; 2. Intuitively we should have O(amount^5). It seems to me that we can compute an
-  ;; upper bound for the number of steps by using '(1 1 1 1 1) as coins. Probably as we
-  ;; increase the amount, the power would get closer to 5 but it takes a lot of time.
-  )
+    ;; note: the number of iterations depends on the order of coins
+    ;; e.g., '(1 5) vs. '(5 1)
+    ;;
+    ;; 1. The space is the number of stacks we have to keep, i.e., the depth of the
+    ;; recursion. In the worst case we would have to express the amount in terms of the
+    ;; smallest coin (which is 1) so the depth is proportional to the amount.
+    ;;
+    ;; 2. Intuitively we should have O(amount^5). It seems to me that we can compute an
+    ;; upper bound for the number of steps by using '(1 1 1 1 1) as coins. Probably as we
+    ;; increase the amount, the power would get closer to 5 but it takes a lot of time.
+    ))
 
 (module Exercise/1.15 sicp
-  (#%require rackunit
-             (only racket format)
+  (#%require (only racket module+ format)
              (only (submod ".." Exercise/1.14) logb))
-  (display "============= Exercise 1.15 =============\n")
 
   (define (cube x) (* x x x))
   (define (p x) (- (* 3 x) (* 4 (cube x))))
@@ -546,30 +549,29 @@
         angle
         (p (sine (/ angle 3.0) (+ iter 1)))))
 
-  ;; At every call of sine, the angle is divided by 3 so the number of steps is
-  ;; determined by the condition: angle / 3^k <= 0.1, from which we get
-  ;; 3^k = angle / 0.1, and hence log_3(angle / 0.1)
-  (sine 12.15 0)
-  (format "[angle: 12.15] iter: ~a\n" (ceiling (logb 3 (/ 12.15 0.1))))
-  ;; in terms of space, we need one stack per invocation (note that this is not tail
-  ;; recursive due to the application of the function p)
+  (module+ test
+    ;; At every call of sine, the angle is divided by 3 so the number of steps is
+    ;; determined by the condition: angle / 3^k <= 0.1, from which we get
+    ;; 3^k = angle / 0.1, and hence log_3(angle / 0.1)
+    (sine 12.15 0)
+    (format "[angle: 12.15] iter: ~a\n" (ceiling (logb 3 (/ 12.15 0.1))))
+    ;; in terms of space, we need one stack per invocation (note that this is not tail
+    ;; recursive due to the application of the function p)
 
-  ;; test something else
-  (sine 500.0 0)
-  (format "[angle: 500.0] iter: ~a\n" (ceiling (logb 3 (/ 500.0 0.1))))
-  )
+    ;; test something else
+    (sine 500.0 0)
+    (format "[angle: 500.0] iter: ~a\n" (ceiling (logb 3 (/ 500.0 0.1))))))
 
 (module Exercise/1.16 sicp
   (#%require rackunit
-             (only racket format))
-  (display "============= Exercise 1.16 =============\n")
+             (only racket module+ format)
+             (only (submod ".." common-utils) square))
 
   (define (show even-or-odd iter n b a)
     (display
      (format "(~a)[~a]: ~a = ~a*~a^~a\n"
              even-or-odd iter (* a (expt b n)) a b n)))
 
-  (define (square x) (* x x))
   (define (fast-expt-recursive b n iter)
     (cond [(= n 0) 1]
           [(even? n)
@@ -598,21 +600,22 @@
            (show "O" iter n b a)
            (fast-expt-iterative.v2 b (- n 1) (* a b) (+ iter 1))]))
 
-  (check-equal? (fast-expt-recursive 5 21 1) 476837158203125)
-  (check-equal? (fast-expt-iterative.v1 5 21 1 1) 476837158203125)
-  (check-equal? (fast-expt-iterative.v2 5 21 1 1) 476837158203125))
+  (module+ test
+    (check-equal? (fast-expt-recursive 5 21 1) 476837158203125)
+    (check-equal? (fast-expt-iterative.v1 5 21 1 1) 476837158203125)
+    (check-equal? (fast-expt-iterative.v2 5 21 1 1) 476837158203125)))
 
 (module Exercise/1.17 sicp
   (#%require rackunit
-             (only racket format raise))
+             (only racket module+ format raise))
   (#%provide mult.v2)
-  (display "============= Exercise 1.17 =============\n")
 
   (define (mult.v1 a b)
     (cond [(or (= a 0) (= b 0)) 0]
           [else (+ a (mult.v1 a (- b 1)))]))
 
-  (check-equal? (mult.v1 5 7) 35)
+  (module+ test
+    (check-equal? (mult.v1 5 7) 35))
 
   (define (show even-or-odd a b acc)
     (display
@@ -633,23 +636,25 @@
            (if verbose (show "O" a b acc))
            (mult.v2 a (- b 1) (+ acc a) verbose)]))
 
-  (check-equal? (mult.v2 5 0 0 #f) 0)
-  (check-equal? (mult.v2 5 1 0 #f) 5)
-  ;; 5 * 9 = 5 + 5 * 8 = 5 + 10 * 4 = 5 + 20 * 2 = 5 + 40 * 1 = 45
-  (check-equal? (mult.v2 5 9 0 #t) 45)
-  (check-equal? (mult.v2 5 10 0 #f) 50))
+  (module+ test
+    (check-equal? (mult.v2 5 0 0 #f) 0)
+    (check-equal? (mult.v2 5 1 0 #f) 5)
+    ;; 5 * 9 = 5 + 5 * 8 = 5 + 10 * 4 = 5 + 20 * 2 = 5 + 40 * 1 = 45
+    (check-equal? (mult.v2 5 9 0 #t) 45)
+    (check-equal? (mult.v2 5 10 0 #f) 50)))
 
 (module Exercise/1.18 sicp
   (#%require rackunit
+             (only racket module+)
              (only (submod ".." Exercise/1.17) mult.v2))
-  (display "============= Exercise 1.18 =============\n")
-  ;; I implemented Exercise 1.17 taking into account the conditions of Exercise 1.18
-  (check-equal? (mult.v2 5 9 0 #t) 45)
-  )
+
+  (module+ test
+    ;; I implemented Exercise 1.17 taking into account the conditions of Exercise 1.18
+    (check-equal? (mult.v2 5 9 0 #t) 45)))
 
 (module Exercise/1.19 sicp
-  (#%require rackunit)
-  (display "============= Exercise 1.19 =============\n")
+  (#%require rackunit
+             (only racket module+))
 
   (define (fib n)
     (fib-iter 1 0 0 1 n))
@@ -668,12 +673,12 @@
                           q
                           (- count 1)))))
 
-  (check-equal? (fib 10) 55))
+  (module+ test
+    (check-equal? (fib 10) 55)))
 
 (module Exercise/1.20 sicp
   (#%require rackunit
-             (only racket format))
-  (display "============= Exercise 1.20 =============\n")
+             (only racket module+ format))
 
   (define (show a b)
     (display (format "[~a] a: ~a, b: ~a\n" (modulo a b) a b)))
@@ -684,41 +689,42 @@
         a
         (gcd b (remainder a b))))
 
-  (gcd 206 40)
-  ;; applicative order: 4 evaluations (as there are 4 iterations)
-  ;; normal order:
-  ;; --------------------------------------------------------------
-  ;; (gcd 206 40)
-  ;; (if (= 40 0) ...)
-  ;; --------------------------------------------------------------
-  ;; (gcd 40 (remainder 206 40))
-  ;; (if (= (remainder 206 40) 0) ...) [1] => (if (= 6 0) ...)
-  ;; --------------------------------------------------------------
-  ;; (gcd (remainder 206 40)
-  ;;      (remainder 40 (remainder 206 40)))
-  ;; (if (= (remainder 40 (remainder 206 40)) 0) ...) [2] => (if (= 4 0) ...)
-  ;; --------------------------------------------------------------
-  ;; (gcd (remainder 40 (remainder 206 40))
-  ;;      (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))
-  ;; (if (= (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) 0) ...) [4] => (if (= 2 0) ...)
-  ;; --------------------------------------------------------------
-  ;; (gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))
-  ;;      (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))
-  ;; (if (= (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))) 0) ...) [7] => (if (= 0 0) ...)
-  ;; --------------------------------------------------------------
-  ;; (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) [4] => DONE
-  ;;
-  ;; (+ 1 2 4 7 4) -> 18 evaluations of (remainder ...)
-  )
+  (module+ test
+    (gcd 206 40)
+    ;; applicative order: 4 evaluations (as there are 4 iterations)
+    ;; normal order:
+    ;; --------------------------------------------------------------
+    ;; (gcd 206 40)
+    ;; (if (= 40 0) ...)
+    ;; --------------------------------------------------------------
+    ;; (gcd 40 (remainder 206 40))
+    ;; (if (= (remainder 206 40) 0) ...) [1] => (if (= 6 0) ...)
+    ;; --------------------------------------------------------------
+    ;; (gcd (remainder 206 40)
+    ;;      (remainder 40 (remainder 206 40)))
+    ;; (if (= (remainder 40 (remainder 206 40)) 0) ...) [2] => (if (= 4 0) ...)
+    ;; --------------------------------------------------------------
+    ;; (gcd (remainder 40 (remainder 206 40))
+    ;;      (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))
+    ;; (if (= (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) 0) ...) [4] => (if (= 2 0) ...)
+    ;; --------------------------------------------------------------
+    ;; (gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))
+    ;;      (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))
+    ;; (if (= (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))) 0) ...) [7] => (if (= 0 0) ...)
+    ;; --------------------------------------------------------------
+    ;; (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) [4] => DONE
+    ;;
+    ;; (+ 1 2 4 7 4) -> 18 evaluations of (remainder ...)
+    ))
 
 (module Exercise/1.21 sicp
-  (#%require rackunit)
+  (#%require rackunit
+             (only racket module+)
+             (only (submod ".." common-utils) square))
   (#%provide smallest-divisor)
-  (display "============= Exercise 1.21 =============\n")
 
   (define (smallest-divisor n)
     (define (find-divisor n test-divisor)
-      (define (square n) (* n n))
       (define (divides? a b) (= (remainder b a) 0))
       (cond ((> (square test-divisor) n) n)
             ((divides? test-divisor n) test-divisor)
@@ -726,15 +732,16 @@
 
     (find-divisor n 2))
 
-  (check-equal? (smallest-divisor 199) 199)
-  (check-equal? (smallest-divisor 1999) 1999)
-  (check-equal? (smallest-divisor 19999) 7))
+  (module+ test
+    (check-equal? (smallest-divisor 199) 199)
+    (check-equal? (smallest-divisor 1999) 1999)
+    (check-equal? (smallest-divisor 19999) 7)))
 
 (module Exercise/1.22 sicp
   (#%require rackunit
+             (only racket module+)
              (only (submod ".." Exercise/1.21) smallest-divisor))
   (#%provide timed-prime-test prime-numbers)
-  (display "============= Exercise 1.22 =============\n")
 
   (define (timed-prime-test n)
     (define (start-prime-test n start-time)
@@ -760,40 +767,42 @@
               (serch-for-primes (+ n 2) (- numb-primes 1))
               (serch-for-primes (+ n 2) numb-primes)))))
 
-  (serch-for-primes 1000 3)
-  (serch-for-primes 10000 3)
-  (serch-for-primes 100000 3)
-  (serch-for-primes 1000000 3)
-  (serch-for-primes 10000000 3)
+  (module+ test
+    (serch-for-primes 1000 3)
+    (serch-for-primes 10000 3)
+    (serch-for-primes 100000 3)
+    (serch-for-primes 1000000 3)
+    (serch-for-primes 10000000 3)
 
+    ;; ============================
+    ;; the times I observe:
+    ;; ============================
+    ;;       1000: ~1
+    ;;     10_000: ~3
+    ;;    100_000: ~9
+    ;;  1_000_000: ~28
+    ;; 10_000_000: ~82
+    ;; ============================
+    ;; there is a sqrt(10) factor
+    ;; ============================
+    )
 
-  ;; ============================
-  ;; the times I observe:
-  ;; ============================
-  ;;       1000: ~1
-  ;;     10_000: ~3
-  ;;    100_000: ~9
-  ;;  1_000_000: ~28
-  ;; 10_000_000: ~82
-  ;; ============================
-  ;; there is a sqrt(10) factor
-  ;; ============================
-
-  (define prime-numbers '(1009 1013 1019 10007 10009 10037 100003 100019 100043 1000003 1000033 1000037 10000019 10000079 10000103)))
+  ;; I have extracted them manually from the above results
+  (define prime-numbers
+    '(1009 1013 1019 10007 10009 10037 100003 100019 100043
+           1000003 1000033 1000037 10000019 10000079 10000103)))
 
 (module Exercise/1.23 sicp
-  (#%require rackunit
-             (only racket format for)
+  (#%require (only racket module+ format for)
+             (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.21) smallest-divisor)
              (only (submod ".." Exercise/1.22) prime-numbers)
              (only (submod ".." common-utils) run-n-times))
-  (display "============= Exercise 1.23 =============\n")
 
   (define (smallest-divisor-optimized n)
     (define (find-divisor n test-divisor)
       (define (next numb)
         (if (= numb 2) 3 (+ numb 2)))
-      (define (square n) (* n n))
       (define (divides? a b) (= (remainder b a) 0))
       (cond ((> (square test-divisor) n) n)
             ((divides? test-divisor n) test-divisor)
@@ -802,7 +811,6 @@
 
   (define (smallest-divisor-optimized-no-extra-function n)
     (define (find-divisor n test-divisor)
-      (define (square n) (* n n))
       (define (divides? a b) (= (remainder b a) 0))
       (cond ((> (square test-divisor) n) n)
             ((divides? test-divisor n) test-divisor)
@@ -841,42 +849,44 @@
     (start-prime-test n (runtime)))
   ;; ---------------------------------------------
 
-  (let ([numb-evals 1000])
-    (for ([prime-number prime-numbers])
-      (display
-       (format "~a: ~a" prime-number
-               (/ (/ (run-n-times
-                      numb-evals
-                      timed-prime-test
-                      (list prime-number)
-                      '())
-                     (/ numb-evals 1.0))
-                  (/ (run-n-times
-                      numb-evals
-                      timed-prime-test-optimized
-                      (list prime-number)
-                      '())
-                     (/ numb-evals 1.0)))))
-      (newline)))
+  (module+ test
+    (let ([numb-evals 1000])
+      (for ([prime-number prime-numbers])
+        (display
+         (format "~a: ~a" prime-number
+                 (/ (/ (run-n-times
+                        numb-evals
+                        timed-prime-test
+                        (list prime-number)
+                        '())
+                       (/ numb-evals 1.0))
+                    (/ (run-n-times
+                        numb-evals
+                        timed-prime-test-optimized
+                        (list prime-number)
+                        '())
+                       (/ numb-evals 1.0)))))
+        (newline))))
 
   ;; inlined version
-  (let ([numb-evals 1000])
-    (for ([prime-number prime-numbers])
-      (display
-       (format "~a: ~a" prime-number
-               (/ (/ (run-n-times
-                      numb-evals
-                      timed-prime-test
-                      (list prime-number)
-                      '())
-                     (/ numb-evals 1.0))
-                  (/ (run-n-times
-                      numb-evals
-                      timed-prime-test-optimized-no-extra-function
-                      (list prime-number)
-                      '())
-                     (/ numb-evals 1.0)))))
-      (newline)))
+  (module+ test
+    (let ([numb-evals 1000])
+      (for ([prime-number prime-numbers])
+        (display
+         (format "~a: ~a" prime-number
+                 (/ (/ (run-n-times
+                        numb-evals
+                        timed-prime-test
+                        (list prime-number)
+                        '())
+                       (/ numb-evals 1.0))
+                    (/ (run-n-times
+                        numb-evals
+                        timed-prime-test-optimized-no-extra-function
+                        (list prime-number)
+                        '())
+                       (/ numb-evals 1.0)))))
+        (newline))))
 
   ;; So I observe a speedup but less than twice (close to 1.6 times). We halve the
   ;; number of iterations and I didn't expect that the extra function call would have
@@ -888,10 +898,11 @@
   )
 
 (module Exercise/1.24 sicp
-  (#%require (only racket format for in-range)
+  (#%require (only racket module+ format for in-range)
+             (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.22) prime-numbers)
              (only (submod ".." common-utils) run-n-times))
-  (display "============= Exercise 1.24 =============\n")
+  (#%provide expmod)
 
   ;; We could have used fast-expt-iterative.v2 to compute p = x^n and then find p%n.
   ;; In this way we would have an iterative procedure but we would be dealing with huge
@@ -900,8 +911,6 @@
   ;;   1. (x*y)%n = ((x%n)*(y%n))%n
   ;;   2. (x*y)%n = (x*(y%n))%n
   (define (expmod base exp m)
-    (define (square x)
-      (* x x))
     (cond ((= exp 0) 1)
           ((even? exp)
            (remainder
@@ -930,63 +939,62 @@
           0))
     (start-prime-test n (runtime)))
 
-  (let ([numb-evals 1000])
-    (for ([prime-number prime-numbers])
-      (display
-       (format "~a: ~a" prime-number
-               (/ (run-n-times
-                   numb-evals
-                   timed-prime-test-fermat
-                   (list prime-number)
-                   '())
-                  (/ (* numb-fermat-tests numb-evals) 1.0))))
-      (newline)))
-
-  (for ([iter (in-range 1 21)])
+  (module+ test
     (let ([numb-evals 1000])
-      (display
-       (format "[~a] 1M / 1K: ~a"
-               iter
-               (/ (/ (run-n-times
-                      numb-evals
-                      timed-prime-test-fermat
-                      (list 1000003)
-                      '())
-                     (/ (* numb-fermat-tests numb-evals) 1.0))
-                  (/ (run-n-times
-                      numb-evals
-                      timed-prime-test-fermat
-                      (list 1009)
-                      '())
-                     (/ (* numb-fermat-tests numb-evals) 1.0)))))
-      (newline)))
+      (for ([prime-number prime-numbers])
+        (display
+         (format "~a: ~a" prime-number
+                 (/ (run-n-times
+                     numb-evals
+                     timed-prime-test-fermat
+                     (list prime-number)
+                     '())
+                    (/ (* numb-fermat-tests numb-evals) 1.0))))
+        (newline)))
 
-  ;; Since the complexity is O(long(n)) I expect to see a linear increase in computation
-  ;; time for n = [10^3, 10^4, ...] - which is indeed the case. But the slope of the
-  ;; line is not as steep as I expected. In particular, I expected to have twice slower
-  ;; computations for primes around 1M compared to 1K. However, I observe a factor of
-  ;; ~1.6 instead of 2. I am not quite sure why.
-  ;;
-  ;; 1. Since we perform the (try-it ...) with a random number the same number of times
-  ;; for 1K and 1M, in the former case this costs relatively more as it is distributed
-  ;; accross less iterations. To test this, I run with (try-it 1) instead of a random
-  ;; number (which of course makes no sense other than checking efficiency of
-  ;; computations) and I get time ~1.8, so indeed this has an impact.
-  ;;
-  ;; 1. Another thing I noticed is that for 1K we have 6 iterations with odd powers, while
-  ;; for 1M we have only 7, so it is possible that the time for 1K is relatively high
-  ;; because of this:
-  ;; 1K: (/ 6.0 16) => 0.38
-  ;; 1M: (/ 7.0 27) => 0.26
-  ;; This might explain the remaining difference.
-  )
+    (for ([iter (in-range 1 21)])
+      (let ([numb-evals 1000])
+        (display
+         (format "[~a] 1M / 1K: ~a"
+                 iter
+                 (/ (/ (run-n-times
+                        numb-evals
+                        timed-prime-test-fermat
+                        (list 1000003)
+                        '())
+                       (/ (* numb-fermat-tests numb-evals) 1.0))
+                    (/ (run-n-times
+                        numb-evals
+                        timed-prime-test-fermat
+                        (list 1009)
+                        '())
+                       (/ (* numb-fermat-tests numb-evals) 1.0)))))
+        (newline)))
+
+    ;; Since the complexity is O(long(n)) I expect to see a linear increase in computation
+    ;; time for n = [10^3, 10^4, ...] - which is indeed the case. But the slope of the
+    ;; line is not as steep as I expected. In particular, I expected to have twice slower
+    ;; computations for primes around 1M compared to 1K. However, I observe a factor of
+    ;; ~1.6 instead of 2. I am not quite sure why.
+    ;;
+    ;; 1. Since we perform the (try-it ...) with a random number the same number of times
+    ;; for 1K and 1M, in the former case this costs relatively more as it is distributed
+    ;; accross less iterations. To test this, I run with (try-it 1) instead of a random
+    ;; number (which of course makes no sense other than checking efficiency of
+    ;; computations) and I get time ~1.8, so indeed this has an impact.
+    ;;
+    ;; 1. Another thing I noticed is that for 1K we have 6 iterations with odd powers,
+    ;; while for 1M we have only 7, so it is possible that the time for 1K is relatively
+    ;; high because of this:
+    ;; 1K: (/ 6.0 16) => 0.38
+    ;; 1M: (/ 7.0 27) => 0.26
+    ;; This might explain the remaining difference.
+    ))
 
 (module Exercise/1.25 sicp
-  (#%require (only racket format))
-  (display "============= Exercise 1.25 =============\n")
-
-  (define (square x)
-    (* x x))
+  (#%require (only racket module+ format)
+             (only (submod ".." Exercise/1.14) logb)
+             (only (submod ".." common-utils) square))
 
   (define (expmod base exp m)
     (cond ((= exp 0) 1)
@@ -1007,23 +1015,25 @@
           [else
            (fast-expt b (- n 1) (* a b))]))
 
-  (let ([x 2]
-        [n 1000])
-    (expmod x n n)
-    (let ([z (fast-expt x n 1)])
-      (display (format "~a\n" z))
-      (remainder z n)))
+  (module+ test
+    (let ([x 2]
+          [n 1000])
+      (expmod x n n)
+      (let ([z (fast-expt x n 1)])
+        (display (format "~a\n" z))
+        (remainder z n)))
 
-  ;; the largest number we have to deal with in expmod e.g., for 2^1000 is 817216
-  ;; while in fast-expt it is astronomical and has 302 digits -> (ceiling (* 1000 (logb 10 2)))
-  ;; so for larger powers we would have to store huge numbers (note that not all languages can
-  ;; handle such numbers like python and racket). See footnote 46 on page 68.
-  )
+    ;; the largest number we have to deal with in expmod e.g., for 2^1000 is 817216
+    ;; while in fast-expt it is astronomical and has 302 digits
+    (ceiling (* 1000 (logb 10 2)))
+    ;; so for larger powers we would have to store huge numbers (note that not all languages can
+    ;; handle such numbers like python and racket). See footnote 46 on page 68.
+    ))
 
 (module Exercise/1.26 sicp
-  (#%require rackunit
-             (only racket format for set!))
-  (display "============= Exercise 1.26 =============\n")
+  (#%require (only racket module+ format for set!)
+             (only (submod ".." common-utils) square)
+             (only (submod ".." Exercise/1.14) logb))
 
   ;; the version of Louis Reasoner has complexity O(log(2^n)) = O(n*log(2)) = O(n),
   ;; note that the linear recursion becomes tree recursion with two branches at each step.
@@ -1031,8 +1041,6 @@
 
   (define (expmod-linear base exp m)
     (set! numb-calls (+ numb-calls 1))
-    (define (square x)
-      (* x x))
     (cond ((= exp 0) 1)
           ((even? exp)
            (let ([z (square (expmod-linear base (/ exp 2) m))])
@@ -1058,41 +1066,30 @@
     (f 2 n n)
     numb-calls)
 
-  (define (logb b n)
-    ;; log_b(n) = ln(n)/ln(b)
-    (/ (log n) (log b)))
-
-  (define n-to-test '(10 100 1000 10000 100000 1000000))
-  (display "-------------------------------------\n")
-  (display "expmod-linear\n")
-  (display "-------------------------------------\n")
-  (for ([n n-to-test])
-    (let ([z (test-f expmod-linear n)])
-      (display (format "[~a] ~a (~a)\n" n z (/ z (logb 2 n))))))
-  (display "-------------------------------------\n")
-  (display "expmod-tree\n")
-  (display "-------------------------------------\n")
-  (for ([n n-to-test])
-    (let ([z (test-f expmod-tree n)])
-      (display (format "[~a] ~a (~a)\n" n z (/ z (* n 1.0)))))))
+  (module+ test
+    (define n-to-test '(10 100 1000 10000 100000 1000000))
+    (display "-------------------------------------\n")
+    (display "expmod-linear\n")
+    (display "-------------------------------------\n")
+    (for ([n n-to-test])
+      (let ([z (test-f expmod-linear n)])
+        (display (format "[~a] ~a (~a)\n" n z (/ z (logb 2 n))))))
+    (display "-------------------------------------\n")
+    (display "expmod-tree\n")
+    (display "-------------------------------------\n")
+    (for ([n n-to-test])
+      (let ([z (test-f expmod-tree n)])
+        (display (format "[~a] ~a (~a)\n" n z (/ z (* n 1.0))))))))
 
 (module Exercise/1.27 sicp
   (#%require rackunit
-             (only racket format for)
-             (only (submod ".." Exercise/1.21) smallest-divisor))
+             (only racket module+ format for)
+             (only (submod ".." common-utils) square)
+             (only (submod ".." Exercise/1.21) smallest-divisor)
+             (only (submod ".." Exercise/1.24) expmod))
   (#%provide carmichael-numbers)
-  (display "============= Exercise 1.27 =============\n")
 
   (define carmichael-numbers '(561 1105 1729 2465 2821 6601))
-
-  (define (expmod base exp m)
-    (define (square x)
-      (* x x))
-    (cond ((= exp 0) 1)
-          ((even? exp)
-           (remainder (square (expmod base (/ exp 2) m)) m))
-          (else
-           (remainder (* base (expmod base (- exp 1) m)) m))))
 
   (define (fermat-test-exhaustive n)
     (define (try-it a)
@@ -1109,25 +1106,24 @@
   (define (prime? n)
     (= n (smallest-divisor n)))
 
-  (check-true (test-carmichael-numbers fermat-test-exhaustive carmichael-numbers))
-  (check-false (test-carmichael-numbers fermat-test-exhaustive
-                                        (append carmichael-numbers (list 9))))
+  (module+ test
+    (check-true (test-carmichael-numbers fermat-test-exhaustive carmichael-numbers))
+    (check-false (test-carmichael-numbers fermat-test-exhaustive
+                                          (append carmichael-numbers (list 9))))
 
-  ;; of course a real test gives false for each carmichael number
-  (for ([n carmichael-numbers])
-    (check-false (test-carmichael-numbers prime? (list n)))))
+    ;; of course a real test gives false for each carmichael number
+    (for ([n carmichael-numbers])
+      (check-false (test-carmichael-numbers prime? (list n))))))
 
 (module Exercise/1.28 sicp
   (#%require rackunit
-             (only racket for)
+             (only racket module+ for)
+             (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.22) prime-numbers)
              (only (submod ".." Exercise/1.27) carmichael-numbers))
-  (display "============= Exercise 1.28 =============\n")
 
   ;; see latex note for details
   (define (expmod-miller-rabin base exp m)
-    (define (square x)
-      (* x x))
     (cond ((= exp 0) 1)
           ((even? exp)
            (let* ([u (expmod-miller-rabin base (/ exp 2) m)]
@@ -1155,41 +1151,9 @@
           ((miller-rabin-test n) (fast-prime? n (- times 1)))
           (else #f)))
 
-  (for ([n carmichael-numbers])
-    (check-false (fast-prime? n 100)))
+  (module+ test
+    (for ([n carmichael-numbers])
+      (check-false (fast-prime? n 100)))
 
-  (for ([n prime-numbers])
-    (check-true (fast-prime? n 100))))
-
-;; FIXME: add a submodule for the tests so that they are not run when
-;; I import something from a previous exercise.
-
-;; (module mitko sicp
-;;   (#%require (only racket module+))
-;;   (#%provide f1)
-;;   (display "mitko\n")
-
-;;   (define (f1)
-;;     1)
-
-;;   (module+ test1
-;;     (display "mitko:test1\n")
-
-;;     (f1)
-;;     )
-
-;;   (module+ test1
-;;     (display "mitko:test2\n")
-
-;;     (f1)
-;;     )
-;;   )
-
-;; (module mitko1 sicp
-;;   (#%require (only racket module+)
-;;              (only (submod ".." mitko) f1))
-
-;;   (display "mitko1\n")
-
-
-;;   )
+    (for ([n prime-numbers])
+      (check-true (fast-prime? n 100)))))
