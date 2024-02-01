@@ -47,6 +47,8 @@
   \end{tcolorbox}
 }
 
+\newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
+
 \begin{document}
 
 \section{Exercise 1.13}
@@ -148,6 +150,67 @@ Hence
 \begin{align*}
   p^{'} &= p^2 + q^2 \\
   q^{'} &= q^2 + 2pq.
+\end{align*}
+
+\section{Exercise 1.24}
+
+In this exercise we use the first two properties of the $\bmod$ operator (for integers
+$x$, $y$ and $n$)
+\begin{align}
+  (xy)\bmod n &= [(x\bmod n)(y\bmod n)]\bmod n \label{eq.mod.property1} \\
+  (xy)\bmod n &= [x(y\bmod n)]\bmod n \label{eq.mod.property2} \\
+  (x + y)\bmod n &= [(x\bmod n) + (y\bmod n)]\bmod n \label{eq.mod.property3}
+\end{align}
+Lets prove them.
+
+\subsection{Proof of property~\eqref{eq.mod.property3}}
+
+We can express
+\begin{align} \label{eq.quotient-form}
+  \begin{split}
+    x &= q_xn + (x \bmod n) \\
+    y &= q_yn + (y \bmod n),
+  \end{split}
+\end{align}
+for some integers $q_x$ and $q_y$. Substituting these in $(x + y) \bmod n$ gives
+\begin{align*}
+  \left[\underbrace{(q_x + q_y)}_{q}n + \underbrace{(x \bmod n) + (y \bmod n)}_z\right] \bmod n = (qn + z) \bmod n.
+\end{align*}
+By definition
+\begin{align*}
+  u \bmod n = u - n\floor{\frac{u}{n}},
+\end{align*}
+hence (note that $q$ is an integer)
+\begin{align*}
+  (qn + z) \bmod n
+  &= (qn + z) - n\floor{\frac{qn + z}{n}} \\
+  &= (qn + z) - n\floor{q + \frac{z}{n}} \\
+  &= (qn + z) - n\left(q + \floor{\frac{z}{n}}\right) \\
+  &= (qn + z) - \left(qn + n\floor{\frac{z}{n}}\right) \\
+  &= z - n\floor{\frac{z}{n}} \\
+  &= z\bmod n.
+\end{align*}
+Therefore we have proven~\eqref{eq.mod.property3}.
+
+\subsection{Proof of property~\eqref{eq.mod.property1}}
+
+Substituting~\eqref{eq.quotient-form} in $(xy)\bmod n$ gives
+\begin{align*}
+  (q_xq_yn^2 + q_xn(y \bmod n) + q_yn(x \bmod n) + (x \bmod n)(y \bmod n))\bmod n
+\end{align*}
+Using property~\eqref{eq.mod.property3} we see that $(xy)\bmod n = ((x \bmod n)(y \bmod n))\bmod n$ because
+\begin{align*}
+  q_xq_yn^2\bmod n = q_xn(y \bmod n)\bmod n = q_yn(x \bmod n)\bmod n = 0.
+\end{align*}
+
+\subsection{Proof of property~\eqref{eq.mod.property2}}
+
+Using property~\eqref{eq.mod.property1} to expand $[x(y\bmod n)]\bmod n$ we get
+\begin{align*}
+  [x(y\bmod n)]\bmod n
+  &= [(x\bmod n)((y\bmod n)\bmod n)]\bmod n \\
+  &= [(x\bmod n)(y\bmod n)]\bmod n \\
+  &= (xy)\bmod n.
 \end{align*}
 
 \section{Quotes}

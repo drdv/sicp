@@ -3,6 +3,15 @@
 ;; #lang sicp
 ;; (#%require (only racket module))
 
+(module common-utils sicp
+  (#%provide run-n-times)
+
+  (define (run-n-times n func args output)
+    (cond [(= n 0) (apply + output)]
+          [else
+           (run-n-times (- n 1) func args (append output (list (apply func args))))]))
+  )
+
 ;; -------------------------------------------
 ;; Exercise 1.2
 ;; -------------------------------------------
@@ -711,7 +720,7 @@
 (module Exercise/1.22 sicp
   (#%require rackunit
              (only (submod ".." Exercise/1.21) smallest-divisor))
-  (#%provide timed-prime-test)
+  (#%provide timed-prime-test prime-numbers)
   (display "============= Exercise 1.22 =============\n")
 
   (define (timed-prime-test n)
@@ -756,12 +765,15 @@
   ;; ============================
   ;; there is a sqrt(10) factor
   ;; ============================
-  )
+
+  (define prime-numbers '(1009 1013 1019 10007 10009 10037 100003 100019 100043 1000003 1000033 1000037 10000019 10000079 10000103)))
 
 (module Exercise/1.23 sicp
   (#%require rackunit
              (only racket format for)
-             (only (submod ".." Exercise/1.21) smallest-divisor))
+             (only (submod ".." Exercise/1.21) smallest-divisor)
+             (only (submod ".." Exercise/1.22) prime-numbers)
+             (only (submod ".." common-utils) run-n-times))
   (display "============= Exercise 1.23 =============\n")
 
   (define (smallest-divisor-optimized n)
@@ -786,7 +798,7 @@
     (find-divisor n 2))
 
   ;; ---------------------------------------------
-  ;; Instead of displaying the time return it
+  ;; Instead of displaying the time return it (here we test only prime numbers)
   ;; ---------------------------------------------
   (define (timed-prime-test n)
     (define (start-prime-test n start-time)
@@ -816,27 +828,20 @@
     (start-prime-test n (runtime)))
   ;; ---------------------------------------------
 
-  (define (run-multiple-times n f prime-number output)
-    (cond [(= n 0) (apply + output)]
-          [else
-           (run-multiple-times (- n 1) f prime-number (append output (list (f prime-number))))]))
-
-  (define prime-numbers '(1009 1013 1019 10007 10009 10037 100003 100019 100043 1000003 1000033 1000037 10000019 10000079 10000103))
-
   (let ([numb-evals 1000])
     (for ([prime-number prime-numbers])
       (display
        (format "~a: ~a" prime-number
-               (/ (/ (run-multiple-times
+               (/ (/ (run-n-times
                       numb-evals
                       timed-prime-test
-                      prime-number
+                      (list prime-number)
                       '())
                      (/ numb-evals 1.0))
-                  (/ (run-multiple-times
+                  (/ (run-n-times
                       numb-evals
                       timed-prime-test-optimized
-                      prime-number
+                      (list prime-number)
                       '())
                      (/ numb-evals 1.0)))))
       (newline)))
@@ -846,16 +851,16 @@
     (for ([prime-number prime-numbers])
       (display
        (format "~a: ~a" prime-number
-               (/ (/ (run-multiple-times
+               (/ (/ (run-n-times
                       numb-evals
                       timed-prime-test
-                      prime-number
+                      (list prime-number)
                       '())
                      (/ numb-evals 1.0))
-                  (/ (run-multiple-times
+                  (/ (run-n-times
                       numb-evals
                       timed-prime-test-optimized-no-extra-function
-                      prime-number
+                      (list prime-number)
                       '())
                      (/ numb-evals 1.0)))))
       (newline)))
@@ -867,4 +872,99 @@
   ;; prime numbers. This means that the function call itself (with its additional stack)
   ;; is the reason. The additional if and equality comparison seem to influence mainly
   ;; the time for small numbers.
+  )
+
+(module Exercise/1.24 sicp
+  (#%require rackunit
+             (only racket format for in-range)
+             (only (submod ".." Exercise/1.22) prime-numbers)
+             (only (submod ".." common-utils) run-n-times))
+  (display "============= Exercise 1.24 =============\n")
+
+  ;; We could have used fast-expt-iterative.v2 to compute p = x^n and then find p%n.
+  ;; In this way we would have an iterative procedure but we would be dealing with huge
+  ;; numbers p. The idea behind the expmod procedure is that by using the following
+  ;; transformations we don't need to deal with huge numbers (see latex note for proof):
+  ;;   1. (x*y)%n = ((x%n)*(y%n))%n
+  ;;   2. (x*y)%n = (x*(y%n))%n
+  (define (expmod base exp m)
+    (define (square x)
+      (* x x))
+    (cond ((= exp 0) 1)
+          ((even? exp)
+           (remainder
+            (square (expmod base (/ exp 2) m))
+            m))
+          (else
+           (remainder
+            (* base (expmod base (- exp 1) m))
+            m))))
+
+  (define (fermat-test n)
+    (define (try-it a)
+      (= (expmod a n n) a))
+    (try-it (+ 1 (random (- n 1)))))
+
+  (define (fast-prime? n times)
+    (cond ((= times 0) #t)
+          ((fermat-test n) (fast-prime? n (- times 1)))
+          (else #f)))
+
+  (define numb-fermat-tests 10)
+  (define (timed-prime-test-fermat n)
+    (define (start-prime-test n start-time)
+      (if (fast-prime? n numb-fermat-tests)
+          (- (runtime) start-time)
+          0))
+    (start-prime-test n (runtime)))
+
+  (let ([numb-evals 1000])
+    (for ([prime-number prime-numbers])
+      (display
+       (format "~a: ~a" prime-number
+               (/ (run-n-times
+                   numb-evals
+                   timed-prime-test-fermat
+                   (list prime-number)
+                   '())
+                  (/ (* numb-fermat-tests numb-evals) 1.0))))
+      (newline)))
+
+  (for ([iter (in-range 1 21)])
+    (let ([numb-evals 1000])
+      (display
+       (format "[~a] 1M / 1K: ~a"
+               iter
+               (/ (/ (run-n-times
+                      numb-evals
+                      timed-prime-test-fermat
+                      (list 1000003)
+                      '())
+                     (/ (* numb-fermat-tests numb-evals) 1.0))
+                  (/ (run-n-times
+                      numb-evals
+                      timed-prime-test-fermat
+                      (list 1009)
+                      '())
+                     (/ (* numb-fermat-tests numb-evals) 1.0)))))
+      (newline)))
+
+  ;; Since the complexity is O(long(n)) I expect to see a linear increase in computation
+  ;; time for n = [10^3, 10^4, ...] - which is indeed the case. But the slope of the
+  ;; line is not as steep as I expected. In particular, I expected to have twice slower
+  ;; computations for primes around 1M compared to 1K. However, I observe a factor of
+  ;; ~1.6 instead of 2. I am not quite sure why.
+  ;;
+  ;; 1. Since we perform the (try-it ...) with a random number the same number of times
+  ;; for 1K and 1M, in the former case this costs relatively more as it is distributed
+  ;; accross less iterations. To test this, I run with (try-it 1) instead of a random
+  ;; number (which of course makes no sense other than checking efficiency of
+  ;; computations) and I get time ~1.8, so indeed this has an impact.
+  ;;
+  ;; 1. Another thing I noticed is that for 1K we have 6 iterations with odd powers, while
+  ;; for 1M we have only 7, so it is possible that the time for 1K is relatively high
+  ;; because of this:
+  ;; 1K: (/ 6.0 16) => 0.38
+  ;; 1M: (/ 7.0 27) => 0.26
+  ;; This might explain the remaining difference.
   )
