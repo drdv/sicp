@@ -1067,6 +1067,7 @@
   (#%require rackunit
              (only racket format for)
              (only (submod ".." Exercise/1.21) smallest-divisor))
+  (#%provide carmichael-numbers)
   (display "============= Exercise 1.27 =============\n")
 
   (define carmichael-numbers '(561 1105 1729 2465 2821 6601))
@@ -1076,11 +1077,9 @@
       (* x x))
     (cond ((= exp 0) 1)
           ((even? exp)
-           (let ([z (square (expmod base (/ exp 2) m))])
-             (remainder z m)))
+           (remainder (square (expmod base (/ exp 2) m)) m))
           (else
-           (let ([z (expmod base (- exp 1) m)])
-             (remainder (* base z) m)))))
+           (remainder (* base (expmod base (- exp 1) m)) m))))
 
   (define (fermat-test-exhaustive n)
     (define (try-it a)
@@ -1104,6 +1103,50 @@
   ;; of course a real test gives false for each carmichael number
   (for ([n carmichael-numbers])
     (check-false (test-carmichael-numbers prime? (list n)))))
+
+(module Exercise/1.28 sicp
+  (#%require rackunit
+             (only racket for)
+             (only (submod ".." Exercise/1.22) prime-numbers)
+             (only (submod ".." Exercise/1.27) carmichael-numbers))
+  (display "============= Exercise 1.28 =============\n")
+
+  ;; see latex note for details
+  (define (expmod-miller-rabin base exp m)
+    (define (square x)
+      (* x x))
+    (cond ((= exp 0) 1)
+          ((even? exp)
+           (let* ([u (expmod-miller-rabin base (/ exp 2) m)]
+                  [v (remainder (square u) m)])
+             (cond [(and
+                     (not (= u 1))
+                     (not (= u (- m 1)))
+                     (= v 1)) 0]
+                   [else v])))
+          (else
+           (remainder
+            ;; I am a bit confused about the odd case
+            ;; there seems to be no need of special handling as in the even case
+            ;; I don't quite understand why
+            (* base (remainder (* base (expmod-miller-rabin base (- exp 1) m)) m))
+            m))))
+
+  (define (miller-rabin-test n)
+    (define (try-it a)
+      (= (expmod-miller-rabin a (- n 1) n) 1))
+    (try-it (+ 2 (random (- n 2)))))
+
+  (define (fast-prime? n times)
+    (cond ((= times 0) #t)
+          ((miller-rabin-test n) (fast-prime? n (- times 1)))
+          (else #f)))
+
+  (for ([n carmichael-numbers])
+    (check-false (fast-prime? n 100)))
+
+  (for ([n prime-numbers])
+    (check-true (fast-prime? n 100))))
 
 ;; FIXME: add a submodule for the tests so that they are not run when
 ;; I import something from a previous exercise.
