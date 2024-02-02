@@ -56,13 +56,13 @@
 \subsection{Proof 1}
 
 The second-order difference equation $F_k = F_{k-1} + F_{k-2}$ can be represented as two
-first-order equations (where $n \geq 2$)
+first-order equations
 \begin{align*}
   \underbrace{\begin{bmatrix} F_{k-1} \\ F_k \end{bmatrix}}_{x_{k+1}} =
   \underbrace{\begin{bmatrix} 0 & 1 \\ 1 & 1 \end{bmatrix}}_{A}
   \underbrace{\begin{bmatrix} F_{k-2} \\ F_{k-1} \end{bmatrix}}_{x_k}.
 \end{align*}
-Hence, $x_{n}$ depends on the initial condition $x_0 = (F_0, F_1) = (0, 1)$ as follows
+Hence, $x_{n}$ (where $n \geq 2$) depends on the initial condition $x_0 = (F_0, F_1) = (0, 1)$ as follows
 \begin{align} \label{eq.initial-condition}
   x_n = A^nx_0.
 \end{align}
