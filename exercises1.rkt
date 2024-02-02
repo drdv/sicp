@@ -1,3 +1,6 @@
+;; =====================================================================================
+;; Exercises in Chapter 1
+;; =====================================================================================
 #lang racket
 
 (module common-utils sicp
@@ -13,14 +16,15 @@
            (run-n-times (- n 1) func args (append output (list (apply func args))))])))
 
 (module Exercise/1.1 sicp
-  (#%require rackunit
-             (only racket module+))
+  (#%require (only racket module+))
 
   (define a 3)
   (define b (+ a 1))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.1 ====================\n")
+
     (check-equal? 10 10)
     (check-equal? (+ 5 3 4) 12)
     (check-equal? (- 9 1) 8)
@@ -39,29 +43,30 @@
                      (+ a 1)) 16)))
 
 (module Exercise/1.2 sicp
-  (#%require rackunit
-             (only racket module+))
+  (#%require (only racket module+))
 
   (define (an-expression)
     (/ (+ 5 4 (- 2 (- 3 (+ 6 4/5))))
        (* 3 (- 6 2) (- 2 7))))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.2 ====================\n")
+
     (check-equal? (an-expression) (/ (- 37) 150))))
 
 (module Exercise/1.3 sicp
-  (#%require
-   rackunit
-   (only racket module+ foldl sort)
-   (only (submod ".." common-utils) square))
+  (#%require (only racket module+ foldl sort)
+             (only (submod ".." common-utils) square))
 
   (define (sum-squares.v1 x y z)
     (- (+ (square x) (square y) (square z))
        (square (min x y z))))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.3 ====================\n")
+
     (check-equal? (sum-squares.v1 9 5 7) 130))
 
   (define (sum-squares.v2 x y z)
@@ -70,6 +75,7 @@
                 (cdr (sort (list x y z) <)))))
 
   (module+ test-disabled
+    (#%require rackunit)
     ;; FIXME: there seems to be a conflict between the list defined in SICP and the
     ;; sort procedure (I get the same error even if I use cons to define the list)
     (check-equal? (sum-squares.v2 9 5 7) 130)))
@@ -88,8 +94,7 @@
 (module Exercise/1.6 sicp
   (#%provide tolerance
              sqrt-v1)
-  (#%require rackunit
-             (only racket module+)
+  (#%require (only racket module+)
              (only (submod ".." common-utils) square))
 
   (define tolerance 0.0001)
@@ -107,7 +112,9 @@
     (sqrt-recursive 1.0 x))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.6 ====================\n")
+
     (check-within (* (sqrt-v1 2) (sqrt-v1 2)) 2 tolerance))
 
   (define (new-if predicate then-clause else-clause)
@@ -120,10 +127,8 @@
   |#)
 
 (module Exercise/1.7 sicp
-  (#%require
-   rackunit
-   (only racket module+ format)
-   (only (submod ".." Exercise/1.6) sqrt-v1 tolerance))
+  (#%require (only racket module+ format)
+             (only (submod ".." Exercise/1.6) sqrt-v1 tolerance))
 
   (define (sqrt-v2 x)
     (define (sqrt-recursive old-guess guess x)
@@ -139,7 +144,9 @@
     (sqrt-recursive 0.0 1.0 x))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.7 ====================\n")
+
     (display (format "computation terminates: ~a\n"
                      (sqrt-v2 999999999999999999999999999999999999)))
 
@@ -148,8 +155,7 @@
     (display (format "accurate  : ~a\n" (* (sqrt-v2 tolerance) (sqrt-v2 tolerance))))))
 
 (module Exercise/1.8 sicp
-  (#%require rackunit
-             (only racket module+)
+  (#%require (only racket module+)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.6) tolerance))
 
@@ -165,12 +171,13 @@
     (cbrt-recursive 0.0 1.0))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.8 ====================\n")
+
     (check-within (* (cube-root 9) (cube-root 9) (cube-root 9)) 9 tolerance)))
 
 (module Section/1.2.1 sicp
-  (#%require rackunit
-             (only racket module+))
+  (#%require (only racket module+))
 
   #| linear recursive process
   1. the amount of information required to keep is proportional to n
@@ -183,6 +190,9 @@
         (* n (factorial-v1 (- n 1)))))
 
   (module+ test
+    (#%require rackunit)
+    (display "==================== Section/1.2.1 ====================\n")
+
     (check-equal? (factorial-v1 5) 120))
 
   #| linear iterative process
@@ -200,7 +210,6 @@
     (factorial-helper 1 1))
 
   (module+ test
-    (display "==================== Section/1.2.1 ====================\n")
     (check-equal? (factorial-v2 5) 120))
 
   (define (factorial-v3 n)
@@ -228,8 +237,7 @@
   |#)
 
 (module Exercise/1.9 sicp
-  (#%require rackunit
-             (only racket module+))
+  (#%require (only racket module+))
 
   (define (plus.rec a b)
     (if (= a 0)
@@ -237,7 +245,9 @@
         (inc (plus.rec (dec a) b))))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.9 ====================\n")
+
     (check-equal? (plus.rec 4 5) 9)
     #| recursive process
     (plus.rec 4 5)
@@ -269,13 +279,13 @@
     |#))
 
 (module Exercise/1.10 sicp
-  (#%require
-   rackunit
-   racket/trace
-   (only racket module+ format))
+  (#%require racket/trace
+             (only racket module+ format))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.10 ====================\n")
+
     ;; I have to define A in the test module because I want to use (trace A) later
     (define (A x y)
       (cond ((= y 0) 0)
@@ -355,9 +365,7 @@
 
 (module Section/1.2.2 sicp
   (#%provide count-change)
-  (#%require rackunit
-             (only racket module+))
-
+  (#%require (only racket module+))
 
   ;; ----------------------------------------------------------
   ;; Fibonacci sequence (tree recursion)
@@ -369,6 +377,9 @@
                    (fib.v1 (- n 2)))]))
 
   (module+ test
+    (#%require rackunit)
+    (display "==================== Section/1.2.2 ====================\n")
+
     (check-equal? (fib.v1 10) 55))
 
   ;; ----------------------------------------------------------
@@ -402,12 +413,10 @@
                    (count-change (- amount (car coins)) coins))]))
 
   (module+ test
-    (display "==================== Section/1.2.2 ====================\n")
     (check-equal? (count-change 100 '(50 25 10 5 1)) 292)))
 
 (module Exercise/1.11 sicp
-  (#%require rackunit
-             (only racket module+))
+  (#%require (only racket module+))
 
   ;; ----------------------------------------------------------
   ;; recursive process
@@ -420,7 +429,9 @@
            (* 3 (f.v1 (- n 3))))))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.11 ====================\n")
+
     (check-equal? (f.v1 10) 1892))
 
   ;; ----------------------------------------------------------
@@ -445,8 +456,7 @@
     (check-equal? (f.v2 -2) -2)))
 
 (module Exercise/1.12 sicp
-  (#%require rackunit
-             (only racket module+))
+  (#%require (only racket module+))
 
   (define (pascal-triangle.v1 row-numb verbose)
     (define (pascal-triangle-next-row current-row row-counter)
@@ -467,7 +477,9 @@
           [else (pascal-triangle-next-row (list 1) 2)]))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.12 ====================\n")
+
     (check-equal? (pascal-triangle.v1 0 #f) '())
     (check-equal? (pascal-triangle.v1 1 #f) '(1))
     (check-equal? (pascal-triangle.v1 2 #f) '(1 1))
@@ -500,12 +512,13 @@
 
 (module Exercise/1.14 sicp
   (#%provide logb)
-  (#%require rackunit
-             (only (submod ".." Section/1.2.2) count-change)
+  (#%require (only (submod ".." Section/1.2.2) count-change)
              (only racket module+ format for in-range set!))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.14 ====================\n")
+
     (check-equal? (count-change 11 '(50 25 10 5 1)) 4))
 
   (define (count-change-display amount coins verbose)
@@ -573,6 +586,7 @@
 
   (module+ test
     (display "==================== Exercise/1.15 ====================\n")
+
     #|
     At every call of sine, the angle is divided by 3 so the number of steps is
     determined by the condition: angle / 3^k <= 0.1, from which we get
@@ -590,8 +604,7 @@
     (format "[angle: 500.0] iter: ~a\n" (ceiling (logb 3 (/ 500.0 0.1))))))
 
 (module Exercise/1.16 sicp
-  (#%require rackunit
-             (only racket module+ format)
+  (#%require (only racket module+ format)
              (only (submod ".." common-utils) square))
 
   (define (show even-or-odd iter n b a)
@@ -640,22 +653,25 @@
                                    (+ iter 1))]))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.16 ====================\n")
+
     (check-equal? (fast-expt-recursive 5 21 1) 476837158203125)
     (check-equal? (fast-expt-iterative.v1 5 21 1 1) 476837158203125)
     (check-equal? (fast-expt-iterative.v2 5 21 1 1) 476837158203125)))
 
 (module Exercise/1.17 sicp
   (#%provide mult.v2)
-  (#%require rackunit
-             (only racket module+ format raise))
+  (#%require (only racket module+ format raise))
 
   (define (mult.v1 a b)
     (cond [(or (= a 0) (= b 0)) 0]
           [else (+ a (mult.v1 a (- b 1)))]))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.17 ====================\n")
+
     (check-equal? (mult.v1 5 7) 35))
 
   (define (show even-or-odd a b acc)
@@ -685,18 +701,18 @@
     (check-equal? (mult.v2 5 10 0 #f) 50)))
 
 (module Exercise/1.18 sicp
-  (#%require rackunit
-             (only racket module+)
+  (#%require (only racket module+)
              (only (submod ".." Exercise/1.17) mult.v2))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.18 ====================\n")
+
     ;; I implemented Exercise 1.17 taking into account the conditions of Exercise 1.18
     (check-equal? (mult.v2 5 9 0 #t) 45)))
 
 (module Exercise/1.19 sicp
-  (#%require rackunit
-             (only racket module+))
+  (#%require (only racket module+))
 
   (define (fib n)
     (fib-iter 1 0 0 1 n))
@@ -716,12 +732,13 @@
                           (- count 1)))))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.19 ====================\n")
+
     (check-equal? (fib 10) 55)))
 
 (module Exercise/1.20 sicp
-  (#%require rackunit
-             (only racket module+ format))
+  (#%require (only racket module+ format))
 
   (define (show a b)
     (display (format "[~a] a: ~a, b: ~a\n" (modulo a b) a b)))
@@ -733,7 +750,9 @@
         (gcd b (remainder a b))))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.20 ====================\n")
+
     (gcd 206 40)
     #|
     applicative order: 4 evaluations (as there are 4 iterations)
@@ -764,8 +783,7 @@
 
 (module Exercise/1.21 sicp
   (#%provide smallest-divisor)
-  (#%require rackunit
-             (only racket module+)
+  (#%require (only racket module+)
              (only (submod ".." common-utils) square))
 
   (define (smallest-divisor n)
@@ -778,7 +796,9 @@
     (find-divisor n 2))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.21 ====================\n")
+
     (check-equal? (smallest-divisor 199) 199)
     (check-equal? (smallest-divisor 1999) 1999)
     (check-equal? (smallest-divisor 19999) 7)))
@@ -786,8 +806,7 @@
 (module Exercise/1.22 sicp
   (#%provide timed-prime-test
              prime-numbers)
-  (#%require rackunit
-             (only racket module+)
+  (#%require (only racket module+)
              (only (submod ".." Exercise/1.21) smallest-divisor))
 
   (define (timed-prime-test n)
@@ -815,7 +834,9 @@
               (serch-for-primes (+ n 2) numb-primes)))))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.22 ====================\n")
+
     (serch-for-primes 1000 3)
     (serch-for-primes 10000 3)
     (serch-for-primes 100000 3)
@@ -900,6 +921,7 @@
 
   (module+ test
     (display "==================== Exercise/1.23 ====================\n")
+
     (let ([numb-evals 1000])
       (for ([prime-number prime-numbers])
         (display
@@ -994,6 +1016,7 @@
 
   (module+ test
     (display "==================== Exercise/1.24 ====================\n")
+
     (let ([numb-evals 1000])
       (for ([prime-number prime-numbers])
         (display
@@ -1072,6 +1095,7 @@
 
   (module+ test
     (display "==================== Exercise/1.25 ====================\n")
+
     (let ([x 2]
           [n 1000])
       (expmod x n n)
@@ -1126,6 +1150,7 @@
 
   (module+ test
     (display "==================== Exercise/1.26 ====================\n")
+
     (define n-to-test '(10 100 1000 10000 100000 1000000))
     (display "-------------------------------------\n")
     (display "expmod-linear\n")
@@ -1142,8 +1167,7 @@
 
 (module Exercise/1.27 sicp
   (#%provide carmichael-numbers)
-  (#%require rackunit
-             (only racket module+ format for)
+  (#%require (only racket module+ format for)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.21) smallest-divisor)
              (only (submod ".." Exercise/1.24) expmod))
@@ -1166,7 +1190,9 @@
     (= n (smallest-divisor n)))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.27 ====================\n")
+
     (check-true (test-carmichael-numbers fermat-test-exhaustive carmichael-numbers))
     (check-false (test-carmichael-numbers fermat-test-exhaustive
                                           (append carmichael-numbers (list 9))))
@@ -1176,8 +1202,7 @@
       (check-false (test-carmichael-numbers prime? (list n))))))
 
 (module Exercise/1.28 sicp
-  (#%require rackunit
-             (only racket module+ for)
+  (#%require (only racket module+ for)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.22) prime-numbers)
              (only (submod ".." Exercise/1.27) carmichael-numbers))
@@ -1212,13 +1237,16 @@
           (else #f)))
 
   (module+ test
+    (#%require rackunit)
     (display "==================== Exercise/1.28 ====================\n")
+
     (for ([n carmichael-numbers])
       (check-false (fast-prime? n 100)))
 
     (for ([n prime-numbers])
       (check-true (fast-prime? n 100)))))
 
+;; FIXME: to create a macro for this
 (module+ test
   (require (submod ".." Exercise/1.1 test))
   (require (submod ".." Exercise/1.2 test))
