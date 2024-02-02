@@ -24,6 +24,7 @@
   (define b (+ a 1))
 
   (module+ test
+    (display "==================== Exercise/1.1 ====================\n")
     (check-equal? 10 10)
     (check-equal? (+ 5 3 4) 12)
     (check-equal? (- 9 1) 8)
@@ -50,6 +51,7 @@
        (* 3 (- 6 2) (- 2 7))))
 
   (module+ test
+    (display "==================== Exercise/1.2 ====================\n")
     (check-equal? (an-expression) (/ (- 37) 150))))
 
 (module Exercise/1.3 sicp
@@ -63,6 +65,7 @@
        (square (min x y z))))
 
   (module+ test
+    (display "==================== Exercise/1.3 ====================\n")
     (check-equal? (sum-squares.v1 9 5 7) 130))
 
   (define (sum-squares.v2 x y z)
@@ -109,6 +112,7 @@
     (sqrt-recursive 1.0 x))
 
   (module+ test
+    (display "==================== Exercise/1.6 ====================\n")
     (check-within (* (sqrt-v1 2) (sqrt-v1 2)) 2 tolerance))
 
   (define (new-if predicate then-clause else-clause)
@@ -140,6 +144,7 @@
     (sqrt-recursive 0.0 1.0 x))
 
   (module+ test
+    (display "==================== Exercise/1.7 ====================\n")
     (display (format "computation terminates: ~a\n" (sqrt-v2 999999999999999999999999999999999999)))
 
     ;; due to loss of numerical precision sqrt-v1 might diverge with the above number
@@ -164,6 +169,7 @@
     (cbrt-recursive 0.0 1.0))
 
   (module+ test
+    (display "==================== Exercise/1.8 ====================\n")
     (check-within (* (cube-root 9) (cube-root 9) (cube-root 9)) 9 tolerance)))
 
 (module Section/1.2.1 sicp
@@ -196,6 +202,7 @@
     (factorial-helper 1 1))
 
   (module+ test
+    (display "==================== Section/1.2.1 ====================\n")
     (check-equal? (factorial-v2 5) 120))
 
   (define (factorial-v3 n)
@@ -231,6 +238,7 @@
         (inc (plus.rec (dec a) b))))
 
   (module+ test
+    (display "==================== Exercise/1.9 ====================\n")
     (check-equal? (plus.rec 4 5) 9)
     ;; recursive process
     ;; (plus.rec 4 5)
@@ -268,6 +276,7 @@
    (only racket module+ format))
 
   (module+ test
+    (display "==================== Exercise/1.10 ====================\n")
     ;; I have to define A in the test module because I want to use (trace A) later
     (define (A x y)
       (cond ((= y 0) 0)
@@ -387,6 +396,7 @@
                    (count-change (- amount (car coins)) coins))]))
 
   (module+ test
+    (display "==================== Section/1.2.2 ====================\n")
     (check-equal? (count-change 100 '(50 25 10 5 1)) 292)))
 
 (module Exercise/1.11 sicp
@@ -404,6 +414,7 @@
            (* 3 (f.v1 (- n 3))))))
 
   (module+ test
+    (display "==================== Exercise/1.11 ====================\n")
     (check-equal? (f.v1 10) 1892))
 
   ;; ----------------------------------------------------------
@@ -448,6 +459,7 @@
           [else (pascal-triangle-next-row (list 1) 2)]))
 
   (module+ test
+    (display "==================== Exercise/1.12 ====================\n")
     (check-equal? (pascal-triangle.v1 0 #f) '())
     (check-equal? (pascal-triangle.v1 1 #f) '(1))
     (check-equal? (pascal-triangle.v1 2 #f) '(1 1))
@@ -485,6 +497,7 @@
   (#%provide logb)
 
   (module+ test
+    (display "==================== Exercise/1.14 ====================\n")
     (check-equal? (count-change 11 '(50 25 10 5 1)) 4))
 
   (define (count-change-display amount coins verbose)
@@ -550,6 +563,7 @@
         (p (sine (/ angle 3.0) (+ iter 1)))))
 
   (module+ test
+    (display "==================== Exercise/1.15 ====================\n")
     ;; At every call of sine, the angle is divided by 3 so the number of steps is
     ;; determined by the condition: angle / 3^k <= 0.1, from which we get
     ;; 3^k = angle / 0.1, and hence log_3(angle / 0.1)
@@ -601,6 +615,7 @@
            (fast-expt-iterative.v2 b (- n 1) (* a b) (+ iter 1))]))
 
   (module+ test
+    (display "==================== Exercise/1.16 ====================\n")
     (check-equal? (fast-expt-recursive 5 21 1) 476837158203125)
     (check-equal? (fast-expt-iterative.v1 5 21 1 1) 476837158203125)
     (check-equal? (fast-expt-iterative.v2 5 21 1 1) 476837158203125)))
@@ -615,6 +630,7 @@
           [else (+ a (mult.v1 a (- b 1)))]))
 
   (module+ test
+    (display "==================== Exercise/1.17 ====================\n")
     (check-equal? (mult.v1 5 7) 35))
 
   (define (show even-or-odd a b acc)
@@ -649,6 +665,7 @@
              (only (submod ".." Exercise/1.17) mult.v2))
 
   (module+ test
+    (display "==================== Exercise/1.18 ====================\n")
     ;; I implemented Exercise 1.17 taking into account the conditions of Exercise 1.18
     (check-equal? (mult.v2 5 9 0 #t) 45)))
 
@@ -674,6 +691,7 @@
                           (- count 1)))))
 
   (module+ test
+    (display "==================== Exercise/1.19 ====================\n")
     (check-equal? (fib 10) 55)))
 
 (module Exercise/1.20 sicp
@@ -690,6 +708,7 @@
         (gcd b (remainder a b))))
 
   (module+ test
+    (display "==================== Exercise/1.20 ====================\n")
     (gcd 206 40)
     ;; applicative order: 4 evaluations (as there are 4 iterations)
     ;; normal order:
@@ -733,6 +752,7 @@
     (find-divisor n 2))
 
   (module+ test
+    (display "==================== Exercise/1.21 ====================\n")
     (check-equal? (smallest-divisor 199) 199)
     (check-equal? (smallest-divisor 1999) 1999)
     (check-equal? (smallest-divisor 19999) 7)))
@@ -768,6 +788,7 @@
               (serch-for-primes (+ n 2) numb-primes)))))
 
   (module+ test
+    (display "==================== Exercise/1.22 ====================\n")
     (serch-for-primes 1000 3)
     (serch-for-primes 10000 3)
     (serch-for-primes 100000 3)
@@ -850,6 +871,7 @@
   ;; ---------------------------------------------
 
   (module+ test
+    (display "==================== Exercise/1.23 ====================\n")
     (let ([numb-evals 1000])
       (for ([prime-number prime-numbers])
         (display
@@ -940,6 +962,7 @@
     (start-prime-test n (runtime)))
 
   (module+ test
+    (display "==================== Exercise/1.24 ====================\n")
     (let ([numb-evals 1000])
       (for ([prime-number prime-numbers])
         (display
@@ -1016,6 +1039,7 @@
            (fast-expt b (- n 1) (* a b))]))
 
   (module+ test
+    (display "==================== Exercise/1.25 ====================\n")
     (let ([x 2]
           [n 1000])
       (expmod x n n)
@@ -1067,6 +1091,7 @@
     numb-calls)
 
   (module+ test
+    (display "==================== Exercise/1.26 ====================\n")
     (define n-to-test '(10 100 1000 10000 100000 1000000))
     (display "-------------------------------------\n")
     (display "expmod-linear\n")
@@ -1107,6 +1132,7 @@
     (= n (smallest-divisor n)))
 
   (module+ test
+    (display "==================== Exercise/1.27 ====================\n")
     (check-true (test-carmichael-numbers fermat-test-exhaustive carmichael-numbers))
     (check-false (test-carmichael-numbers fermat-test-exhaustive
                                           (append carmichael-numbers (list 9))))
@@ -1152,8 +1178,39 @@
           (else #f)))
 
   (module+ test
+    (display "==================== Exercise/1.28 ====================\n")
     (for ([n carmichael-numbers])
       (check-false (fast-prime? n 100)))
 
     (for ([n prime-numbers])
       (check-true (fast-prime? n 100)))))
+
+(module+ test
+  (require (submod ".." Exercise/1.1 test))
+  (require (submod ".." Exercise/1.2 test))
+  (require (submod ".." Exercise/1.3 test))
+  ;; 1.4: no tests
+  ;; 1.5: no tests
+  (require (submod ".." Exercise/1.6 test))
+  (require (submod ".." Exercise/1.7 test))
+  (require (submod ".." Exercise/1.8 test))
+  (require (submod ".." Exercise/1.9 test))
+  (require (submod ".." Exercise/1.10 test))
+  (require (submod ".." Exercise/1.11 test))
+  (require (submod ".." Exercise/1.12 test))
+  ;; 1.13: no tests
+  (require (submod ".." Exercise/1.14 test))
+  (require (submod ".." Exercise/1.15 test))
+  (require (submod ".." Exercise/1.16 test))
+  (require (submod ".." Exercise/1.17 test))
+  (require (submod ".." Exercise/1.18 test))
+  (require (submod ".." Exercise/1.19 test))
+  (require (submod ".." Exercise/1.20 test))
+  (require (submod ".." Exercise/1.21 test))
+  (require (submod ".." Exercise/1.22 test))
+  (require (submod ".." Exercise/1.23 test))
+  (require (submod ".." Exercise/1.24 test))
+  (require (submod ".." Exercise/1.25 test))
+  (require (submod ".." Exercise/1.26 test))
+  (require (submod ".." Exercise/1.27 test))
+  (require (submod ".." Exercise/1.28 test)))
