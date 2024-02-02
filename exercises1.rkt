@@ -1,7 +1,7 @@
 ;; =====================================================================================
 ;; Exercises in Chapter 1
 ;; =====================================================================================
-#lang racket
+#lang racket/base
 
 (module common-utils sicp
   (#%provide square
@@ -20,7 +20,7 @@
                                 (list (apply func args))))])))
 
 (module Exercise/1.1 sicp
-  (#%require (only racket module+))
+  (#%require (only racket/base module+))
 
   (define a 3)
   (define b (+ a 1))
@@ -47,7 +47,7 @@
                      (+ a 1)) 16)))
 
 (module Exercise/1.2 sicp
-  (#%require (only racket module+))
+  (#%require (only racket/base module+))
 
   (define (an-expression)
     (/ (+ 5 4 (- 2 (- 3 (+ 6 4/5))))
@@ -60,7 +60,7 @@
     (check-equal? (an-expression) (/ (- 37) 150))))
 
 (module Exercise/1.3 sicp
-  (#%require (only racket module+ foldl sort)
+  (#%require (only racket/base module+ foldl sort)
              (only (submod ".." common-utils) square))
 
   (define (sum-squares.v1 x y z)
@@ -98,7 +98,7 @@
 (module Exercise/1.6 sicp
   (#%provide tolerance
              sqrt-v1)
-  (#%require (only racket module+)
+  (#%require (only racket/base module+)
              (only (submod ".." common-utils) square))
 
   (define tolerance 0.0001)
@@ -131,7 +131,7 @@
   |#)
 
 (module Exercise/1.7 sicp
-  (#%require (only racket module+ format)
+  (#%require (only racket/base module+ format)
              (only (submod ".." Exercise/1.6) sqrt-v1 tolerance))
 
   (define (sqrt-v2 x)
@@ -159,7 +159,7 @@
     (display (format "accurate  : ~a\n" (* (sqrt-v2 tolerance) (sqrt-v2 tolerance))))))
 
 (module Exercise/1.8 sicp
-  (#%require (only racket module+)
+  (#%require (only racket/base module+)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.6) tolerance))
 
@@ -181,7 +181,7 @@
     (check-within (* (cube-root 9) (cube-root 9) (cube-root 9)) 9 tolerance)))
 
 (module Section/1.2.1 sicp
-  (#%require (only racket module+))
+  (#%require (only racket/base module+))
 
   #| linear recursive process
   1. the amount of information required to keep is proportional to n
@@ -241,7 +241,7 @@
   |#)
 
 (module Exercise/1.9 sicp
-  (#%require (only racket module+))
+  (#%require (only racket/base module+))
 
   ;; O(a) in time
   ;; O(a) in space
@@ -292,7 +292,7 @@
 
 (module Exercise/1.10 sicp
   (#%require racket/trace
-             (only racket module+ format))
+             (only racket/base module+ format))
 
   (module+ test
     (#%require rackunit)
@@ -377,7 +377,7 @@
 
 (module Section/1.2.2 sicp
   (#%provide count-change)
-  (#%require (only racket module+))
+  (#%require (only racket/base module+))
 
   ;; ----------------------------------------------------------
   ;; Fibonacci sequence (tree recursion)
@@ -428,7 +428,7 @@
     (check-equal? (count-change 100 '(50 25 10 5 1)) 292)))
 
 (module Exercise/1.11 sicp
-  (#%require (only racket module+))
+  (#%require (only racket/base module+))
 
   ;; ----------------------------------------------------------
   ;; recursive process
@@ -468,7 +468,7 @@
     (check-equal? (f.v2 -2) -2)))
 
 (module Exercise/1.12 sicp
-  (#%require (only racket module+))
+  (#%require (only racket/base module+))
 
   (define (pascal-triangle.v1 row-numb verbose)
     (define (pascal-triangle-next-row current-row row-counter)
@@ -525,7 +525,7 @@
 (module Exercise/1.14 sicp
   (#%provide logb)
   (#%require (only (submod ".." Section/1.2.2) count-change)
-             (only racket module+ format for in-range set!))
+             (only racket/base module+ format for in-range set!))
 
   (module+ test
     (#%require rackunit)
@@ -589,7 +589,7 @@
     |#))
 
 (module Exercise/1.15 sicp
-  (#%require (only racket module+ format)
+  (#%require (only racket/base module+ format)
              (only (submod ".." Exercise/1.14) logb))
 
   (define (cube x) (* x x x))
@@ -620,7 +620,7 @@
     (format "[angle: 500.0] iter: ~a\n" (ceiling (logb 3 (/ 500.0 0.1))))))
 
 (module Exercise/1.16 sicp
-  (#%require (only racket module+ format)
+  (#%require (only racket/base module+ format)
              (only (submod ".." common-utils) square))
 
   (define (show even-or-odd iter n b a)
@@ -678,7 +678,7 @@
 
 (module Exercise/1.17 sicp
   (#%provide mult.v2)
-  (#%require (only racket module+ format raise))
+  (#%require (only racket/base module+ format raise))
 
   (define (mult.v1 a b)
     (cond [(or (= a 0) (= b 0)) 0]
@@ -717,7 +717,7 @@
     (check-equal? (mult.v2 5 10 0 #f) 50)))
 
 (module Exercise/1.18 sicp
-  (#%require (only racket module+)
+  (#%require (only racket/base module+)
              (only (submod ".." Exercise/1.17) mult.v2))
 
   (module+ test
@@ -728,7 +728,7 @@
     (check-equal? (mult.v2 5 9 0 #t) 45)))
 
 (module Exercise/1.19 sicp
-  (#%require (only racket module+))
+  (#%require (only racket/base module+))
 
   (define (fib n)
     (fib-iter 1 0 0 1 n))
@@ -754,7 +754,7 @@
     (check-equal? (fib 10) 55)))
 
 (module Exercise/1.20 sicp
-  (#%require (only racket module+ format))
+  (#%require (only racket/base module+ format))
 
   (define (show a b)
     (display (format "[~a] a: ~a, b: ~a\n" (modulo a b) a b)))
@@ -815,7 +815,7 @@
 
 (module Exercise/1.21 sicp
   (#%provide smallest-divisor)
-  (#%require (only racket module+)
+  (#%require (only racket/base module+)
              (only (submod ".." common-utils) square))
 
   (define (smallest-divisor n)
@@ -838,7 +838,7 @@
 (module Exercise/1.22 sicp
   (#%provide timed-prime-test
              prime-numbers)
-  (#%require (only racket module+ for)
+  (#%require (only racket/base module+ for)
              (only (submod ".." Exercise/1.21) smallest-divisor))
 
   (define (timed-prime-test n)
@@ -908,7 +908,7 @@
                           10000103)))
 
 (module Exercise/1.23 sicp
-  (#%require (only racket module+ format for)
+  (#%require (only racket/base module+ format for)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.21) smallest-divisor)
              (only (submod ".." Exercise/1.22) prime-numbers)
@@ -1017,7 +1017,7 @@
 
 (module Exercise/1.24 sicp
   (#%provide expmod)
-  (#%require (only racket module+ format for in-range)
+  (#%require (only racket/base module+ format for in-range)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.22) prime-numbers)
              (only (submod ".." common-utils) run-n-times))
@@ -1115,7 +1115,7 @@
     |#))
 
 (module Exercise/1.25 sicp
-  (#%require (only racket module+ format)
+  (#%require (only racket/base module+ format)
              (only (submod ".." Exercise/1.14) logb)
              (only (submod ".." common-utils) square))
 
@@ -1158,7 +1158,7 @@
     |#))
 
 (module Exercise/1.26 sicp
-  (#%require (only racket module+ format for set!)
+  (#%require (only racket/base module+ format for set!)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.14) logb))
   #|
@@ -1212,7 +1212,7 @@
 
 (module Exercise/1.27 sicp
   (#%provide carmichael-numbers)
-  (#%require (only racket module+ format for)
+  (#%require (only racket/base module+ format for)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.21) smallest-divisor)
              (only (submod ".." Exercise/1.24) expmod))
@@ -1247,7 +1247,7 @@
       (check-false (test-carmichael-numbers prime? (list n))))))
 
 (module Exercise/1.28 sicp
-  (#%require (only racket module+ for)
+  (#%require (only racket/base module+ for)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.22) prime-numbers)
              (only (submod ".." Exercise/1.27) carmichael-numbers))

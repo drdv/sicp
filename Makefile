@@ -17,3 +17,7 @@ tex: ## Generate latex note
 
 test: ## Run tests
 	raco test exercises1.rkt
+
+.PHONY: docs
+docs: ## Generate docs
+	cd docs && scribble mouse.scrbl
