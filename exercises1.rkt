@@ -1,8 +1,5 @@
 #lang racket
 
-;; #lang sicp
-;; (#%require (only racket module))
-
 (module common-utils sicp
   (#%provide square
              run-n-times)
