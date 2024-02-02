@@ -1291,6 +1291,26 @@
     (for ([n prime-numbers])
       (check-true (fast-prime? n 100)))))
 
+(module Lecture/1B sicp
+  (#%require (only racket/base module+ format hash-set! make-hash hash-count))
+
+  ;; Hanoi towers problem
+  (define (move n src dest other)
+    (cond [(= n 0) "DONE"]
+          [else
+           ;; 1. imagive we can move n - 1 blocks from SRC to OTHER
+           (move (- n 1) src other dest)
+           ;; 2. then we move the one block that is left from SRC to DEST
+           (display (format "~a -> ~a\n" src dest))
+           ;; 3. and then we move all n - 1 blocks from OTHER to DEST
+           (move (- n 1) other dest src)]))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Lecture/1B ====================\n")
+
+    (move 4 "S" "D" "O")))
+
 ;; FIXME: to create a macro for this
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 (module+ test
@@ -1321,4 +1341,5 @@
   (require (submod ".." Exercise/1.25 test))
   (require (submod ".." Exercise/1.26 test))
   (require (submod ".." Exercise/1.27 test))
-  (require (submod ".." Exercise/1.28 test)))
+  (require (submod ".." Exercise/1.28 test))
+  (require (submod ".." Lecture/1B test)))
