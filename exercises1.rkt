@@ -13,7 +13,11 @@
   (define (run-n-times n func args output)
     (cond [(= n 0) (apply + output)]
           [else
-           (run-n-times (- n 1) func args (append output (list (apply func args))))])))
+           (run-n-times (- n 1)
+                        func
+                        args
+                        (append output
+                                (list (apply func args))))])))
 
 (module Exercise/1.1 sicp
   (#%require (only racket module+))
@@ -239,10 +243,14 @@
 (module Exercise/1.9 sicp
   (#%require (only racket module+))
 
+  ;; O(a) in time
+  ;; O(a) in space
+  ;; linear recursion (because it is proportional to a in both time and space)
   (define (plus.rec a b)
     (if (= a 0)
         b
-        (inc (plus.rec (dec a) b))))
+        (inc (plus.rec (dec a)
+                       b))))
 
   (module+ test
     (#%require rackunit)
@@ -262,10 +270,14 @@
     9
     |#)
 
+  ;; O(a) in time
+  ;; O(1) in space
+  ;; linear iteration
   (define (plus.iter a b)
     (if (= a 0)
         b
-        (plus.iter (dec a) (inc b))))
+        (plus.iter (dec a)
+                   (inc b))))
 
   (module+ test
     (check-equal? (plus.iter 4 5) 9)
@@ -536,8 +548,12 @@
             [(or (< amount 0)
                  (= (length coins) 0)) 0]
             [else
-             (+ (count-change-display-helper amount (cdr coins) new-offset)
-                (count-change-display-helper (- amount (car coins)) coins new-offset))]))
+             (+ (count-change-display-helper amount
+                                             (cdr coins)
+                                             new-offset)
+                (count-change-display-helper (- amount (car coins))
+                                             coins
+                                             new-offset))]))
 
     (define numb-calls 0)
     (count-change-display-helper amount coins "")
@@ -762,21 +778,37 @@
     (if (= 40 0) ...)
     --------------------------------------------------------------
     (gcd 40 (remainder 206 40))
-    (if (= (remainder 206 40) 0) ...) [1] => (if (= 6 0) ...)
+    (if (= (remainder 206 40) 0) ...)
+
+    [1] => (if (= 6 0) ...)
     --------------------------------------------------------------
     (gcd (remainder 206 40)
          (remainder 40 (remainder 206 40)))
-    (if (= (remainder 40 (remainder 206 40)) 0) ...) [2] => (if (= 4 0) ...)
+    (if (= (remainder 40 (remainder 206 40)) 0) ...)
+
+    [2] => (if (= 4 0) ...)
     --------------------------------------------------------------
     (gcd (remainder 40 (remainder 206 40))
-         (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))
-    (if (= (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) 0) ...) [4] => (if (= 2 0) ...)
+         (remainder (remainder 206 40)
+                    (remainder 40 (remainder 206 40))))
+    (if (= (remainder (remainder 206 40)
+                      (remainder 40 (remainder 206 40))) 0) ...)
+
+    [4] => (if (= 2 0) ...)
     --------------------------------------------------------------
-    (gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))
-         (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))
-    (if (= (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))) 0) ...) [7] => (if (= 0 0) ...)
+    (gcd (remainder (remainder 206 40)
+                    (remainder 40 (remainder 206 40)))
+         (remainder (remainder 40 (remainder 206 40))
+                    (remainder (remainder 206 40)
+                               (remainder 40 (remainder 206 40)))))
+    (if (= (remainder (remainder 40 (remainder 206 40))
+                      (remainder (remainder 206 40)
+                                 (remainder 40 (remainder 206 40)))) 0) ...)
+
+    [7] => (if (= 0 0) ...)
     --------------------------------------------------------------
-    (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) [4] => DONE
+    (remainder (remainder 206 40)
+               (remainder 40 (remainder 206 40))) [4] => DONE
 
     (+ 1 2 4 7 4) -> 18 evaluations of (remainder ...)
     |#))
@@ -806,7 +838,7 @@
 (module Exercise/1.22 sicp
   (#%provide timed-prime-test
              prime-numbers)
-  (#%require (only racket module+)
+  (#%require (only racket module+ for)
              (only (submod ".." Exercise/1.21) smallest-divisor))
 
   (define (timed-prime-test n)
@@ -837,11 +869,12 @@
     (#%require rackunit)
     (display "==================== Exercise/1.22 ====================\n")
 
-    (serch-for-primes 1000 3)
-    (serch-for-primes 10000 3)
-    (serch-for-primes 100000 3)
-    (serch-for-primes 1000000 3)
-    (serch-for-primes 10000000 3)
+    (for ([n '(1000
+               10000
+               100000
+               1000000
+               10000000)])
+      (serch-for-primes n 3))
 
     #|
     ============================
@@ -853,14 +886,26 @@
      1_000_000: ~28
     10_000_000: ~82
     ============================
-    there is a sqrt(10) factor
+    the factor is sqrt(10)
     ============================
     |#)
 
   ;; I have extracted them manually from the above results
-  (define prime-numbers
-    '(1009 1013 1019 10007 10009 10037 100003 100019 100043
-           1000003 1000033 1000037 10000019 10000079 10000103)))
+  (define prime-numbers '(1009
+                          1013
+                          1019
+                          10007
+                          10009
+                          10037
+                          100003
+                          100019
+                          100043
+                          1000003
+                          1000033
+                          1000037
+                          10000019
+                          10000079
+                          10000103)))
 
 (module Exercise/1.23 sicp
   (#%require (only racket module+ format for)
@@ -1247,6 +1292,7 @@
       (check-true (fast-prime? n 100)))))
 
 ;; FIXME: to create a macro for this
+;; FIXME: it would be nice for each problem to have its own Scribble docs
 (module+ test
   (require (submod ".." Exercise/1.1 test))
   (require (submod ".." Exercise/1.2 test))
