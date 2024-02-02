@@ -86,13 +86,13 @@
   |#)
 
 (module Exercise/1.6 sicp
+  (#%provide tolerance
+             sqrt-v1)
   (#%require rackunit
              (only racket module+)
              (only (submod ".." common-utils) square))
-  (#%provide tolerance sqrt-v1)
 
   (define tolerance 0.0001)
-
   (define (sqrt-v1 x)
     (define (sqrt-recursive guess x)
       (define (improve guess x)
@@ -354,9 +354,10 @@
     (A 1 5)))
 
 (module Section/1.2.2 sicp
+  (#%provide count-change)
   (#%require rackunit
              (only racket module+))
-  (#%provide count-change)
+
 
   ;; ----------------------------------------------------------
   ;; Fibonacci sequence (tree recursion)
@@ -498,10 +499,10 @@
   |#)
 
 (module Exercise/1.14 sicp
+  (#%provide logb)
   (#%require rackunit
              (only (submod ".." Section/1.2.2) count-change)
              (only racket module+ format for in-range set!))
-  (#%provide logb)
 
   (module+ test
     (display "==================== Exercise/1.14 ====================\n")
@@ -645,9 +646,9 @@
     (check-equal? (fast-expt-iterative.v2 5 21 1 1) 476837158203125)))
 
 (module Exercise/1.17 sicp
+  (#%provide mult.v2)
   (#%require rackunit
              (only racket module+ format raise))
-  (#%provide mult.v2)
 
   (define (mult.v1 a b)
     (cond [(or (= a 0) (= b 0)) 0]
@@ -762,10 +763,10 @@
     |#))
 
 (module Exercise/1.21 sicp
+  (#%provide smallest-divisor)
   (#%require rackunit
              (only racket module+)
              (only (submod ".." common-utils) square))
-  (#%provide smallest-divisor)
 
   (define (smallest-divisor n)
     (define (find-divisor n test-divisor)
@@ -783,10 +784,11 @@
     (check-equal? (smallest-divisor 19999) 7)))
 
 (module Exercise/1.22 sicp
+  (#%provide timed-prime-test
+             prime-numbers)
   (#%require rackunit
              (only racket module+)
              (only (submod ".." Exercise/1.21) smallest-divisor))
-  (#%provide timed-prime-test prime-numbers)
 
   (define (timed-prime-test n)
     (define (start-prime-test n start-time)
@@ -947,11 +949,11 @@
   |#)
 
 (module Exercise/1.24 sicp
+  (#%provide expmod)
   (#%require (only racket module+ format for in-range)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.22) prime-numbers)
              (only (submod ".." common-utils) run-n-times))
-  (#%provide expmod)
 
   #|
   We could have used fast-expt-iterative.v2 to compute p = x^n and then find p%n.
@@ -1139,12 +1141,12 @@
         (display (format "[~a] ~a (~a)\n" n z (/ z (* n 1.0))))))))
 
 (module Exercise/1.27 sicp
+  (#%provide carmichael-numbers)
   (#%require rackunit
              (only racket module+ format for)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.21) smallest-divisor)
              (only (submod ".." Exercise/1.24) expmod))
-  (#%provide carmichael-numbers)
 
   (define carmichael-numbers '(561 1105 1729 2465 2821 6601))
 
