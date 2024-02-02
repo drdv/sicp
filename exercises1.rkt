@@ -10,8 +10,7 @@
   (define (run-n-times n func args output)
     (cond [(= n 0) (apply + output)]
           [else
-           (run-n-times (- n 1) func args (append output (list (apply func args))))]))
-  )
+           (run-n-times (- n 1) func args (append output (list (apply func args))))])))
 
 (module Exercise/1.1 sicp
   (#%require rackunit
@@ -73,19 +72,18 @@
   (module+ test-disabled
     ;; FIXME: there seems to be a conflict between the list defined in SICP and the
     ;; sort procedure (I get the same error even if I use cons to define the list)
-    (check-equal? (sum-squares.v2 9 5 7) 130))
-  )
+    (check-equal? (sum-squares.v2 9 5 7) 130)))
 
 (module Exercise/1.4 sicp
-  ;; Solution:
-  ;; (if (> b 0) + -) returns - if b <= 0 so the result is a + |b|
-  )
+  #| Solution:
+  (if (> b 0) + -) returns - if b <= 0 so the result is a + |b|
+  |#)
 
 (module Exercise/1.5 sicp
-  ;; Solution:
-  ;; applicative-order evaluation: enter in an infinite recursion
-  ;; normal-order evaluation: return 0
-  )
+  #| Solution:
+  applicative-order evaluation: enter in an infinite recursion
+  normal-order evaluation: return 0
+  |#)
 
 (module Exercise/1.6 sicp
   (#%require rackunit
@@ -115,11 +113,11 @@
   (define (new-if predicate then-clause else-clause)
     (cond (predicate then-clause)
           (else else-clause)))
-  ;; Solution:
-  ;; Note that new-if is a procedure and all of its arguments are evaluated
-  ;; i.e., there is no short-circuit so even if the guess is good-enough, the
-  ;; second argument would be evaluated leading to an infinite loop.
-  )
+  #| Solution:
+  Note that new-if is a procedure and all of its arguments are evaluated
+  i.e., there is no short-circuit so even if the guess is good-enough, the
+  second argument would be evaluated leading to an infinite loop.
+  |#)
 
 (module Exercise/1.7 sicp
   (#%require
@@ -142,7 +140,8 @@
 
   (module+ test
     (display "==================== Exercise/1.7 ====================\n")
-    (display (format "computation terminates: ~a\n" (sqrt-v2 999999999999999999999999999999999999)))
+    (display (format "computation terminates: ~a\n"
+                     (sqrt-v2 999999999999999999999999999999999999)))
 
     ;; due to loss of numerical precision sqrt-v1 might diverge with the above number
     (display (format "inaccurate: ~a\n" (* (sqrt-v1 tolerance) (sqrt-v1 tolerance))))
@@ -173,10 +172,11 @@
   (#%require rackunit
              (only racket module+))
 
-  ;; linear recursive process
-  ;; 1. the amount of information required to keep is proportional to n
-  ;; 2. number of steps is linear in n
-  ;; 3. actual implementation requires the use of an auxiliary date structure (a stack)
+  #| linear recursive process
+  1. the amount of information required to keep is proportional to n
+  2. number of steps is linear in n
+  3. actual implementation requires the use of an auxiliary date structure (a stack)
+  |#
   (define (factorial-v1 n)
     (if (= n 1)
         1
@@ -185,10 +185,11 @@
   (module+ test
     (check-equal? (factorial-v1 5) 120))
 
-  ;; linear iterative process
-  ;; 1. a fixed number of state variables is required
-  ;; 2. number of steps depend linearly on n
-  ;; 3. can be implemented on a machine with a fixed set of registers (w/o auxiliary memory)
+  #| linear iterative process
+  1. a fixed number of state variables is required
+  2. number of steps depend linearly on n
+  3. can be implemented on a machine with a fixed set of registers (w/o auxiliary memory)
+  |#
   (define (factorial-v2 n)
     (define (factorial-helper counter product)
       (if (> counter n)
@@ -212,18 +213,19 @@
   (module+ test
     (check-equal? (factorial-v3 5) 120))
 
-  ;; note the difference between
-  ;; iterative process vs. iterative procedure
-  ;; recursive process vs. recursive procedure
-  ;; the linear iterative process above is implemented with a recursive procedure
+  #|
+  Note the difference between:
+  1. iterative process vs. iterative procedure
+  2. recursive process vs. recursive procedure
+  the linear iterative process above is implemented with a recursive procedure
 
-  ;; Some languages are able to implement in constant space an iterative process
-  ;; even if it is defined in terms of a recursive procedure. An implementation with
-  ;; this property is called tail-recursive. Many languages introduce iterative constructs
-  ;; in order to model iterative processes because they don't exploit tail-recursion.
-  ;; In languages that support tail recursion optimization, iterative constructs
-  ;; can be considered as sintactic sugar.
-  )
+  Some languages are able to implement in constant space an iterative process
+  even if it is defined in terms of a recursive procedure. An implementation with
+  this property is called tail-recursive. Many languages introduce iterative constructs
+  in order to model iterative processes because they don't exploit tail-recursion.
+  In languages that support tail recursion optimization, iterative constructs
+  can be considered as sintactic sugar.
+  |#)
 
 (module Exercise/1.9 sicp
   (#%require rackunit
@@ -237,18 +239,18 @@
   (module+ test
     (display "==================== Exercise/1.9 ====================\n")
     (check-equal? (plus.rec 4 5) 9)
-    ;; recursive process
-    ;; (plus.rec 4 5)
-    ;; (inc (plus.rec 3 5))
-    ;; (inc (inc (plus.rec 2 5)))
-    ;; (int (inc (inc (plus.rec 1 5))))
-    ;; (int (int (inc (inc (plus.rec 0 5))))) ;; end expanding, start contracting
-    ;; (int (int (inc (inc 5))))
-    ;; (int (int (inc 6)))
-    ;; (int (int 7))
-    ;; (int 8)
-    ;; 9
-    )
+    #| recursive process
+    (plus.rec 4 5)
+    (inc (plus.rec 3 5))
+    (inc (inc (plus.rec 2 5)))
+    (int (inc (inc (plus.rec 1 5))))
+    (int (int (inc (inc (plus.rec 0 5))))) ;; end expanding, start contracting
+    (int (int (inc (inc 5))))
+    (int (int (inc 6)))
+    (int (int 7))
+    (int 8)
+    9
+    |#)
 
   (define (plus.iter a b)
     (if (= a 0)
@@ -257,14 +259,14 @@
 
   (module+ test
     (check-equal? (plus.iter 4 5) 9)
-    ;; iterative process (implemented using a recursive procedure)
-    ;; (plus.iter 4 5)
-    ;; (plus.iter 3 6)
-    ;; (plus.iter 2 7)
-    ;; (plus.iter 1 8)
-    ;; (plus.iter 0 9)
-    ;; 9
-    ))
+    #| iterative process (implemented using a recursive procedure)
+    (plus.iter 4 5)
+    (plus.iter 3 6)
+    (plus.iter 2 7)
+    (plus.iter 1 8)
+    (plus.iter 0 9)
+    9
+    |#))
 
 (module Exercise/1.10 sicp
   (#%require
@@ -291,22 +293,26 @@
     (display (format "(A 3 3): ~a\n" (A 3 3))))
 
   (module+ test
-    ;; (A 0 n)
-    ;; (* 2 n)
-    ;; f(n) = 2*n
+    #|
+    (A 0 n)
+    (* 2 n)
+    f(n) = 2*n
+    |#
     (let* ([x 4]
            [y (f x)])
       (display (format "(f ~a): ~a\n" x y))
       (check-equal? y (* 2 x))))
 
   (module+ test
-    ;; (A 1 3)
-    ;; (A 0 (A 1 2)) -> (f (g (- n 1)))
-    ;; (A 0 (A 0 (A 1 1)))
-    ;; (A 0 (A 0 2))
-    ;; (A 0 (* 2 2))
-    ;; (expt 2 n)
-    ;; g(n) = 2^n
+    #|
+    (A 1 3)
+    (A 0 (A 1 2)) -> (f (g (- n 1)))
+    (A 0 (A 0 (A 1 1)))
+    (A 0 (A 0 2))
+    (A 0 (* 2 2))
+    (expt 2 n)
+    g(n) = 2^n
+    |#
     (let* ([n 4]
            [y (g n)])
       (display (format "(g ~a): ~a\n" n y))
@@ -314,18 +320,20 @@
       (check-equal? y (f (g (- n 1))))))
 
   (module+ test
-    ;; (A 2 4)
-    ;; (A 1 (A 2 3)) -> (g (h (- n 1)))
-    ;; (A 1 (A 1 (A 2 2)))
-    ;; (A 1 (A 1 (A 1 (A 2 1))))
-    ;; (A 1 (A 1 (A 1 2)))
-    ;; (expt 2 (expt 2 (expt 2 2)))
+    #|
+    (A 2 4)
+    (A 1 (A 2 3)) -> (g (h (- n 1)))
+    (A 1 (A 1 (A 2 2)))
+    (A 1 (A 1 (A 1 (A 2 1))))
+    (A 1 (A 1 (A 1 2)))
+    (expt 2 (expt 2 (expt 2 2)))
 
-    ;; 2^1
-    ;; 2^2
-    ;; 2^(2^2)
-    ;; 2^(2^(2^2))
-    ;; h(n) = 2^h(n-1)
+    2^1
+    2^2
+    2^(2^2)
+    2^(2^(2^2))
+    h(n) = 2^h(n-1)
+    |#
     (define (expt-recursive n)
       (if (= n 1)
           2
@@ -343,8 +351,7 @@
     (trace A)
     (A 1 5)
     (untrace A)
-    (A 1 5)
-    ))
+    (A 1 5)))
 
 (module Section/1.2.2 sicp
   (#%require rackunit
@@ -366,18 +373,19 @@
   ;; ----------------------------------------------------------
   ;; Fibonacci sequence (iterative process)
   ;; ----------------------------------------------------------
-  ;; [n = 0] a1 = 0, a2 = 1
-  ;; [n = 1] a1 = 1, a2 = 1
-  ;; [n = 2] a1 = 1, a2 = 2
-  ;; [n = 3] a1 = 2, a2 = 3
-  ;; ...
+  #|
+  [n = 0] a1 = 0, a2 = 1
+  [n = 1] a1 = 1, a2 = 1
+  [n = 2] a1 = 1, a2 = 2
+  [n = 3] a1 = 2, a2 = 3
+  ...
+  |#
   (define (fib.v2 n)
     (define (fib-iter a1 a2 n)
       (if (= n 0)
           a1
           (fib-iter a2 (+ a1 a2) (- n 1))))
-    (fib-iter 0 1 n)
-    )
+    (fib-iter 0 1 n))
 
   (module+ test
     (check-equal? (fib.v2 10) 55))
@@ -421,9 +429,11 @@
     (define (f.iter a0 a1 a2 n)
       (if (= n 0)
           a0
-          ;; a2 <- 3*a0 + 2*a1 + a2
-          ;; a1 <- a2
-          ;; a0 <- a1
+          #|
+          a2 <- 3*a0 + 2*a1 + a2
+          a1 <- a2
+          a0 <- a1
+          |#
           (f.iter a1 a2 (+ (* 3 a0) (* 2 a1) a2) (- n 1))))
     (if (< n 3)
         n
@@ -471,8 +481,7 @@
         (+ (pascal-triangle.v2 (- row-numb 1)
                                (- col-numb 1))
            (pascal-triangle.v2 (- row-numb 1)
-                               col-numb)))
-    )
+                               col-numb))))
 
   (module+ test
     (check-equal? (list (pascal-triangle.v2 6 1)
@@ -484,8 +493,9 @@
                   '(1 5 10 10 5 1))))
 
 (module Exercise/1.13 sicp
-  ;; See latex note.
-  )
+  #| Solution:
+  See latex note.
+  |#)
 
 (module Exercise/1.14 sicp
   (#%require rackunit
@@ -535,17 +545,18 @@
         (let [(n (count-change-display k coins #f))]
           (display (format "~a: ~a (~a)\n" k n (logb k n))))))
 
-    ;; note: the number of iterations depends on the order of coins
-    ;; e.g., '(1 5) vs. '(5 1)
-    ;;
-    ;; 1. The space is the number of stacks we have to keep, i.e., the depth of the
-    ;; recursion. In the worst case we would have to express the amount in terms of the
-    ;; smallest coin (which is 1) so the depth is proportional to the amount.
-    ;;
-    ;; 2. Intuitively we should have O(amount^5). It seems to me that we can compute an
-    ;; upper bound for the number of steps by using '(1 1 1 1 1) as coins. Probably as we
-    ;; increase the amount, the power would get closer to 5 but it takes a lot of time.
-    ))
+    #|
+    Note: the number of iterations depends on the order of coins
+    e.g., '(1 5) vs. '(5 1)
+
+    1. The space is the number of stacks we have to keep, i.e., the depth of the
+    recursion. In the worst case we would have to express the amount in terms of the
+    smallest coin (which is 1) so the depth is proportional to the amount.
+
+    2. Intuitively we should have O(amount^5). It seems to me that we can compute an
+    upper bound for the number of steps by using '(1 1 1 1 1) as coins. Probably as we
+    increase the amount, the power would get closer to 5 but it takes a lot of time.
+    |#))
 
 (module Exercise/1.15 sicp
   (#%require (only racket module+ format)
@@ -561,13 +572,17 @@
 
   (module+ test
     (display "==================== Exercise/1.15 ====================\n")
-    ;; At every call of sine, the angle is divided by 3 so the number of steps is
-    ;; determined by the condition: angle / 3^k <= 0.1, from which we get
-    ;; 3^k = angle / 0.1, and hence log_3(angle / 0.1)
+    #|
+    At every call of sine, the angle is divided by 3 so the number of steps is
+    determined by the condition: angle / 3^k <= 0.1, from which we get
+    3^k = angle / 0.1, and hence log_3(angle / 0.1)
+    |#
     (sine 12.15 0)
     (format "[angle: 12.15] iter: ~a\n" (ceiling (logb 3 (/ 12.15 0.1))))
-    ;; in terms of space, we need one stack per invocation (note that this is not tail
-    ;; recursive due to the application of the function p)
+    #|
+    in terms of space, we need one stack per invocation (note that this is not tail
+    recursive due to the application of the function p)
+    |#
 
     ;; test something else
     (sine 500.0 0)
@@ -597,19 +612,31 @@
     (cond [(= n 0) a]
           [(even? n)
            (show "E" iter n b a)
-           (fast-expt-iterative.v1 (square b) (- (/ n 2) 1) (* a (square b)) (+ iter 1))]
+           (fast-expt-iterative.v1 (square b)
+                                   (- (/ n 2) 1)
+                                   (* a (square b))
+                                   (+ iter 1))]
           [else
            (show "O" iter n b a)
-           (fast-expt-iterative.v1 b (- n 1) (* a b) (+ iter 1))]))
+           (fast-expt-iterative.v1 b
+                                   (- n 1)
+                                   (* a b)
+                                   (+ iter 1))]))
 
   (define (fast-expt-iterative.v2 b n a iter)
     (cond [(= n 0) a]
           [(even? n)
            (show "E" iter n b a)
-           (fast-expt-iterative.v2 (square b) (/ n 2) a (+ iter 1))]
+           (fast-expt-iterative.v2 (square b)
+                                   (/ n 2)
+                                   a
+                                   (+ iter 1))]
           [else
            (show "O" iter n b a)
-           (fast-expt-iterative.v2 b (- n 1) (* a b) (+ iter 1))]))
+           (fast-expt-iterative.v2 b
+                                   (- n 1)
+                                   (* a b)
+                                   (+ iter 1))]))
 
   (module+ test
     (display "==================== Exercise/1.16 ====================\n")
@@ -678,8 +705,8 @@
           ((even? count)
            (fib-iter a
                      b
-                     (+ (* p p) (* q q)); compute p'
-                     (+ (* q q) (* 2 p q) ) ; compute q'
+                     (+ (* p p) (* q q)) ; compute p'
+                     (+ (* q q) (* 2 p q)) ; compute q'
                      (/ count 2)))
           (else (fib-iter (+ (* b q) (* a q) (* a p))
                           (+ (* b p) (* a q))
@@ -707,31 +734,32 @@
   (module+ test
     (display "==================== Exercise/1.20 ====================\n")
     (gcd 206 40)
-    ;; applicative order: 4 evaluations (as there are 4 iterations)
-    ;; normal order:
-    ;; --------------------------------------------------------------
-    ;; (gcd 206 40)
-    ;; (if (= 40 0) ...)
-    ;; --------------------------------------------------------------
-    ;; (gcd 40 (remainder 206 40))
-    ;; (if (= (remainder 206 40) 0) ...) [1] => (if (= 6 0) ...)
-    ;; --------------------------------------------------------------
-    ;; (gcd (remainder 206 40)
-    ;;      (remainder 40 (remainder 206 40)))
-    ;; (if (= (remainder 40 (remainder 206 40)) 0) ...) [2] => (if (= 4 0) ...)
-    ;; --------------------------------------------------------------
-    ;; (gcd (remainder 40 (remainder 206 40))
-    ;;      (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))
-    ;; (if (= (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) 0) ...) [4] => (if (= 2 0) ...)
-    ;; --------------------------------------------------------------
-    ;; (gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))
-    ;;      (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))
-    ;; (if (= (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))) 0) ...) [7] => (if (= 0 0) ...)
-    ;; --------------------------------------------------------------
-    ;; (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) [4] => DONE
-    ;;
-    ;; (+ 1 2 4 7 4) -> 18 evaluations of (remainder ...)
-    ))
+    #|
+    applicative order: 4 evaluations (as there are 4 iterations)
+    normal order:
+    --------------------------------------------------------------
+    (gcd 206 40)
+    (if (= 40 0) ...)
+    --------------------------------------------------------------
+    (gcd 40 (remainder 206 40))
+    (if (= (remainder 206 40) 0) ...) [1] => (if (= 6 0) ...)
+    --------------------------------------------------------------
+    (gcd (remainder 206 40)
+         (remainder 40 (remainder 206 40)))
+    (if (= (remainder 40 (remainder 206 40)) 0) ...) [2] => (if (= 4 0) ...)
+    --------------------------------------------------------------
+    (gcd (remainder 40 (remainder 206 40))
+         (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))
+    (if (= (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) 0) ...) [4] => (if (= 2 0) ...)
+    --------------------------------------------------------------
+    (gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))
+         (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))
+    (if (= (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))) 0) ...) [7] => (if (= 0 0) ...)
+    --------------------------------------------------------------
+    (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) [4] => DONE
+
+    (+ 1 2 4 7 4) -> 18 evaluations of (remainder ...)
+    |#))
 
 (module Exercise/1.21 sicp
   (#%require rackunit
@@ -792,18 +820,19 @@
     (serch-for-primes 1000000 3)
     (serch-for-primes 10000000 3)
 
-    ;; ============================
-    ;; the times I observe:
-    ;; ============================
-    ;;       1000: ~1
-    ;;     10_000: ~3
-    ;;    100_000: ~9
-    ;;  1_000_000: ~28
-    ;; 10_000_000: ~82
-    ;; ============================
-    ;; there is a sqrt(10) factor
-    ;; ============================
-    )
+    #|
+    ============================
+    the times I observe:
+    ============================
+          1000: ~1
+        10_000: ~3
+       100_000: ~9
+     1_000_000: ~28
+    10_000_000: ~82
+    ============================
+    there is a sqrt(10) factor
+    ============================
+    |#)
 
   ;; I have extracted them manually from the above results
   (define prime-numbers
@@ -907,14 +936,15 @@
                        (/ numb-evals 1.0)))))
         (newline))))
 
-  ;; So I observe a speedup but less than twice (close to 1.6 times). We halve the
-  ;; number of iterations and I didn't expect that the extra function call would have
-  ;; such a signifficant influence (especially because "next" is super simple). In the
-  ;; second test, where "next" is inlined we see that the ratio is almost 2 for large
-  ;; prime numbers. This means that the function call itself (with its additional stack)
-  ;; is the reason. The additional if and equality comparison seem to influence mainly
-  ;; the time for small numbers.
-  )
+  #|
+  So I observe a speedup but less than twice (close to 1.6 times). We halve the
+  number of iterations and I didn't expect that the extra function call would have
+  such a signifficant influence (especially because "next" is super simple). In the
+  second test, where "next" is inlined we see that the ratio is almost 2 for large
+  prime numbers. This means that the function call itself (with its additional stack)
+  is the reason. The additional if and equality comparison seem to influence mainly
+  the time for small numbers.
+  |#)
 
 (module Exercise/1.24 sicp
   (#%require (only racket module+ format for in-range)
@@ -923,12 +953,14 @@
              (only (submod ".." common-utils) run-n-times))
   (#%provide expmod)
 
-  ;; We could have used fast-expt-iterative.v2 to compute p = x^n and then find p%n.
-  ;; In this way we would have an iterative procedure but we would be dealing with huge
-  ;; numbers p. The idea behind the expmod procedure is that by using the following
-  ;; transformations we don't need to deal with huge numbers (see latex note for proof):
-  ;;   1. (x*y)%n = ((x%n)*(y%n))%n
-  ;;   2. (x*y)%n = (x*(y%n))%n
+  #|
+  We could have used fast-expt-iterative.v2 to compute p = x^n and then find p%n.
+  In this way we would have an iterative procedure but we would be dealing with huge
+  numbers p. The idea behind the expmod procedure is that by using the following
+  transformations we don't need to deal with huge numbers (see latex note for proof):
+    1. (x*y)%n = ((x%n)*(y%n))%n
+    2. (x*y)%n = (x*(y%n))%n
+  |#
   (define (expmod base exp m)
     (cond ((= exp 0) 1)
           ((even? exp)
@@ -991,25 +1023,26 @@
                        (/ (* numb-fermat-tests numb-evals) 1.0)))))
         (newline)))
 
-    ;; Since the complexity is O(long(n)) I expect to see a linear increase in computation
-    ;; time for n = [10^3, 10^4, ...] - which is indeed the case. But the slope of the
-    ;; line is not as steep as I expected. In particular, I expected to have twice slower
-    ;; computations for primes around 1M compared to 1K. However, I observe a factor of
-    ;; ~1.6 instead of 2. I am not quite sure why.
-    ;;
-    ;; 1. Since we perform the (try-it ...) with a random number the same number of times
-    ;; for 1K and 1M, in the former case this costs relatively more as it is distributed
-    ;; accross less iterations. To test this, I run with (try-it 1) instead of a random
-    ;; number (which of course makes no sense other than checking efficiency of
-    ;; computations) and I get time ~1.8, so indeed this has an impact.
-    ;;
-    ;; 1. Another thing I noticed is that for 1K we have 6 iterations with odd powers,
-    ;; while for 1M we have only 7, so it is possible that the time for 1K is relatively
-    ;; high because of this:
-    ;; 1K: (/ 6.0 16) => 0.38
-    ;; 1M: (/ 7.0 27) => 0.26
-    ;; This might explain the remaining difference.
-    ))
+    #|
+    Since the complexity is O(long(n)) I expect to see a linear increase in computation
+    time for n = [10^3, 10^4, ...] - which is indeed the case. But the slope of the
+    line is not as steep as I expected. In particular, I expected to have twice slower
+    computations for primes around 1M compared to 1K. However, I observe a factor of
+    ~1.6 instead of 2. I am not quite sure why.
+
+    1. Since we perform the (try-it ...) with a random number the same number of times
+    for 1K and 1M, in the former case this costs relatively more as it is distributed
+    accross less iterations. To test this, I run with (try-it 1) instead of a random
+    number (which of course makes no sense other than checking efficiency of
+    computations) and I get time ~1.8, so indeed this has an impact.
+
+    2. Another thing I noticed is that for 1K we have 6 iterations with odd powers,
+    while for 1M we have only 7, so it is possible that the time for 1K is relatively
+    high because of this:
+      1K: (/ 6.0 16) => 0.38
+      1M: (/ 7.0 27) => 0.26
+    This might explain the remaining difference.
+    |#))
 
 (module Exercise/1.25 sicp
   (#%require (only racket module+ format)
@@ -1044,22 +1077,24 @@
         (display (format "~a\n" z))
         (remainder z n)))
 
-    ;; the largest number we have to deal with in expmod e.g., for 2^1000 is 817216
-    ;; while in fast-expt it is astronomical and has 302 digits
-    (ceiling (* 1000 (logb 10 2)))
-    ;; so for larger powers we would have to store huge numbers (note that not all languages can
-    ;; handle such numbers like python and racket). See footnote 46 on page 68.
-    ))
+    (define numb-digits (ceiling (* 1000 (logb 10 2))))
+    #|
+    The largest number we have to deal with in expmod e.g., for 2^1000 is 817216
+    while in fast-expt it is astronomical and has 302 digits
+    so for larger powers we would have to store huge numbers (note that not all
+    languages can handle such numbers like python and racket).
+    See footnote 46 on page 68.
+    |#))
 
 (module Exercise/1.26 sicp
   (#%require (only racket module+ format for set!)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.14) logb))
-
-  ;; the version of Louis Reasoner has complexity O(log(2^n)) = O(n*log(2)) = O(n),
-  ;; note that the linear recursion becomes tree recursion with two branches at each step.
-  ;; The following test confirms this by counting number of iterations:
-
+  #|
+  the version of Louis Reasoner has complexity O(log(2^n)) = O(n*log(2)) = O(n),
+  note that the linear recursion becomes tree recursion with two branches at each step.
+  The following test confirms this by counting number of iterations:
+  |#
   (define (expmod-linear base exp m)
     (set! numb-calls (+ numb-calls 1))
     (cond ((= exp 0) 1)
