@@ -869,11 +869,7 @@
     (#%require rackunit)
     (display "==================== Exercise/1.22 ====================\n")
 
-    (for ([n '(1000
-               10000
-               100000
-               1000000
-               10000000)])
+    (for ([n '(1e3 1e4 1e5 1e6 1e7)])
       (serch-for-primes n 3))
 
     #|
@@ -1196,7 +1192,7 @@
   (module+ test
     (display "==================== Exercise/1.26 ====================\n")
 
-    (define n-to-test '(10 100 1000 10000 100000 1000000))
+    (define n-to-test '(1e1 1e2 1e3 1e4 1e5 1e6))
     (display "-------------------------------------\n")
     (display "expmod-linear\n")
     (display "-------------------------------------\n")
@@ -1513,7 +1509,7 @@
                           (ratio-square 6.0)
                           (ratio-square 8.0)))
     (check-within (pi-approx 8) ref-result 1e-15)
-    (check-within (pi-approx 10000000) 3.14159 1e-4)))
+    (check-within (pi-approx 1e7) 3.14159 1e-4)))
 
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
