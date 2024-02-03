@@ -769,7 +769,7 @@
     (#%require rackunit)
     (display "==================== Exercise/1.20 ====================\n")
 
-    (gcd 206 40)
+    (check-equal? (gcd 206 40) 2)
     #|
     applicative order: 4 evaluations (as there are 4 iterations)
     normal order:
@@ -837,9 +837,14 @@
 
 (module Exercise/1.22 sicp
   (#%provide timed-prime-test
-             prime-numbers)
+             prime-numbers
+             prime?)
   (#%require (only racket/base module+ for)
              (only (submod ".." Exercise/1.21) smallest-divisor))
+
+  ;; This detects 1 as a prime number (I choose to ignore this detail)
+  (define (prime? n)
+    (= n (smallest-divisor n)))
 
   (define (timed-prime-test n)
     (define (start-prime-test n start-time)
@@ -847,8 +852,6 @@
         (display " *** ")
         (display elapsed-time)
         #t)
-      (define (prime? n)
-        (= n (smallest-divisor n)))
       (if (prime? n)
           (report-prime (- (runtime) start-time))
           #f))
@@ -906,8 +909,7 @@
 (module Exercise/1.23 sicp
   (#%require (only racket/base module+ format for)
              (only (submod ".." common-utils) square)
-             (only (submod ".." Exercise/1.21) smallest-divisor)
-             (only (submod ".." Exercise/1.22) prime-numbers)
+             (only (submod ".." Exercise/1.22) prime-numbers prime?)
              (only (submod ".." common-utils) run-n-times))
 
   (define (smallest-divisor-optimized n)
@@ -934,8 +936,6 @@
   ;; ---------------------------------------------
   (define (timed-prime-test n)
     (define (start-prime-test n start-time)
-      (define (prime? n)
-        (= n (smallest-divisor n)))
       (if (prime? n)
           (- (runtime) start-time)
           0))
@@ -1037,6 +1037,7 @@
             (* base (expmod base (- exp 1) m))
             m))))
 
+  ;; here n > 1 is assumed: (random 0) raises a contract violation
   (define (fermat-test n)
     (define (try-it a)
       (= (expmod a n n) a))
@@ -1210,7 +1211,7 @@
   (#%provide carmichael-numbers)
   (#%require (only racket/base module+ format for)
              (only (submod ".." common-utils) square)
-             (only (submod ".." Exercise/1.21) smallest-divisor)
+             (only (submod ".." Exercise/1.22) prime?)
              (only (submod ".." Exercise/1.24) expmod))
 
   (define carmichael-numbers '(561 1105 1729 2465 2821 6601))
@@ -1226,9 +1227,6 @@
     (cond [(= (length numbers) 0) #t]
           [(not (func (car numbers))) #f]
           [else (test-carmichael-numbers func (cdr numbers))]))
-
-  (define (prime? n)
-    (= n (smallest-divisor n)))
 
   (module+ test
     (#%require rackunit)
@@ -1511,6 +1509,83 @@
     (check-within (pi-approx 8) ref-result 1e-15)
     (check-within (pi-approx 1e7) 3.14159 1e-4)))
 
+(module Exercise/1.32 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/1.2.1) factorial-v2))
+
+  (define (accumulate-recursion combiner null-value f next a b)
+    (if (> a b)
+        null-value
+        (combiner (f a)
+                  (accumulate-recursion combiner
+                                        null-value
+                                        f
+                                        next
+                                        (next a)
+                                        b))))
+
+  (define (accumulate-iter combiner null-value f next a b)
+    (define (iter a result)
+      (if (> a b)
+          result
+          (iter (next a) (combiner result (f a)))))
+    (iter a null-value))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.32 ====================\n")
+
+    (define (cube x) (* x x x))
+
+    (check-equal? (accumulate-recursion + 0 cube (lambda (x) (+ x 1)) 1 10) 3025)
+    (check-equal? (accumulate-iter + 0 cube (lambda (x) (+ x 1)) 1 10) 3025)
+    (check-equal? (accumulate-recursion + 0 (lambda (x) x) (lambda (x) (+ x 1)) 1 10) 55)
+    (check-equal? (accumulate-iter + 0 (lambda (x) x) (lambda (x) (+ x 1)) 1 10) 55)
+
+    (define (I x) x)
+    (define (incr x) (+ x 1))
+    (let* ([n 10]
+           [z (factorial-v2 n)])
+      (check-equal? (accumulate-recursion * 1 I incr 1 n) z)
+      (check-equal? (accumulate-iter * 1 I incr 1 n) z))))
+
+(module Exercise/1.33 racket/base ; I want to use foldl
+  (#%require (only (submod ".." common-utils) square)
+             (only (submod ".." Exercise/1.22) prime?))
+
+  (define (filter-accumulate predicate combiner null-value f next a b)
+    (if (> a b)
+        null-value
+        (combiner (if (predicate a) (f a) null-value)
+                  (filter-accumulate predicate
+                                     combiner
+                                     null-value
+                                     f
+                                     next
+                                     (next a)
+                                     b))))
+
+  (module+ test
+    (#%require rackunit
+               (only racket/list range))
+    (display "==================== Exercise/1.33 ====================\n")
+
+    ;; Note: (prime? 1) -> #t
+    (check-equal?
+     (filter-accumulate prime? + 0 square (lambda (x) (+ x 1)) 1 20)
+     (foldl + 0 (map square '(1 2 3 5 7 11 13 17 19))))
+
+    (define (solve-assignment-b n)
+      (define (relatively-prime? i)
+        ;; gcd is from racket/base
+        (= (gcd i n) 1))
+      (filter-accumulate relatively-prime? * 1 (lambda (x) x) (lambda (x) (+ x 1)) 1 (- n 1)))
+
+    (let ([n 16])
+      (check-equal? (solve-assignment-b n)
+                    (foldl * 1 (filter (lambda (i) (= (gcd i n) 1))
+                                       (range 1 n)))))))
+
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
 (module+ test
@@ -1545,4 +1620,6 @@
   (require (submod ".." Lecture/1B test))
   (require (submod ".." Exercise/1.29 test))
   (require (submod ".." Exercise/1.30 test))
-  (require (submod ".." Exercise/1.31 test)))
+  (require (submod ".." Exercise/1.31 test))
+  (require (submod ".." Exercise/1.32 test))
+  (require (submod ".." Exercise/1.33 test)))
