@@ -100,7 +100,7 @@
   (#%require (only racket/base module+)
              (only (submod ".." common-utils) square))
 
-  (define tolerance 0.0001)
+  (define tolerance 1e-4)
   (define (sqrt-v1 x)
     (define (sqrt-recursive guess x)
       (define (improve guess x)
@@ -180,6 +180,7 @@
     (check-within (* (cube-root 9) (cube-root 9) (cube-root 9)) 9 tolerance)))
 
 (module Section/1.2.1 sicp
+  (#%provide factorial-v2)
   (#%require (only racket/base module+))
 
   #| linear recursive process
@@ -1431,7 +1432,7 @@
     (check-within (* 8 (sum (lambda (x) (/ 1.0 (* x (+ x 2))))
                             (lambda (x) (+ x 4))
                             1
-                            1000)) 3.1396 0.0001)
+                            1000)) 3.1396 1e-4)
 
     (display (format "[integral(0.01)  ] ~a\n" (integral cube 0 1 0.01)))
     (display (format "[integral(0.001) ] ~a\n" (integral cube 0 1 0.001)))
@@ -1441,6 +1442,78 @@
     (display (format "[simpson.v2(1000)] ~a\n" (simpson.v2 cube 0 1 1000)))
     (display (format "[simpson.v3(100) ] ~a\n" (simpson.v3 cube 0 1 100)))
     (display (format "[simpson.v3(1000)] ~a\n" (simpson.v3 cube 0 1 1000)))))
+
+(module Exercise/1.30 sicp
+  (#%require (only racket/base module+))
+
+  (define (sum f next a b)
+    (define (iter a result)
+      (if (> a b)
+          result
+          (iter (next a) (+ result (f a)))))
+    (iter a 0))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.30 ====================\n")
+
+    (define (cube x) (* x x x))
+
+    (check-equal? (sum cube (lambda (x) (+ x 1)) 1 10) 3025)
+    (check-equal? (sum (lambda (x) x) (lambda (x) (+ x 1)) 1 10) 55)
+    (check-within (* 8 (sum (lambda (x) (/ 1.0 (* x (+ x 2))))
+                            (lambda (x) (+ x 4))
+                            1
+                            1000)) 3.1396 1e-4)))
+
+(module Exercise/1.31 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." common-utils) square)
+             (only (submod ".." Section/1.2.1) factorial-v2))
+
+  (define (product-recursion f next a b)
+    (if (> a b)
+        1
+        (* (f a)
+           (product-recursion f next (next a) b))))
+
+  (define (product-iter f next a b)
+    (define (iter a result)
+      (if (> a b)
+          result
+          (iter (next a) (* result (f a)))))
+    (iter a 1))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.31 ====================\n")
+
+    (define (I x) x)
+    (define (incr x) (+ x 1))
+    (let* ([n 10]
+           [z (factorial-v2 n)])
+      (check-equal? (product-recursion I incr 1 n) z)
+      (check-equal? (product-iter I incr 1 n) z))
+
+    (define (ratio-square x) (square (/ x (- x 1))))
+    (define (final-term x) (/ x (- x 1) (- x 1)))
+    (define (pi-approx n)
+      (define (approx m) ; m has to be even (verified below)
+        (* (* 2.0 4.0 (final-term (+ m 2)))
+           (product-iter ratio-square (lambda (x) (+ x 2)) 4.0 m)))
+      (approx (if (even? n)
+                  n
+                  (+ n 1))))
+
+    ;; for n = 8: pi/4 = 2*((4/3)^2 * (6/5)^2 * (8/7)^2) * 10/9^2
+    (define ref-result (* 4.0
+                          2.0
+                          (final-term 10.0)
+                          (ratio-square 4.0)
+                          (ratio-square 6.0)
+                          (ratio-square 8.0)))
+    (check-within (pi-approx 8) ref-result 1e-15)
+    (check-within (pi-approx 10000000) 3.14159 1e-4)))
 
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
@@ -1474,4 +1547,6 @@
   (require (submod ".." Exercise/1.27 test))
   (require (submod ".." Exercise/1.28 test))
   (require (submod ".." Lecture/1B test))
-  (require (submod ".." Exercise/1.29 test)))
+  (require (submod ".." Exercise/1.29 test))
+  (require (submod ".." Exercise/1.30 test))
+  (require (submod ".." Exercise/1.31 test)))
