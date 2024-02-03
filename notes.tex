@@ -22,6 +22,7 @@
 \usepackage{hyperref}
 \usepackage{eurosym}
 \usepackage{bbold}
+\usepackage[toc,page]{appendix}
 \usepackage[top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry}
 
 \def\UrlBreaks{\do\/\do-}  % https://tex.stackexchange.com/a/561193
@@ -231,11 +232,14 @@ of $1$ modulo $n$ because
 Of course, we could say the same thing about $n+1$ but in the Miller-Rabin test we care
 only about numbers smaller than $n$.
 
+\appendix
+\appendixpage
+
 \section{Random quotes}
 
 \begin{itemize}
-\item (Lecture 1A) It is very easy to confuse the essence of what you are doing with the
-  tools that you use.
+\item It is very easy to confuse the essence of what you are doing with the tools that
+  you use.
 \item One of the things we have to learn how to do is ignore details. The key to
   understand complicated things is to know what not to look at.
 \item The way in which you would construct a recursive process is by wishful thinking.
