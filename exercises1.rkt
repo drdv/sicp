@@ -1586,6 +1586,26 @@
                     (foldl * 1 (filter (lambda (i) (= (gcd i n) 1))
                                        (range 1 n)))))))
 
+(module Exercise/1.34 sicp
+  (#%require (only racket/base module+ exn:fail?))
+
+  ;; (f f) -> (f 2) -> (2 2) ERROR: 2 is not a procedure
+  (define (f g) (g 2))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.34 ====================\n")
+
+    ;; expect to raise
+    (check-exn
+     exn:fail?
+     (lambda () (f f)))
+
+    ;; we could match the error message
+    (check-exn
+     #rx"application: not a procedure.*given: 2"
+     (lambda () (f f)))))
+
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
 (module+ test
@@ -1622,4 +1642,5 @@
   (require (submod ".." Exercise/1.30 test))
   (require (submod ".." Exercise/1.31 test))
   (require (submod ".." Exercise/1.32 test))
-  (require (submod ".." Exercise/1.33 test)))
+  (require (submod ".." Exercise/1.33 test))
+  (require (submod ".." Exercise/1.34 test)))
