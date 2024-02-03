@@ -59,9 +59,8 @@
 
     (check-equal? (an-expression) (/ (- 37) 150))))
 
-(module Exercise/1.3 sicp
-  (#%require (only racket/base module+ foldl sort)
-             (only (submod ".." common-utils) square))
+(module Exercise/1.3 racket/base ; see note in test
+  (#%require (only (submod ".." common-utils) square))
 
   (define (sum-squares.v1 x y z)
     (- (+ (square x) (square y) (square z))
@@ -78,10 +77,10 @@
            (map (lambda (x) (* x x))
                 (cdr (sort (list x y z) <)))))
 
-  (module+ test-disabled
-    (#%require rackunit)
-    ;; FIXME: there seems to be a conflict between the list defined in SICP and the
+  (module+ test
+    ;; NOTE: there seems to be a conflict between the list defined in SICP and the
     ;; sort procedure (I get the same error even if I use cons to define the list)
+    ;; that is why I use racket/base instead of sicp
     (check-equal? (sum-squares.v2 9 5 7) 130)))
 
 (module Exercise/1.4 sicp
@@ -1291,28 +1290,81 @@
     (for ([n prime-numbers])
       (check-true (fast-prime? n 100)))))
 
-(module Lecture/1B sicp
-  (#%require (only racket/base module+ format hash-set! make-hash hash-count))
+(module Lecture/1B racket/base ;; because I want to use a hash table
+  ;; (#%require (only racket/base module+ format))
 
   ;; Hanoi towers problem
-  (define (move n src dest tmp)
+  (define (move-v1 n src dest extra)
     (cond [(= n 0) "DONE"]
           [else
-           ;; 1. imagive we can move n - 1 blocks from SRC to TMP
-           (move (- n 1) src tmp dest)
+           ;; 1. imagive we can move n-1 blocks from SRC to EXTRA
+           (move-v1 (- n 1) src extra dest)
            ;; 2. then we move the one block that is left from SRC to DEST
            (display (format "~a -> ~a\n" src dest))
-           ;; 3. and then we move all n - 1 blocks from TMP to DEST
-           (move (- n 1) tmp dest src)]))
+           ;; 3. and then we move all n-1 blocks from EXTRA to DEST
+           (move-v1 (- n 1) extra dest src)]))
+
+  #| writing it like this is more clear to me
+                                S D E
+  (move 3 S D E)     [0] STATE: 3 0 0
+    (move 2 S E D)
+      (move 1 S D E) [1] STATE: 2 1 0  S -> D
+      (move 1 S E D) [2] STATE: 1 1 1  S -> E
+      (move 1 D E S) [3] STATE: 1 0 2  D -> E
+    (move 1 S D E)   [4] STATE: 0 1 2  S -> D
+    (move 2 E D S)
+      (move 1 E S D) [5] STATE: 1 1 1  E -> S
+      (move 1 E D S) [6] STATE: 1 2 0  E -> D
+      (move 1 S D E) [7] STATE: 0 3 0  S -> D
+  |#
+  (define (move-v2 n src dest extra)
+    (cond [
+           (= n 1) (display (format "~a -> ~a\n" src dest)) ; define an actual move
+           ]
+          [else
+           (move-v2 (- n 1) src extra dest) ; move n-1 blocks from SRC to EXTRA
+           (move-v2 1 src dest extra)       ; move remaining block from SRC to DEST
+           (move-v2 (- n 1) extra dest src) ; move n-1 blocks from EXTRA to DEST
+           ]))
+
+  ;; adding offset for better visualization
+  (define (move-v2-offset n src dest extra offset)
+    (define (indent+ offset) (string-append offset "  "))
+    (display (format
+              (string-append "~a~a~a~a~a" (if (= n 1) " " "\n"))
+              offset n src dest extra))
+    (cond [(= n 1) (display (format "(~a -> ~a)\n" src dest))]
+          [else (move-v2-offset (- n 1) src extra dest (indent+ offset))
+                (move-v2-offset 1 src dest extra (indent+ offset))
+                (move-v2-offset (- n 1) extra dest src (indent+ offset))]))
+
+  ;; display count of blocks on each tower
+  (define (move-v2-counts n src dest extra counts)
+    (define (update-counts counts)
+      (hash-set! counts src (- (hash-ref counts src) 1))
+      (hash-set! counts dest (+ (hash-ref counts dest) 1)))
+    (cond [(= n 1)
+           (update-counts counts)
+           (display (format "~a -> ~a (~a)\n" src dest counts))]
+          [else (move-v2-counts (- n 1) src extra dest counts)
+                (move-v2-counts 1 src dest extra counts)
+                (move-v2-counts (- n 1) extra dest src counts)]))
 
   (module+ test
     (#%require rackunit)
     (display "==================== Lecture/1B ====================\n")
 
-    (move 4 "S" "D" "T")))
+    ;; (move-v1 4 "S" "D" "E")
+    ;; (move-v2 4 "S" "D" "E")
+    (move-v2-offset 4 "S" "D" "E" "")
 
-;; FIXME: to create a macro for this
+    (define counts (make-hash (list (cons "S" 4)
+                                    (cons "D" 0)
+                                    (cons "E" 0))))
+    (move-v2-counts 4 "S" "D" "E" counts)))
+
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
+;; FIXME: to create a macro for generating this test module
 (module+ test
   (require (submod ".." Exercise/1.1 test))
   (require (submod ".." Exercise/1.2 test))
