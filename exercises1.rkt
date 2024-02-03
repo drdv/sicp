@@ -1295,21 +1295,21 @@
   (#%require (only racket/base module+ format hash-set! make-hash hash-count))
 
   ;; Hanoi towers problem
-  (define (move n src dest other)
+  (define (move n src dest tmp)
     (cond [(= n 0) "DONE"]
           [else
-           ;; 1. imagive we can move n - 1 blocks from SRC to OTHER
-           (move (- n 1) src other dest)
+           ;; 1. imagive we can move n - 1 blocks from SRC to TMP
+           (move (- n 1) src tmp dest)
            ;; 2. then we move the one block that is left from SRC to DEST
            (display (format "~a -> ~a\n" src dest))
-           ;; 3. and then we move all n - 1 blocks from OTHER to DEST
-           (move (- n 1) other dest src)]))
+           ;; 3. and then we move all n - 1 blocks from TMP to DEST
+           (move (- n 1) tmp dest src)]))
 
   (module+ test
     (#%require rackunit)
     (display "==================== Lecture/1B ====================\n")
 
-    (move 4 "S" "D" "O")))
+    (move 4 "S" "D" "T")))
 
 ;; FIXME: to create a macro for this
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
