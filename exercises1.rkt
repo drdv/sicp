@@ -1367,6 +1367,81 @@
     (hash-set! counts "E" 0)
     (move-v2-counts 4 "S" "D" "E" counts)))
 
+(module Exercise/1.29 sicp
+  (#%require (only racket/base module+ format))
+
+  (define (sum f next a b)
+    (if (> a b)
+        0
+        (+ (f a)
+           (sum f next (next a) b))))
+
+  (define (integral f a b dx)
+    (define (add-dx x)
+      (+ x dx))
+    (* (sum f add-dx (+ a (/ dx 2.0)) b)
+       dx))
+
+  ;; here I use a modified version of sum with a counter
+  (define (simpson.v1 f a b n)
+    (define (sum-k f next k a b)
+      (if (> a b)
+          0
+          (+ ((f k) a)
+             (sum-k f next (+ k 1) (next a) b))))
+    (define h (/ (- b a) n))
+    (define (g k)
+      (cond [(or (= k 0)
+                 (= k n)) f]
+            [(even? k) (lambda (x) (* 2.0 (f x)))]
+            [else (lambda (x) (* 4.0 (f x)))]))
+    (* (sum-k g (lambda (x) (+ x h)) 0 a b) (/ h 3.0)))
+
+  (define (simpson.v2 f a b n)
+    (define h (/ (- b a) n))
+    ;; note that g is a function of k
+    (define (g k)
+      (cond [(or (= k 0)
+                 (= k n)) (f (+ a (* k h)))]
+            [(even? k) (* 2.0 (f (+ a (* k h))))]
+            [else (* 4.0 (f (+ a (* k h))))]))
+    (* (sum g (lambda (k) (+ k 1)) 0 n) (/ h 3.0)))
+
+  ;; grouping terms
+  ;; y_0 + 4(y_1 + y_3 + ... + y_{n-1}) + 2(y_2 + y_4 + ... + y_{n-2}) + y_n
+  ;; argument at k: a + k*h
+  (define (simpson.v3 f a b n)
+    (define h (/ (- b a) n))
+    (define (+kh a k) (+ a (* k h))) ; how to use default values in sicp?
+    (define (+2h a) (+kh a 2))
+    (* (+ (f a)                                         ; 0
+          (* 4.0 (sum f +2h (+kh a 1) (+kh a (- n 1)))) ; odd
+          (* 2.0 (sum f +2h (+kh a 2) (+kh a (- n 2)))) ; even
+          (f (+ a (+kh a n))))                          ; n (i.e. b)
+       (/ h 3.0)))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.29 ====================\n")
+
+    (define (cube x) (* x x x))
+
+    (check-equal? (sum cube (lambda (x) (+ x 1)) 1 10) 3025)
+    (check-equal? (sum (lambda (x) x) (lambda (x) (+ x 1)) 1 10) 55)
+    (check-within (* 8 (sum (lambda (x) (/ 1.0 (* x (+ x 2))))
+                            (lambda (x) (+ x 4))
+                            1
+                            1000)) 3.1396 0.0001)
+
+    (display (format "[integral(0.01)  ] ~a\n" (integral cube 0 1 0.01)))
+    (display (format "[integral(0.001) ] ~a\n" (integral cube 0 1 0.001)))
+    (display (format "[simpson.v1(100) ] ~a\n" (simpson.v1 cube 0 1 100)))
+    (display (format "[simpson.v1(1000)] ~a\n" (simpson.v1 cube 0 1 1000)))
+    (display (format "[simpson.v2(100) ] ~a\n" (simpson.v2 cube 0 1 100)))
+    (display (format "[simpson.v2(1000)] ~a\n" (simpson.v2 cube 0 1 1000)))
+    (display (format "[simpson.v3(100) ] ~a\n" (simpson.v3 cube 0 1 100)))
+    (display (format "[simpson.v3(1000)] ~a\n" (simpson.v3 cube 0 1 1000)))))
+
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
 (module+ test
@@ -1398,4 +1473,5 @@
   (require (submod ".." Exercise/1.26 test))
   (require (submod ".." Exercise/1.27 test))
   (require (submod ".." Exercise/1.28 test))
-  (require (submod ".." Lecture/1B test)))
+  (require (submod ".." Lecture/1B test))
+  (require (submod ".." Exercise/1.29 test)))
