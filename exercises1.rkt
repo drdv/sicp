@@ -1290,8 +1290,8 @@
     (for ([n prime-numbers])
       (check-true (fast-prime? n 100)))))
 
-(module Lecture/1B racket/base ;; because I want to use a hash table
-  ;; (#%require (only racket/base module+ format))
+(module Lecture/1B sicp
+  (#%require (only racket/base module+ format hash-set! hash-ref make-hash))
 
   ;; Hanoi towers problem
   (define (move-v1 n src dest extra)
@@ -1358,9 +1358,13 @@
     ;; (move-v2 4 "S" "D" "E")
     (move-v2-offset 4 "S" "D" "E" "")
 
-    (define counts (make-hash (list (cons "S" 4)
-                                    (cons "D" 0)
-                                    (cons "E" 0))))
+    ;; For some reason I cannot use the (make-hash alists) form when I use SICP
+    ;; Just like I had problems with sort in Exercise/1.3
+    ;; (define counts (make-hash (list (cons "S" 4) (cons "D" 0) (cons "E" 0))))
+    (define counts (make-hash))
+    (hash-set! counts "S" 4) ; so I populate the dict manually
+    (hash-set! counts "D" 0)
+    (hash-set! counts "E" 0)
     (move-v2-counts 4 "S" "D" "E" counts)))
 
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
