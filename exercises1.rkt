@@ -1693,6 +1693,26 @@
     (check-within (fixed-point (lambda (x) (+ 1 (/ 1.0 x))) 1.0 100)
                   (/ (+ 1 (sqrt 5)) 2.0) 1e-4)))
 
+(module Exercise/1.36 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." common-utils) average)
+             (only (submod ".." Exercise/1.14) logb)
+             ;; I already defined fixed-point to print its iterates
+             (only (submod ".." Section/1.3.3) fixed-point))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.36 ====================\n")
+
+    ;; original fixed-point problem: 33 iterations
+    ;; fixed-point problem with damping: 8 iterations
+    (let* ([y 1000]
+           [x1 (fixed-point (lambda (x) (logb x y)) 2.0 100)]
+           [x2 (fixed-point (lambda (x) (average x (logb x y))) 2.0 100)])
+      (check-within x1 (logb x1 y) 1e-4)
+      (check-within x2 (logb x2 y) 1e-4)
+      (check-within x1 x2 1e-4))))
+
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
 (module+ test
@@ -1731,7 +1751,9 @@
   (require (submod ".." Exercise/1.31 test))
   (require (submod ".." Exercise/1.32 test))
   (require (submod ".." Exercise/1.33 test))
-  (require (submod ".." Exercise/1.34 test)))
+  (require (submod ".." Exercise/1.34 test))
+  (require (submod ".." Exercise/1.35 test))
+  (require (submod ".." Exercise/1.36 test)))
 
 ;; =====================================================================================
 ;; TEMPLATE
