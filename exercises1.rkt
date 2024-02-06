@@ -5,10 +5,14 @@
 
 (module common-utils sicp
   (#%provide square
+             average
              run-n-times)
 
   (define (square x)
     (* x x))
+
+  (define (average a b)
+    (/ (+ a b) 2.0))
 
   (define (run-n-times n func args output)
     (cond [(= n 0) (apply + output)]
@@ -94,18 +98,16 @@
   normal-order evaluation: return 0
   |#)
 
-(module Exercise/1.6 sicp
+(module Section/1.1.7 sicp
   (#%provide tolerance
              sqrt-v1)
-  (#%require (only racket/base module+)
-             (only (submod ".." common-utils) square))
+  (#%require (only racket/base module+ format)
+             (only (submod ".." common-utils) square average))
 
-  (define tolerance 1e-4)
+  (define tolerance 1e-5)
   (define (sqrt-v1 x)
     (define (sqrt-recursive guess x)
       (define (improve guess x)
-        (define (average a b)
-          (/ (+ a b) 2.0))
         (average guess (/ x guess)))
       (define (good-enough? guess x)
         (< (abs (- (square guess) x)) tolerance))
@@ -116,10 +118,11 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.6 ====================\n")
+    (display "==================== Section/1.1.7 ====================\n")
 
-    (check-within (* (sqrt-v1 2) (sqrt-v1 2)) 2 tolerance))
+    (check-within (* (sqrt-v1 2) (sqrt-v1 2)) 2 tolerance)))
 
+(module Exercise/1.6 sicp
   (define (new-if predicate then-clause else-clause)
     (cond (predicate then-clause)
           (else else-clause)))
@@ -131,13 +134,12 @@
 
 (module Exercise/1.7 sicp
   (#%require (only racket/base module+ format)
-             (only (submod ".." Exercise/1.6) sqrt-v1 tolerance))
+             (only (submod ".." common-utils) average)
+             (only (submod ".." Section/1.1.7) sqrt-v1 tolerance))
 
   (define (sqrt-v2 x)
     (define (sqrt-recursive old-guess guess x)
       (define (improve guess x)
-        (define (average a b)
-          (/ (+ a b) 2.0))
         (average guess (/ x guess)))
       (define (good-enough? old-guess guess)
         (< (abs (- old-guess guess)) tolerance))
@@ -160,7 +162,7 @@
 (module Exercise/1.8 sicp
   (#%require (only racket/base module+)
              (only (submod ".." common-utils) square)
-             (only (submod ".." Exercise/1.6) tolerance))
+             (only (submod ".." Section/1.1.7) tolerance))
 
   (define (cube-root x)
     (define (cbrt-recursive old-guess guess)
@@ -1606,6 +1608,91 @@
      #rx"application: not a procedure.*given: 2"
      (lambda () (f f)))))
 
+(module Section/1.3.3 sicp
+  (#%provide fixed-point)
+  (#%require (only racket/base module+ format)
+             (only (submod ".." common-utils) average)
+             (only (submod ".." Section/1.1.7) tolerance))
+
+  (define (close-enough? x y) (< (abs (- x y)) 0.001))
+
+  (define (search f neg-point pos-point)
+    (let ((midpoint (average neg-point pos-point)))
+      (if (close-enough? neg-point pos-point)
+          midpoint
+          (let ((test-value (f midpoint)))
+            (cond ((positive? test-value)
+                   (search f neg-point midpoint))
+                  ((negative? test-value)
+                   (search f midpoint pos-point))
+                  (else midpoint))))))
+
+  (define (half-interval-method f a b)
+    (let ((a-value (f a))
+          (b-value (f b)))
+      (cond ((and (negative? a-value) (positive? b-value))
+             (search f a b))
+            ((and (negative? b-value) (positive? a-value))
+             (search f b a))
+            (else
+             (error "Values are not of opposite sign" a b)))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Section/1.3.3 ====================\n")
+
+    (check-within (half-interval-method sin 2.0 4.0)
+                  3.14111328125
+                  1e-4)
+    (check-within (half-interval-method (lambda (x) (- (* x x x) (* 2 x) 3)) 1.0 2.0)
+                  1.89306640625
+                  1e-4))
+
+  (define (fixed-point f first-guess max-iter)
+    (define (close-enough? v1 v2)
+      (< (abs (- v1 v2))
+         tolerance))
+    (define (try guess iter)
+      (display (format "[~a] ~a\n" iter guess))
+      (let ((next (f guess)))
+        (if (or (close-enough? guess next) (= iter max-iter))
+            next
+            (try next (+ iter 1)))))
+    (try first-guess 0))
+
+  (module+ test
+    (check-within (fixed-point cos 1.0 100)
+                  0.7390822985224023
+                  1e-4)
+    (check-within (fixed-point (lambda (y) (+ (sin y) (cos y))) 1.0 100)
+                  1.2587315962971173
+                  1e-4)
+
+    ;; verify infinite oscilation
+    (let ([x 4])
+      (fixed-point (lambda (y) (/ x y)) 1.0 5)
+      ;; y -> x / y
+      ;; y + y -> y + x / y
+      ;; 0.5*(y + y) -> 0.5*(y + x / y)
+      ;; y -> average(y, x / y)
+      (check-within (fixed-point (lambda (y) (average y (/ x y))) 1.0 100) 2 1e-4))))
+
+(module Exercise/1.35 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/1.3.3) fixed-point))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.35 ====================\n")
+
+    #| Solution
+    Using the characteritic equation x^2 - x -1 = 0 (see latex note Exercise 1.13),
+    we get x = 1 + 1/x
+    |#
+
+    (check-within (fixed-point (lambda (x) (+ 1 (/ 1.0 x))) 1.0 100)
+                  (/ (+ 1 (sqrt 5)) 2.0) 1e-4)))
+
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
 (module+ test
@@ -1614,7 +1701,8 @@
   (require (submod ".." Exercise/1.3 test))
   ;; 1.4: no tests
   ;; 1.5: no tests
-  (require (submod ".." Exercise/1.6 test))
+  (require (submod ".." Section/1.1.7 test))
+  ;; 1.6: no tests
   (require (submod ".." Exercise/1.7 test))
   (require (submod ".." Exercise/1.8 test))
   (require (submod ".." Exercise/1.9 test))
@@ -1644,3 +1732,14 @@
   (require (submod ".." Exercise/1.32 test))
   (require (submod ".." Exercise/1.33 test))
   (require (submod ".." Exercise/1.34 test)))
+
+;; =====================================================================================
+;; TEMPLATE
+;; =====================================================================================
+;; (module Exercise/? sicp
+;;   (#%require (only racket/base module+))
+;;   (module+ test
+;;     (#%require rackunit)
+;;     (display "==================== Exercise/? ====================\n")
+;;     ))
+;; =====================================================================================
