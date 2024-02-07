@@ -6,6 +6,7 @@
 (module common-utils sicp
   (#%provide square
              average
+             golden-ratio
              run-n-times)
 
   (define (square x)
@@ -13,6 +14,8 @@
 
   (define (average a b)
     (/ (+ a b) 2.0))
+
+  (define golden-ratio (/ (+ 1 (sqrt 5)) 2.0))
 
   (define (run-n-times n func args output)
     (cond [(= n 0) (apply + output)]
@@ -1679,6 +1682,7 @@
 
 (module Exercise/1.35 sicp
   (#%require (only racket/base module+)
+             (only (submod ".." common-utils) golden-ratio)
              (only (submod ".." Section/1.3.3) fixed-point))
 
   (module+ test
@@ -1690,14 +1694,13 @@
     we get x = 1 + 1/x
     |#
 
-    (check-within (fixed-point (lambda (x) (+ 1 (/ 1.0 x))) 1.0 100)
-                  (/ (+ 1 (sqrt 5)) 2.0) 1e-4)))
+    (check-within (fixed-point (lambda (x) (+ 1 (/ 1.0 x))) 1.0 100) golden-ratio 1e-4)))
 
 (module Exercise/1.36 sicp
   (#%require (only racket/base module+)
              (only (submod ".." common-utils) average)
              (only (submod ".." Exercise/1.14) logb)
-             ;; I already defined fixed-point to print its iterates
+             ;; I already defined fixed-point to display its iterates
              (only (submod ".." Section/1.3.3) fixed-point))
 
   (module+ test
@@ -1712,6 +1715,43 @@
       (check-within x1 (logb x1 y) 1e-4)
       (check-within x2 (logb x2 y) 1e-4)
       (check-within x1 x2 1e-4))))
+
+(module Exercise/1.37 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." common-utils) golden-ratio))
+
+  (define (cont-frac-rec n d k)
+    (define (helper-recursion n d i)
+      (if (= i k)
+          0
+          (/ (n i)
+             (+ (d i) (helper-recursion n d (+ i 1))))))
+    (helper-recursion n d 0))
+
+  (define (cont-frac-iter n d k)
+    (define (helper-iteration n d i acc)
+      (if (= i 0)
+          acc
+          (helper-iteration n d (- i 1) (/ (n i) (+ (d i) acc)))))
+    (helper-iteration n d (- k 1) (/ (n k) (d k))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.37 ====================\n")
+
+    (let ([inverse-golden-ratio (/ 1 golden-ratio)]
+          [tolerance 1e-4])
+      (check-within (cont-frac-rec (lambda (i) 1.0)
+                                   (lambda (i) 1.0)
+                                   10)
+                    inverse-golden-ratio
+                    tolerance)
+
+      (check-within (cont-frac-iter (lambda (i) 1.0)
+                                    (lambda (i) 1.0)
+                                    10)
+                    inverse-golden-ratio
+                    tolerance))))
 
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
@@ -1753,7 +1793,8 @@
   (require (submod ".." Exercise/1.33 test))
   (require (submod ".." Exercise/1.34 test))
   (require (submod ".." Exercise/1.35 test))
-  (require (submod ".." Exercise/1.36 test)))
+  (require (submod ".." Exercise/1.36 test))
+  (require (submod ".." Exercise/1.37 test)))
 
 ;; =====================================================================================
 ;; TEMPLATE
