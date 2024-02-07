@@ -1721,19 +1721,19 @@
              (only (submod ".." common-utils) golden-ratio))
 
   (define (cont-frac-rec n d k)
-    (define (helper-recursion n d i)
+    (define (helper-recursion i)
       (if (= i k)
           0
           (/ (n i)
-             (+ (d i) (helper-recursion n d (+ i 1))))))
-    (helper-recursion n d 0))
+             (+ (d i) (helper-recursion (+ i 1))))))
+    (helper-recursion 0))
 
   (define (cont-frac-iter n d k)
-    (define (helper-iteration n d i acc)
+    (define (helper-iteration i acc)
       (if (= i 0)
           acc
-          (helper-iteration n d (- i 1) (/ (n i) (+ (d i) acc)))))
-    (helper-iteration n d (- k 1) (/ (n k) (d k))))
+          (helper-iteration (- i 1) (/ (n i) (+ (d i) acc)))))
+    (helper-iteration (- k 1) (/ (n k) (d k))))
 
   (module+ test
     (#%require rackunit)
