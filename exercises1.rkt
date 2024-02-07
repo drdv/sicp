@@ -1757,7 +1757,7 @@
 (module Exercise/1.38 sicp
   (#%require (only racket/base module+ raise)
              (only (submod ".." Exercise/1.37) cont-frac-rec)
-             (only (submod ".." Section/1.1.7) sqrt-v1 tolerance))
+             (only (submod ".." Section/1.1.7) tolerance))
 
   (module+ test
     (#%require rackunit)
@@ -1783,6 +1783,25 @@
                    100)
                   (- (exp 1) 2)
                   tolerance)))
+
+(module Exercise/1.39 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." common-utils) square)
+             (only (submod ".." Section/1.1.7) tolerance)
+             (only (submod ".." Exercise/1.37) cont-frac-rec))
+
+  (define (tan-cf x k)
+    (cont-frac-rec
+     (lambda (i) (if (= i 0) x (- (square x))))
+     (lambda (i) (+ (* 2 i) 1))
+     k))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.39 ====================\n")
+
+    (let ([x 0.2])
+      (check-within (tan-cf x 100) (tan x) tolerance))))
 
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
@@ -1826,7 +1845,8 @@
   (require (submod ".." Exercise/1.35 test))
   (require (submod ".." Exercise/1.36 test))
   (require (submod ".." Exercise/1.37 test))
-  (require (submod ".." Exercise/1.38 test)))
+  (require (submod ".." Exercise/1.38 test))
+  (require (submod ".." Exercise/1.39 test)))
 
 ;; =====================================================================================
 ;; TEMPLATE
