@@ -1717,6 +1717,7 @@
       (check-within x1 x2 1e-4))))
 
 (module Exercise/1.37 sicp
+  (#%provide cont-frac-rec)
   (#%require (only racket/base module+)
              (only (submod ".." common-utils) golden-ratio))
 
@@ -1752,6 +1753,36 @@
                                     10)
                     inverse-golden-ratio
                     tolerance))))
+
+(module Exercise/1.38 sicp
+  (#%require (only racket/base module+ raise)
+             (only (submod ".." Exercise/1.37) cont-frac-rec)
+             (only (submod ".." Section/1.1.7) sqrt-v1 tolerance))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.38 ====================\n")
+
+    #|
+    [0] 0 1 2
+    [1] 3 4 5
+    [2] 6 7 8
+    [3] 9 ...
+
+    k-th column: i%3 == k
+    |#
+    (check-within (cont-frac-rec
+                   (lambda (i) 1.0)
+                   (lambda (i)
+                     (cond [(or (= (remainder i 3) 0)
+                                (= (remainder i 3) 2)) 1]
+                           [(= (remainder i 3) 1)
+                            (let ([iteration (/ (- i 1) 3)])
+                              (+ 2 (* 2 iteration)))]
+                           [else (raise "Shouldn't be here.")]))
+                   100)
+                  (- (exp 1) 2)
+                  tolerance)))
 
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
@@ -1794,7 +1825,8 @@
   (require (submod ".." Exercise/1.34 test))
   (require (submod ".." Exercise/1.35 test))
   (require (submod ".." Exercise/1.36 test))
-  (require (submod ".." Exercise/1.37 test)))
+  (require (submod ".." Exercise/1.37 test))
+  (require (submod ".." Exercise/1.38 test)))
 
 ;; =====================================================================================
 ;; TEMPLATE
