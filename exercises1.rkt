@@ -1884,6 +1884,18 @@
                     0
                     tolerance))))
 
+(module Exercise/1.41 sicp
+  (#%require (only racket/base module+))
+
+  (define (double g)
+    (lambda (x) (g (g x))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.41 ====================\n")
+
+    (check-equal? (((double (double double)) inc) 5) 21)))
+
 ;; FIXME: to extract utils from exercises into an associated section module
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
@@ -1930,7 +1942,8 @@
   (require (submod ".." Exercise/1.38 test))
   (require (submod ".." Exercise/1.39 test))
   (require (submod ".." Section/1.3.4 test))
-  (require (submod ".." Exercise/1.40 test)))
+  (require (submod ".." Exercise/1.40 test))
+  (require (submod ".." Exercise/1.41 test)))
 
 ;; =====================================================================================
 ;; TEMPLATE
