@@ -1897,6 +1897,7 @@
     (check-equal? (((double (double double)) inc) 5) 21)))
 
 (module Exercise/1.42 sicp
+  (#%provide compose)
   (#%require (only racket/base module+)
              (only (submod ".." common-utils) square))
 
@@ -1908,6 +1909,23 @@
     (display "==================== Exercise/1.42 ====================\n")
 
     (check-equal? ((compose square inc) 6) 49)))
+
+(module Exercise/1.43 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." common-utils) square)
+             (only (submod ".." Exercise/1.42) compose))
+
+  (define (repeated f n)
+    (if (= n 1)
+        f
+        (compose f (repeated f (- n 1)))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.43 ====================\n")
+
+    (check-equal? ((repeated square 1) 5) 25)
+    (check-equal? ((repeated square 2) 5) 625)))
 
 ;; FIXME: to extract utils from exercises into an associated section module
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
@@ -1957,7 +1975,8 @@
   (require (submod ".." Section/1.3.4 test))
   (require (submod ".." Exercise/1.40 test))
   (require (submod ".." Exercise/1.41 test))
-  (require (submod ".." Exercise/1.42 test)))
+  (require (submod ".." Exercise/1.42 test))
+  (require (submod ".." Exercise/1.43 test)))
 
 ;; =====================================================================================
 ;; TEMPLATE
