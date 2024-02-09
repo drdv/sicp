@@ -4,18 +4,25 @@
 #lang racket/base
 
 (module common-utils sicp
-  (#%provide square
+  (#%provide tolerance
+             square
+             cube
              average
              golden-ratio
              run-n-times)
 
+  (define tolerance 1e-5)
+
+  (define golden-ratio (/ (+ 1 (sqrt 5)) 2.0))
+
   (define (square x)
     (* x x))
 
+  (define (cube x)
+    (* x x x))
+
   (define (average a b)
     (/ (+ a b) 2.0))
-
-  (define golden-ratio (/ (+ 1 (sqrt 5)) 2.0))
 
   (define (run-n-times n func args output)
     (cond [(= n 0) (apply + output)]
@@ -102,12 +109,10 @@
   |#)
 
 (module Section/1.1.7 sicp
-  (#%provide tolerance
-             sqrt-v1)
+  (#%provide sqrt-v1)
   (#%require (only racket/base module+ format)
-             (only (submod ".." common-utils) square average))
+             (only (submod ".." common-utils) square average tolerance))
 
-  (define tolerance 1e-5)
   (define (sqrt-v1 x)
     (define (sqrt-recursive guess x)
       (define (improve guess x)
@@ -137,8 +142,8 @@
 
 (module Exercise/1.7 sicp
   (#%require (only racket/base module+ format)
-             (only (submod ".." common-utils) average)
-             (only (submod ".." Section/1.1.7) sqrt-v1 tolerance))
+             (only (submod ".." common-utils) average tolerance)
+             (only (submod ".." Section/1.1.7) sqrt-v1))
 
   (define (sqrt-v2 x)
     (define (sqrt-recursive old-guess guess x)
@@ -164,8 +169,7 @@
 
 (module Exercise/1.8 sicp
   (#%require (only racket/base module+)
-             (only (submod ".." common-utils) square)
-             (only (submod ".." Section/1.1.7) tolerance))
+             (only (submod ".." common-utils) square tolerance))
 
   (define (cube-root x)
     (define (cbrt-recursive old-guess guess)
@@ -595,9 +599,9 @@
 
 (module Exercise/1.15 sicp
   (#%require (only racket/base module+ format)
+             (only (submod ".." common-utils) cube)
              (only (submod ".." Exercise/1.14) logb))
 
-  (define (cube x) (* x x x))
   (define (p x) (- (* 3 x) (* 4 (cube x))))
   (define (sine angle iter)
     (display (format "[~a] angle: ~a\n" iter angle))
@@ -1368,7 +1372,8 @@
     (move-v2-counts 4 "S" "D" "E" counts)))
 
 (module Exercise/1.29 sicp
-  (#%require (only racket/base module+ format))
+  (#%require (only racket/base module+ format)
+             (only (submod ".." common-utils) cube))
 
   (define (sum f next a b)
     (if (> a b)
@@ -1424,8 +1429,6 @@
     (#%require rackunit)
     (display "==================== Exercise/1.29 ====================\n")
 
-    (define (cube x) (* x x x))
-
     (check-equal? (sum cube (lambda (x) (+ x 1)) 1 10) 3025)
     (check-equal? (sum (lambda (x) x) (lambda (x) (+ x 1)) 1 10) 55)
     (check-within (* 8 (sum (lambda (x) (/ 1.0 (* x (+ x 2))))
@@ -1443,7 +1446,8 @@
     (display (format "[simpson.v3(1000)] ~a\n" (simpson.v3 cube 0 1 1000)))))
 
 (module Exercise/1.30 sicp
-  (#%require (only racket/base module+))
+  (#%require (only racket/base module+)
+             (only (submod ".." common-utils) cube))
 
   (define (sum f next a b)
     (define (iter a result)
@@ -1455,8 +1459,6 @@
   (module+ test
     (#%require rackunit)
     (display "==================== Exercise/1.30 ====================\n")
-
-    (define (cube x) (* x x x))
 
     (check-equal? (sum cube (lambda (x) (+ x 1)) 1 10) 3025)
     (check-equal? (sum (lambda (x) x) (lambda (x) (+ x 1)) 1 10) 55)
@@ -1516,6 +1518,7 @@
 
 (module Exercise/1.32 sicp
   (#%require (only racket/base module+)
+             (only (submod ".." common-utils) cube)
              (only (submod ".." Section/1.2.1) factorial-v2))
 
   (define (accumulate-recursion combiner null-value f next a b)
@@ -1539,8 +1542,6 @@
   (module+ test
     (#%require rackunit)
     (display "==================== Exercise/1.32 ====================\n")
-
-    (define (cube x) (* x x x))
 
     (check-equal? (accumulate-recursion + 0 cube (lambda (x) (+ x 1)) 1 10) 3025)
     (check-equal? (accumulate-iter + 0 cube (lambda (x) (+ x 1)) 1 10) 3025)
@@ -1614,8 +1615,7 @@
 (module Section/1.3.3 sicp
   (#%provide fixed-point)
   (#%require (only racket/base module+ format)
-             (only (submod ".." common-utils) average)
-             (only (submod ".." Section/1.1.7) tolerance))
+             (only (submod ".." common-utils) average tolerance))
 
   (define (close-enough? x y) (< (abs (- x y)) 0.001))
 
@@ -1757,7 +1757,7 @@
 (module Exercise/1.38 sicp
   (#%require (only racket/base module+ raise)
              (only (submod ".." Exercise/1.37) cont-frac-rec)
-             (only (submod ".." Section/1.1.7) tolerance))
+             (only (submod ".." common-utils) tolerance))
 
   (module+ test
     (#%require rackunit)
@@ -1786,8 +1786,7 @@
 
 (module Exercise/1.39 sicp
   (#%require (only racket/base module+)
-             (only (submod ".." common-utils) square)
-             (only (submod ".." Section/1.1.7) tolerance)
+             (only (submod ".." common-utils) square tolerance)
              (only (submod ".." Exercise/1.37) cont-frac-rec))
 
   (define (tan-cf x k)
@@ -1803,6 +1802,89 @@
     (let ([x 0.2])
       (check-within (tan-cf x 100) (tan x) tolerance))))
 
+(module Section/1.3.4 sicp
+  (#%provide newtons-method)
+  (#%require (only racket/base module+)
+             (only (submod ".." common-utils) average square cube tolerance)
+             (only (submod ".." Section/1.3.3) fixed-point))
+
+  (define (average-damp f)
+    (lambda (x) (average x (f x))))
+
+  (define (sqrt-v1 x)
+    (fixed-point (average-damp (lambda (y) (/ x y)))
+                 1.0 100))
+
+  (define (cube-root x)
+    (fixed-point (average-damp (lambda (y) (/ x (square y))))
+                 1.0 100))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Section/1.3.4 ====================\n")
+
+    (check-equal? ((average-damp square) 10) 55.0)
+    (check-within (sqrt-v1 4) 2.0 tolerance)
+    (check-within (cube-root 8) 2.0 tolerance)
+    (check-within ((deriv cube) 5) 75.0 1e-3))
+
+  (define (deriv g)
+    (define dx tolerance)
+    (lambda (x) (/ (- (g (+ x dx)) (g x)) dx)))
+
+  (define (newton-transform g)
+    (lambda (x) (- x (/ (g x) ((deriv g) x)))))
+
+  (define (newtons-method g guess max-iter)
+    (fixed-point (newton-transform g) guess max-iter))
+
+  (define (sqrt-v2 x)
+    (newtons-method
+     (lambda (y) (- (square y) x)) 1.0 100))
+
+  (module+ test
+    (check-within (sqrt-v2 4) 2.0 tolerance))
+
+  (define (fixed-point-of-transform g transform guess)
+    (fixed-point (transform g) guess 100))
+
+  (define (sqrt-v3 x)
+    (fixed-point-of-transform
+     (lambda (y) (/ x y)) average-damp 1.0))
+
+  (define (sqrt-v4 x)
+    (fixed-point-of-transform
+     (lambda (y) (- (square y) x)) newton-transform 1.0))
+
+  (module+ test
+    (check-within (sqrt-v3 4) 2.0 tolerance)
+    (check-within (sqrt-v4 4) 2.0 tolerance)))
+
+(module Exercise/1.40 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." common-utils) square cube tolerance)
+             (only (submod ".." Section/1.3.4) newtons-method))
+
+  (define (cubic a b c)
+    (lambda (x)
+      (+ (cube x)
+         (* a (square x))
+         (* b x)
+         c)))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.40 ====================\n")
+
+    (let ([a 1]
+          [b 2]
+          [c 3])
+      (check-within ((cubic a b c)
+                     (newtons-method (cubic a b c) 1 100))
+                    0
+                    tolerance))))
+
+;; FIXME: to extract utils from exercises into an associated section module
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
 (module+ test
@@ -1846,7 +1928,9 @@
   (require (submod ".." Exercise/1.36 test))
   (require (submod ".." Exercise/1.37 test))
   (require (submod ".." Exercise/1.38 test))
-  (require (submod ".." Exercise/1.39 test)))
+  (require (submod ".." Exercise/1.39 test))
+  (require (submod ".." Section/1.3.4 test))
+  (require (submod ".." Exercise/1.40 test)))
 
 ;; =====================================================================================
 ;; TEMPLATE
