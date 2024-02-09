@@ -1911,6 +1911,7 @@
     (check-equal? ((compose square inc) 6) 49)))
 
 (module Exercise/1.43 sicp
+  (#%provide repeated)
   (#%require (only racket/base module+)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.42) compose))
@@ -1926,6 +1927,27 @@
 
     (check-equal? ((repeated square 1) 5) 25)
     (check-equal? ((repeated square 2) 5) 625)))
+
+(module Exercise/1.44 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." common-utils) square tolerance)
+             (only (submod ".." Exercise/1.43) repeated))
+
+  (define (smooth f dx)
+    (lambda (x)
+      (+ (f (- x dx))
+         (f x)
+         (f (+ x dx)))))
+
+  (define (smooth-n n f dx)
+    (repeated (smooth f dx) n))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.44 ====================\n")
+
+    (check-within ((smooth square 0.1) 2) 12.02 tolerance)
+    (check-within ((smooth-n 2 square 0.1) 2) 433.4612 tolerance)))
 
 ;; FIXME: to extract utils from exercises into an associated section module
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
@@ -1976,7 +1998,8 @@
   (require (submod ".." Exercise/1.40 test))
   (require (submod ".." Exercise/1.41 test))
   (require (submod ".." Exercise/1.42 test))
-  (require (submod ".." Exercise/1.43 test)))
+  (require (submod ".." Exercise/1.43 test))
+  (require (submod ".." Exercise/1.44 test)))
 
 ;; =====================================================================================
 ;; TEMPLATE
