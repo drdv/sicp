@@ -157,7 +157,6 @@
     (sqrt-recursive 0.0 1.0 x))
 
   (module+ test
-    (#%require rackunit)
     (display "==================== Exercise/1.7 ====================\n")
 
     (display (format "computation terminates: ~a\n"
@@ -875,7 +874,6 @@
               (serch-for-primes (+ n 2) numb-primes)))))
 
   (module+ test
-    (#%require rackunit)
     (display "==================== Exercise/1.22 ====================\n")
 
     (for ([n '(1e3 1e4 1e5 1e6 1e7)])
@@ -1351,7 +1349,6 @@
                 (move-v2-counts (- n 1) extra dest src counts)]))
 
   (module+ test
-    (#%require rackunit)
     (display "==================== Lecture/1B ====================\n")
 
     ;; (move-v1 4 "S" "D" "E")
@@ -1978,7 +1975,7 @@
     When using (floor (log n 2)) damping steps, the computation does not cycle
     (at least for n <= 64). But note that, in general, this is not the number of damping
     steps that minimizes the number of iterations taken by the procedure. The number of
-    iterations depends of course on the x we use.
+    iterations depends of course on the x and x0 we use.
     |#
     (for ([n (in-range 2 65)])
       (let* ([x 2]
@@ -2035,7 +2032,6 @@
                      x0)
                     solution tolerance))))
 
-;; FIXME: to extract utils from exercises into an associated section module
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
 (module+ test
