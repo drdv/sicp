@@ -1974,6 +1974,12 @@
     (#%require rackunit)
     (display "==================== Exercise/1.45 ====================\n")
 
+    #|
+    When using (floor (log n 2)) damping steps, the computation does not cycle
+    (at least for n <= 64). But note that, in general, this is not the number of damping
+    steps that minimizes the number of iterations taken by the procedure. The number of
+    iterations depends of course on the x we use.
+    |#
     (for ([n (in-range 2 65)])
       (let* ([x 2]
              [numb-damp (floor (log n 2))]
@@ -1981,6 +1987,49 @@
         (check-true
          (< (list-ref (nth-root-fixed-point-damp 16 n numb-damp max-iter) 1)
             max-iter))))))
+
+(module Exercise/1.46 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." common-utils) square average tolerance))
+
+  (define (iterative-improve good-enough? improve)
+    (define (iter guess)
+      (let ([next-guess (improve guess)])
+        (if (good-enough? guess next-guess)
+            next-guess
+            (iter next-guess))))
+    iter)
+
+  (define (sqrt-iterative-improve-v1 x)
+    (iterative-improve (lambda (guess next-guess)
+                         ;; next-guess is not used intentionally
+                         (< (abs (- (square guess) x)) tolerance))
+                       (lambda (guess)
+                         (average guess (/ x guess)))))
+
+  (define (sqrt-iterative-improve-v2 x)
+    (iterative-improve (lambda (guess next-guess)
+                         (< (abs (- guess next-guess))
+                            tolerance))
+                       (lambda (guess)
+                         (average guess (/ x guess)))))
+
+  (define (fixed-point-iterative-improve f)
+    (iterative-improve (lambda (guess next-guess)
+                         (< (abs (- guess next-guess))
+                            tolerance))
+                       (lambda (guess)
+                         (f guess))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.46 ====================\n")
+
+    (check-within ((sqrt-iterative-improve-v1 4) 1) 2 tolerance)
+    (check-within ((sqrt-iterative-improve-v2 4) 1) 2 tolerance)
+    ;; implement sqrt in terms of fixed-point-iterative-improve
+    (check-within ((fixed-point-iterative-improve (lambda (y) (average y (/ 4 y)))) 1)
+                  2 tolerance)))
 
 ;; FIXME: to extract utils from exercises into an associated section module
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
@@ -2033,7 +2082,8 @@
   (require (submod ".." Exercise/1.42 test))
   (require (submod ".." Exercise/1.43 test))
   (require (submod ".." Exercise/1.44 test))
-  (require (submod ".." Exercise/1.45 test)))
+  (require (submod ".." Exercise/1.45 test))
+  (require (submod ".." Exercise/1.46 test)))
 
 ;; =====================================================================================
 ;; TEMPLATE
