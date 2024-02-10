@@ -2025,11 +2025,15 @@
     (#%require rackunit)
     (display "==================== Exercise/1.46 ====================\n")
 
-    (check-within ((sqrt-iterative-improve-v1 4) 1) 2 tolerance)
-    (check-within ((sqrt-iterative-improve-v2 4) 1) 2 tolerance)
-    ;; implement sqrt in terms of fixed-point-iterative-improve
-    (check-within ((fixed-point-iterative-improve (lambda (y) (average y (/ 4 y)))) 1)
-                  2 tolerance)))
+    (let ([x 4]
+          [x0 1]
+          [solution 2])
+      (check-within ((sqrt-iterative-improve-v1 x) x0) solution tolerance)
+      (check-within ((sqrt-iterative-improve-v2 x) x0) solution tolerance)
+      ;; implement sqrt in terms of fixed-point-iterative-improve
+      (check-within ((fixed-point-iterative-improve (lambda (y) (average y (/ x y))))
+                     x0)
+                    solution tolerance))))
 
 ;; FIXME: to extract utils from exercises into an associated section module
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
