@@ -532,7 +532,6 @@
   |#)
 
 (module Exercise/1.14 sicp
-  (#%provide logb)
   (#%require (only (submod ".." Section/1.2.2) count-change)
              (only racket/base module+ format for in-range set!))
 
@@ -568,9 +567,8 @@
     (count-change-display-helper amount coins "")
     numb-calls)
 
-  (define (logb b n)
-    ;; log_b(n) = ln(n)/ln(b)
-    (/ (log n) (log b)))
+  ;; (log n b) can be computed using log_b(n) = ln(n)/ln(b)
+  ;; (define (logb n b) (/ (log n) (log b)))
 
   (module+ test
     (count-change-display 11 '(50 25 10 5 1) #t)
@@ -582,7 +580,7 @@
       (display (format "========== ~a coin ==========\n" (length coins)))
       (for ([k '(5 10 50)])
         (let [(n (count-change-display k coins #f))]
-          (display (format "~a: ~a (~a)\n" k n (logb k n))))))
+          (display (format "~a: ~a (~a)\n" k n (log n k))))))
 
     #|
     Note: the number of iterations depends on the order of coins
@@ -599,8 +597,7 @@
 
 (module Exercise/1.15 sicp
   (#%require (only racket/base module+ format)
-             (only (submod ".." common-utils) cube)
-             (only (submod ".." Exercise/1.14) logb))
+             (only (submod ".." common-utils) cube))
 
   (define (p x) (- (* 3 x) (* 4 (cube x))))
   (define (sine angle iter)
@@ -618,7 +615,7 @@
     3^k = angle / 0.1, and hence log_3(angle / 0.1)
     |#
     (sine 12.15 0)
-    (format "[angle: 12.15] iter: ~a\n" (ceiling (logb 3 (/ 12.15 0.1))))
+    (format "[angle: 12.15] iter: ~a\n" (ceiling (log (/ 12.15 0.1) 3)))
     #|
     in terms of space, we need one stack per invocation (note that this is not tail
     recursive due to the application of the function p)
@@ -626,7 +623,7 @@
 
     ;; test something else
     (sine 500.0 0)
-    (format "[angle: 500.0] iter: ~a\n" (ceiling (logb 3 (/ 500.0 0.1))))))
+    (format "[angle: 500.0] iter: ~a\n" (ceiling (log (/ 500.0 0.1) 3)))))
 
 (module Exercise/1.16 sicp
   (#%require (only racket/base module+ format)
@@ -1121,8 +1118,8 @@
     |#))
 
 (module Exercise/1.25 sicp
+  (#%provide fast-expt)
   (#%require (only racket/base module+ format)
-             (only (submod ".." Exercise/1.14) logb)
              (only (submod ".." common-utils) square))
 
   (define (expmod base exp m)
@@ -1154,7 +1151,7 @@
         (display (format "~a\n" z))
         (remainder z n)))
 
-    (define numb-digits (ceiling (* 1000 (logb 10 2))))
+    (define numb-digits (ceiling (* 1000 (log 2 10))))
     #|
     The largest number we have to deal with in expmod e.g., for 2^1000 is 817216
     while in fast-expt it is astronomical and has 302 digits
@@ -1165,8 +1162,7 @@
 
 (module Exercise/1.26 sicp
   (#%require (only racket/base module+ format for set!)
-             (only (submod ".." common-utils) square)
-             (only (submod ".." Exercise/1.14) logb))
+             (only (submod ".." common-utils) square))
   #|
   the version of Louis Reasoner has complexity O(log(2^n)) = O(n*log(2)) = O(n),
   note that the linear recursion becomes tree recursion with two branches at each step.
@@ -1208,7 +1204,7 @@
     (display "-------------------------------------\n")
     (for ([n n-to-test])
       (let ([z (test-f expmod-linear n)])
-        (display (format "[~a] ~a (~a)\n" n z (/ z (logb 2 n))))))
+        (display (format "[~a] ~a (~a)\n" n z (/ z (log n 2))))))
     (display "-------------------------------------\n")
     (display "expmod-tree\n")
     (display "-------------------------------------\n")
@@ -1613,7 +1609,7 @@
      (lambda () (f f)))))
 
 (module Section/1.3.3 sicp
-  (#%provide fixed-point)
+  (#%provide fixed-point fixed-point-iter)
   (#%require (only racket/base module+ format)
              (only (submod ".." common-utils) average tolerance))
 
@@ -1651,17 +1647,20 @@
                   1.89306640625
                   1e-4))
 
-  (define (fixed-point f first-guess max-iter)
+  (define (fixed-point-iter f first-guess max-iter verbose)
     (define (close-enough? v1 v2)
       (< (abs (- v1 v2))
          tolerance))
     (define (try guess iter)
-      (display (format "[~a] ~a\n" iter guess))
+      (if verbose (display (format "[~a] ~a\n" iter guess)))
       (let ((next (f guess)))
         (if (or (close-enough? guess next) (= iter max-iter))
-            next
+            (list next iter)
             (try next (+ iter 1)))))
     (try first-guess 0))
+
+  (define (fixed-point f first-guess max-iter)
+    (list-ref (fixed-point-iter f first-guess max-iter #t) 0))
 
   (module+ test
     (check-within (fixed-point cos 1.0 100)
@@ -1671,9 +1670,9 @@
                   1.2587315962971173
                   1e-4)
 
-    ;; verify infinite oscilation
+
     (let ([x 4])
-      (fixed-point (lambda (y) (/ x y)) 1.0 5)
+      (fixed-point (lambda (y) (/ x y)) 1.0 5) ;; verify infinite oscilation
       ;; y -> x / y
       ;; y + y -> y + x / y
       ;; 0.5*(y + y) -> 0.5*(y + x / y)
@@ -1699,7 +1698,6 @@
 (module Exercise/1.36 sicp
   (#%require (only racket/base module+)
              (only (submod ".." common-utils) average)
-             (only (submod ".." Exercise/1.14) logb)
              ;; I already defined fixed-point to display its iterates
              (only (submod ".." Section/1.3.3) fixed-point))
 
@@ -1710,10 +1708,10 @@
     ;; original fixed-point problem: 33 iterations
     ;; fixed-point problem with damping: 8 iterations
     (let* ([y 1000]
-           [x1 (fixed-point (lambda (x) (logb x y)) 2.0 100)]
-           [x2 (fixed-point (lambda (x) (average x (logb x y))) 2.0 100)])
-      (check-within x1 (logb x1 y) 1e-4)
-      (check-within x2 (logb x2 y) 1e-4)
+           [x1 (fixed-point (lambda (x) (log y x)) 2.0 100)]
+           [x2 (fixed-point (lambda (x) (average x (log y x))) 2.0 100)])
+      (check-within x1 (log y x1) 1e-4)
+      (check-within x2 (log y x2) 1e-4)
       (check-within x1 x2 1e-4))))
 
 (module Exercise/1.37 sicp
@@ -1803,7 +1801,7 @@
       (check-within (tan-cf x 100) (tan x) tolerance))))
 
 (module Section/1.3.4 sicp
-  (#%provide newtons-method)
+  (#%provide average-damp newtons-method)
   (#%require (only racket/base module+)
              (only (submod ".." common-utils) average square cube tolerance)
              (only (submod ".." Section/1.3.3) fixed-point))
@@ -1949,6 +1947,41 @@
     (check-within ((smooth square 0.1) 2) 12.02 tolerance)
     (check-within ((smooth-n 2 square 0.1) 2) 433.4612 tolerance)))
 
+(module Exercise/1.45 sicp
+  (#%require (only racket/base module+ format for in-range)
+             (only (submod ".." Exercise/1.25) fast-expt)
+             (only (submod ".." Section/1.3.3) fixed-point-iter)
+             (only (submod ".." Section/1.3.4) average-damp)
+             (only (submod ".." Exercise/1.43) repeated))
+
+  (define (pow b n)
+    (fast-expt b n 1))
+
+  (define (nth-root-fixed-point-damp x n numb-damp max-iter)
+    (let ([res (fixed-point-iter ((repeated average-damp numb-damp)
+                                  (lambda (y) (/ x (pow y (- n 1)))))
+                                 1.0
+                                 max-iter
+                                 #f)])
+      (display (format "Computing ~a-th root (damping: ~a) of ~a: ~a\n"
+                       n
+                       numb-damp
+                       x
+                       res))
+      res))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/1.45 ====================\n")
+
+    (for ([n (in-range 2 65)])
+      (let* ([x 2]
+             [numb-damp (floor (log n 2))]
+             [max-iter 300])
+        (check-true
+         (< (list-ref (nth-root-fixed-point-damp 16 n numb-damp max-iter) 1)
+            max-iter))))))
+
 ;; FIXME: to extract utils from exercises into an associated section module
 ;; FIXME: it would be nice for each problem to have its own Scribble docs
 ;; FIXME: to create a macro for generating this test module
@@ -1999,7 +2032,8 @@
   (require (submod ".." Exercise/1.41 test))
   (require (submod ".." Exercise/1.42 test))
   (require (submod ".." Exercise/1.43 test))
-  (require (submod ".." Exercise/1.44 test)))
+  (require (submod ".." Exercise/1.44 test))
+  (require (submod ".." Exercise/1.45 test)))
 
 ;; =====================================================================================
 ;; TEMPLATE
