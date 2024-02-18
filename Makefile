@@ -16,7 +16,8 @@ tex: ## Generate latex note
 	tectonic notes.tex
 
 test: ## Run tests
-	raco test exercises1.rkt
+	# raco test exercises1.rkt
+	raco test exercises2.rkt
 
 .PHONY: docs
 docs: ## Generate docs
