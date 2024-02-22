@@ -239,9 +239,67 @@
       (check-within (rectangle-perimeter rectangle rectangle-width rectangle-height)
                     perimeter tolerance))))
 
+(module Exercise/2.4 sicp
+  (#%require (only racket/base module+))
+
+  (define (cons x y)
+    (lambda (m) (m x y)))
+
+  (define (car z)
+    (z (lambda (p q) p)))
+
+  (define (cdr z)
+    (z (lambda (p q) q)))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.4 ====================\n")
+
+    #|
+    (cons x y) -> (lambda (m) (m x y)) where x and y are stored in the closure
+    (car (lambda (m) (m x y))) -> ((lambda (m) (m x y)) (lambda (p q) p))
+                               -> ((lambda (p q) p) x y) -> x
+    |#
+    (let ([c (cons 1 2)])
+      (check-equal? (car c) 1)
+      (check-equal? (cdr c) 2))))
+
+(module Exercise/2.5 sicp
+  (#%require (only racket/base module+))
+
+  ;; works because:
+  ;;  1. no power of 2 is divisible by 3
+  ;;  2. no power of 3 is divisible by 2
+  (define (cons a b)
+    (* (expt 2 a)
+       (expt 3 b)))
+
+  (define (reduction z counter base)
+    (cond [(= (remainder z base) 0) (reduction (/ z base)
+                                               (+ counter 1)
+                                               base)]
+          [else counter]))
+
+  (define (car z)
+    (reduction z 0 2))
+
+  (define (cdr z)
+    (reduction z 0 3))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.5 ====================\n")
+
+    (let* ([a 5]
+           [b 7]
+           [c (cons a b)])
+         (check-equal? (car c) a)
+         (check-equal? (cdr c) b))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
   (require (submod ".." Exercise/2.3 test)
            (submod ".." Exercise/2.3 test-representation-1)
-           (submod ".." Exercise/2.3 test-representation-2)))
+           (submod ".." Exercise/2.3 test-representation-2))
+  (require (submod ".." Exercise/2.4 test)))

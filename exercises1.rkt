@@ -683,7 +683,7 @@
 
 (module Exercise/1.17 sicp
   (#%provide mult.v2)
-  (#%require (only racket/base module+ format raise))
+  (#%require (only racket/base module+ format))
 
   (define (mult.v1 a b)
     (cond [(or (= a 0) (= b 0)) 0]
@@ -705,7 +705,7 @@
     (define (halve x)
       (if (even? x)
           (/ x 2)
-          (raise "Cannot halve an odd integer.")))
+          (error "Cannot halve an odd integer.")))
     (cond [(or (= a 0) (= b 0)) acc]
           [(even? b)
            (if verbose (show "E" a b acc))
@@ -1750,7 +1750,7 @@
                     tolerance))))
 
 (module Exercise/1.38 sicp
-  (#%require (only racket/base module+ raise)
+  (#%require (only racket/base module+)
              (only (submod ".." Exercise/1.37) cont-frac-rec)
              (only (submod ".." common-utils) tolerance))
 
@@ -1774,7 +1774,7 @@
                            [(= (remainder i 3) 1)
                             (let ([iteration (/ (- i 1) 3)])
                               (+ 2 (* 2 iteration)))]
-                           [else (raise "Shouldn't be here.")]))
+                           [else (error "Shouldn't be here.")]))
                    100)
                   (- (exp 1) 2)
                   tolerance)))
