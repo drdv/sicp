@@ -15,8 +15,10 @@ help: ## Show this help
 tex: ## Generate latex note
 	tectonic notes.tex
 
-test: ## Run tests
-	# raco test exercises1.rkt
+test-1: ## Run tests for exercise1.rkt
+	raco test exercises1.rkt
+
+test-2: ## Run tests for exercise2.rkt
 	raco test exercises2.rkt
 
 .PHONY: docs
