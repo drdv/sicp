@@ -345,9 +345,12 @@
              add-interval
              mul-interval
              div-interval)
-  (#%require (only racket/base module+))
+  (#%require (only racket/base module+ format exn:fail?))
 
-  (define (make-interval a b) (cons a b))
+  (define (make-interval a b)
+    (if (> a b)
+        (error (format "lower bound ~a > upper bound ~a" a b))
+        (cons a b)))
   (define (lower-bound interval) (car interval))
   (define (upper-bound interval) (cdr interval))
 
@@ -382,9 +385,10 @@
       (check-equal? (upper-bound res-mul)  4))
 
     ;; NOTE: the reciprocal interval in div-interval doesn't make sense
-    (let ([y (make-interval -1 2)])
-      (make-interval (/ 1.0 (upper-bound y))
-                     (/ 1.0 (lower-bound y))))))
+    (check-exn exn:fail? (lambda ()
+                           (let ([y (make-interval -1 2)])
+                             (make-interval (/ 1.0 (upper-bound y))
+                                            (/ 1.0 (lower-bound y))))))))
 
 (module Exercise/2.8 sicp
   (#%provide sub-interval)
@@ -499,7 +503,7 @@
     (display "==================== Exercise/2.10 ====================\n")
 
     (let* ([x (make-interval -1 2)]
-           [res-div (div-interval x (make-interval -1 -2))])
+           [res-div (div-interval x (make-interval -2 -1))])
       (check-exn exn:fail? (lambda () (div-interval x (make-interval -1 1))))
       (check-exn exn:fail? (lambda () (div-interval x (make-interval  0 1))))
       (check-exn exn:fail? (lambda () (div-interval x (make-interval -1 0))))
