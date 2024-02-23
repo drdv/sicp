@@ -477,6 +477,35 @@
                         (width-interval (mul-interval (offset-interval x offset)
                                                       (offset-interval x offset)))))))
 
+(module Exercise/2.10 sicp
+  (#%require (only racket/base module+ format exn:fail?)
+             (only (submod ".." Exercise/2.7)
+                   make-interval
+                   lower-bound
+                   upper-bound
+                   mul-interval))
+
+  (define (div-interval x y)
+    (cond [(and (<= (lower-bound y) 0)
+                (>= (upper-bound y) 0))
+           (error (format "Denominator interval ~a spans 0." y))]
+          [else (mul-interval
+                 x
+                 (make-interval (/ 1.0 (upper-bound y))
+                                (/ 1.0 (lower-bound y))))]))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.10 ====================\n")
+
+    (let* ([x (make-interval -1 2)]
+           [res-div (div-interval x (make-interval -1 -2))])
+      (check-exn exn:fail? (lambda () (div-interval x (make-interval -1 1))))
+      (check-exn exn:fail? (lambda () (div-interval x (make-interval  0 1))))
+      (check-exn exn:fail? (lambda () (div-interval x (make-interval -1 0))))
+      (check-equal? (lower-bound res-div) -2.0)
+      (check-equal? (upper-bound res-div)  1.0))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -488,4 +517,5 @@
   (require (submod ".." Exercise/2.6 test))
   (require (submod ".." Exercise/2.7 test))
   (require (submod ".." Exercise/2.8 test))
-  (require (submod ".." Exercise/2.9 test)))
+  (require (submod ".." Exercise/2.9 test))
+  (require (submod ".." Exercise/2.10 test)))
