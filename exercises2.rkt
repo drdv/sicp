@@ -341,7 +341,10 @@
 (module Exercise/2.7 sicp
   (#%provide make-interval
              lower-bound
-             upper-bound)
+             upper-bound
+             add-interval
+             mul-interval
+             div-interval)
   (#%require (only racket/base module+))
 
   (define (make-interval a b) (cons a b))
@@ -384,6 +387,7 @@
                      (/ 1.0 (lower-bound y))))))
 
 (module Exercise/2.8 sicp
+  (#%provide sub-interval)
   (#%require (only racket/base module+)
              (only (submod ".." Exercise/2.7) make-interval lower-bound upper-bound))
 
@@ -418,6 +422,61 @@
       (check-equal? (lower-bound res-sub) (lower-bound res-sub-check))
       (check-equal? (upper-bound res-sub) (upper-bound res-sub-check)))))
 
+(module Exercise/2.9 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Exercise/2.7)
+                   make-interval
+                   lower-bound
+                   upper-bound
+                   add-interval
+                   mul-interval
+                   div-interval)
+             (only (submod ".." Exercise/2.8) sub-interval))
+
+  (define (width-interval interval)
+    (/ (- (upper-bound interval)
+          (lower-bound interval)) 2))
+
+  (define (offset-interval interval offset)
+    (make-interval (+ (lower-bound interval) offset)
+                   (+ (upper-bound interval) offset)))
+
+  #| add-interval
+  (width-interval (add-interval x y)) = (width-interval x) + (width-interval y) because
+  0.5 * (ub(x) + ub(y) - (lb(x) + lb(y))) = 0.5 * (ub(x) - lb(x)) + 0.5*(ub(y) - lb(y))
+  |#
+
+  #| sub-interval
+  (width-interval (sub-interval x y)) = (width-interval x) + (width-interval y) because
+  0.5 * (ub(x) - lb(y) - (lb(x) - ub(y))) = 0.5 * (ub(x) - lb(x)) + 0.5*(ub(y) - lb(y))
+  |#
+
+  #| mul-interval and div-interval
+  The examples below demonstrate that the width of the interval resulting from the
+  application of mul-interval or div-interval does not depend only on the widths of the
+  input intervals but on the lower and upper bounds as well. Note that
+  (width-interval (offset-interval interval offset)) = (width-interval interval) for any
+  offset
+  |#
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.9 ====================\n")
+
+    (let* ([x (make-interval -1 2)]
+           [w (width-interval x)]
+           [offset 1])
+      (check-equal? (width-interval (add-interval x x)) (* 2 w))
+      (check-equal? (width-interval (sub-interval x x)) (* 2 w))
+      (check-equal? (width-interval (sub-interval x x))
+                    (width-interval (offset-interval (sub-interval x x) offset)))
+      (check-not-equal? (width-interval (mul-interval x x))
+                        (width-interval (mul-interval (offset-interval x offset)
+                                                      (offset-interval x offset))))
+      (check-not-equal? (width-interval (mul-interval x x))
+                        (width-interval (mul-interval (offset-interval x offset)
+                                                      (offset-interval x offset)))))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -428,4 +487,5 @@
   (require (submod ".." Exercise/2.5 test))
   (require (submod ".." Exercise/2.6 test))
   (require (submod ".." Exercise/2.7 test))
-  (require (submod ".." Exercise/2.8 test)))
+  (require (submod ".." Exercise/2.8 test))
+  (require (submod ".." Exercise/2.9 test)))
