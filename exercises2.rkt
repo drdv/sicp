@@ -506,6 +506,86 @@
       (check-equal? (lower-bound res-div) -2.0)
       (check-equal? (upper-bound res-div)  1.0))))
 
+(module Exercise/2.11 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Exercise/2.7)
+                   make-interval
+                   lower-bound
+                   upper-bound
+                   mul-interval))
+
+  #|
+  1. 0 [x1 x2] [y1 y2]: [x1*y1, x2*y2]
+  2. [x1 0 x2] [y1 y2]: [x1*y2, x2*y2]
+  3. [x1 x2] 0 [y1 y2]: [x1*y2, x2*y1]
+  4. [x1 x2] [y1 0 y2]: [x1*y2, x1*y1]
+  5. [x1 x2] [y1 y2] 0: [x1*y1, x2*y2]
+  6. [y1 0 y2] [x1 x2]: [y1*x2, y2*x2]
+  7. [y1 y2] 0 [x1 x2]: [y1*x2, y2*x1]
+  8. [y1 y2] [x1 0 x2]: [y1*x2, y1*x1]
+  9. [x1 0 x2] [y1 0 y2]: [min(x1*y2, y1*x2), max(x1*y1, x2*y2)]
+  |#
+  (define (mul-interval-cases x y)
+    (let ([x1 (lower-bound x)]
+          [x2 (upper-bound x)]
+          [y1 (lower-bound y)]
+          [y2 (upper-bound y)])
+      (cond
+        [(and (>= x1 0) (>= x2 0) (>= y1 0) (>= y2 0)) (display "case 1\n")
+         (make-interval (* x1 y1) (* x2 y2))]
+        [(and (<= x1 0) (>= x2 0) (>= y1 0) (>= y2 0)) (display "case 2\n")
+         (make-interval (* x1 y2) (* x2 y2))]
+        [(and (<= x1 0) (<= x2 0) (>= y1 0) (>= y2 0)) (display "case 3\n")
+         (make-interval (* x1 y2) (* x2 y1))]
+        [(and (<= x1 0) (<= x2 0) (<= y1 0) (>= y2 0)) (display "case 4\n")
+         (make-interval (* x1 y2) (* x1 y1))]
+        [(and (<= x1 0) (<= x2 0) (<= y1 0) (<= y2 0)) (display "case 5\n")
+         (make-interval (* x2 y2) (* x1 y1))]
+        [(and (<= y1 0) (>= y2 0) (>= x1 0) (>= x2 0)) (display "case 6\n")
+         (make-interval (* y1 x2) (* y2 x2))]
+        [(and (<= y1 0) (<= y2 0) (>= x1 0) (>= x2 0)) (display "case 7\n")
+         (make-interval (* y1 x2) (* y2 x1))]
+        [(and (<= y1 0) (<= y2 0) (<= x1 0) (>= x2 0)) (display "case 8\n")
+         (make-interval (* y1 x2) (* y1 x1))]
+        [else                                          (display "case 9\n")
+         (make-interval (min (* x1 y2) (* y1 x2))
+                        (max (* x1 y1) (* x2 y2)))])))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.11 ====================\n")
+
+    ;; case 1
+    (check-equal? (mul-interval       (make-interval 1 2) (make-interval 3 4))
+                  (mul-interval-cases (make-interval 1 2) (make-interval 3 4)))
+    ;; case 2
+    (check-equal? (mul-interval       (make-interval -1 2) (make-interval 3 4))
+                  (mul-interval-cases (make-interval -1 2) (make-interval 3 4)))
+    ;; case 3
+    (check-equal? (mul-interval       (make-interval -2 -1) (make-interval 3 4))
+                  (mul-interval-cases (make-interval -2 -1) (make-interval 3 4)))
+    ;; case 4
+    (check-equal? (mul-interval       (make-interval -3 -2) (make-interval -1 4))
+                  (mul-interval-cases (make-interval -3 -2) (make-interval -1 4)))
+    ;; case 5
+    (check-equal? (mul-interval       (make-interval -4 -3) (make-interval -2 -1))
+                  (mul-interval-cases (make-interval -4 -3) (make-interval -2 -1)))
+    ;; case 6
+    (check-equal? (mul-interval       (make-interval 2 3) (make-interval -1 1))
+                  (mul-interval-cases (make-interval 2 3) (make-interval -1 1)))
+    ;; case 7
+    (check-equal? (mul-interval       (make-interval 1 2) (make-interval -2 -1))
+                  (mul-interval-cases (make-interval 1 2) (make-interval -2 -1)))
+    ;; case 8
+    (check-equal? (mul-interval       (make-interval -1 1) (make-interval -3 -2))
+                  (mul-interval-cases (make-interval -1 1) (make-interval -3 -2)))
+    ;; case 9
+    (check-equal? (mul-interval       (make-interval -3 2) (make-interval -3 1))
+                  (mul-interval-cases (make-interval -3 2) (make-interval -3 1)))
+    ;; case 9
+    (check-equal? (mul-interval       (make-interval -3 2) (make-interval -3 5))
+                  (mul-interval-cases (make-interval -3 2) (make-interval -3 5)))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -518,4 +598,5 @@
   (require (submod ".." Exercise/2.7 test))
   (require (submod ".." Exercise/2.8 test))
   (require (submod ".." Exercise/2.9 test))
-  (require (submod ".." Exercise/2.10 test)))
+  (require (submod ".." Exercise/2.10 test))
+  (require (submod ".." Exercise/2.11 test)))
