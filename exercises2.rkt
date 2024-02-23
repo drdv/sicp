@@ -510,13 +510,31 @@
       (check-equal? (lower-bound res-div) -2.0)
       (check-equal? (upper-bound res-div)  1.0))))
 
+(module Exercise/2.11-data racket/base
+  (#%provide test-intervals-pairs)
+  (#%require (only racket/list combinations)
+             (only (submod ".." Exercise/2.7) make-interval))
+
+  (define test-intervals-pairs
+    (map
+     ;; https://www.reddit.com/r/Racket/comments/99e1qe/can_you_read_sicp_with_racket/?rdt=57058
+     (lambda (x) (mcons (car x) (cadr x)))
+     (combinations ;; construct all pairs of intervals
+      (map (lambda (x) (make-interval (car x) (cadr x)))
+           ;; NOTE: order is preserved
+           (combinations '(-5 -4 -3 -2 -1 0 1 2 3 4 5) 2)) 2)))
+
+  (display (format "generated ~a random pairs of intervals\n"
+                   (length test-intervals-pairs))))
+
 (module Exercise/2.11 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ for)
              (only (submod ".." Exercise/2.7)
                    make-interval
                    lower-bound
                    upper-bound
-                   mul-interval))
+                   mul-interval)
+             (only (submod ".." Exercise/2.11-data) test-intervals-pairs))
 
   #|
   1. 0 [x1 x2] [y1 y2]: [x1*y1, x2*y2]
@@ -534,24 +552,25 @@
           [x2 (upper-bound x)]
           [y1 (lower-bound y)]
           [y2 (upper-bound y)])
+      ;; the conditions could be grouped (e.g., by y1 <= 0)
       (cond
-        [(and (>= x1 0) (>= x2 0) (>= y1 0) (>= y2 0)) (display "case 1\n")
+        [(and (>= x1 0) (>= x2 0) (>= y1 0) (>= y2 0)) ;; case 1
          (make-interval (* x1 y1) (* x2 y2))]
-        [(and (<= x1 0) (>= x2 0) (>= y1 0) (>= y2 0)) (display "case 2\n")
+        [(and (<= x1 0) (>= x2 0) (>= y1 0) (>= y2 0)) ;; case 2
          (make-interval (* x1 y2) (* x2 y2))]
-        [(and (<= x1 0) (<= x2 0) (>= y1 0) (>= y2 0)) (display "case 3\n")
+        [(and (<= x1 0) (<= x2 0) (>= y1 0) (>= y2 0)) ;; case 3
          (make-interval (* x1 y2) (* x2 y1))]
-        [(and (<= x1 0) (<= x2 0) (<= y1 0) (>= y2 0)) (display "case 4\n")
+        [(and (<= x1 0) (<= x2 0) (<= y1 0) (>= y2 0)) ;; case 4
          (make-interval (* x1 y2) (* x1 y1))]
-        [(and (<= x1 0) (<= x2 0) (<= y1 0) (<= y2 0)) (display "case 5\n")
+        [(and (<= x1 0) (<= x2 0) (<= y1 0) (<= y2 0)) ;; case 5
          (make-interval (* x2 y2) (* x1 y1))]
-        [(and (<= y1 0) (>= y2 0) (>= x1 0) (>= x2 0)) (display "case 6\n")
+        [(and (<= y1 0) (>= y2 0) (>= x1 0) (>= x2 0)) ;; case 6
          (make-interval (* y1 x2) (* y2 x2))]
-        [(and (<= y1 0) (<= y2 0) (>= x1 0) (>= x2 0)) (display "case 7\n")
+        [(and (<= y1 0) (<= y2 0) (>= x1 0) (>= x2 0)) ;; case 7
          (make-interval (* y1 x2) (* y2 x1))]
-        [(and (<= y1 0) (<= y2 0) (<= x1 0) (>= x2 0)) (display "case 8\n")
+        [(and (<= y1 0) (<= y2 0) (<= x1 0) (>= x2 0)) ;; case 8
          (make-interval (* y1 x2) (* y1 x1))]
-        [else                                          (display "case 9\n")
+        [else                                          ;; case 9
          (make-interval (min (* x1 y2) (* y1 x2))
                         (max (* x1 y1) (* x2 y2)))])))
 
@@ -588,7 +607,13 @@
                   (mul-interval-cases (make-interval -3 2) (make-interval -3 1)))
     ;; case 9
     (check-equal? (mul-interval       (make-interval -3 2) (make-interval -3 5))
-                  (mul-interval-cases (make-interval -3 2) (make-interval -3 5)))))
+                  (mul-interval-cases (make-interval -3 2) (make-interval -3 5))))
+
+  ;; test on automatically generated pairs of intervals
+  (module+ test
+    (for ([pair test-intervals-pairs])
+      (check-equal? (mul-interval       (car pair) (cdr pair))
+                    (mul-interval-cases (car pair) (cdr pair))))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test))
