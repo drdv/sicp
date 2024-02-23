@@ -338,6 +338,86 @@
       (check-equal? (((church-add four two) f) n0) 6)
       (check-equal? (((church-add four three) f) n0) 7))))
 
+(module Exercise/2.7 sicp
+  (#%provide make-interval
+             lower-bound
+             upper-bound)
+  (#%require (only racket/base module+))
+
+  (define (make-interval a b) (cons a b))
+  (define (lower-bound interval) (car interval))
+  (define (upper-bound interval) (cdr interval))
+
+  (define (add-interval x y)
+    (make-interval (+ (lower-bound x) (lower-bound y))
+                   (+ (upper-bound x) (upper-bound y))))
+
+  (define (mul-interval x y)
+    (let ((p1 (* (lower-bound x) (lower-bound y)))
+          (p2 (* (lower-bound x) (upper-bound y)))
+          (p3 (* (upper-bound x) (lower-bound y)))
+          (p4 (* (upper-bound x) (upper-bound y))))
+      (make-interval (min p1 p2 p3 p4)
+                     (max p1 p2 p3 p4))))
+
+  (define (div-interval x y)
+    (mul-interval
+     x
+     (make-interval (/ 1.0 (upper-bound y))
+                    (/ 1.0 (lower-bound y)))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.7 ====================\n")
+
+    (let* ([x (make-interval -1 2)]
+           [res-add (add-interval x x)]
+           [res-mul (mul-interval x x)])
+      (check-equal? (lower-bound res-add) -2)
+      (check-equal? (upper-bound res-add)  4)
+      (check-equal? (lower-bound res-mul) -2)
+      (check-equal? (upper-bound res-mul)  4))
+
+    ;; NOTE: the reciprocal interval in div-interval doesn't make sense
+    (let ([y (make-interval -1 2)])
+      (make-interval (/ 1.0 (upper-bound y))
+                     (/ 1.0 (lower-bound y))))))
+
+(module Exercise/2.8 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Exercise/2.7) make-interval lower-bound upper-bound))
+
+  #|
+  ub(y) >= lb(y) -> -ub(y) <= -lb(y) -> lb(x) - ub(y) <= lb(x) - lb(y)
+                                     -> ub(x) - ub(y) <= ub(x) - lb(y)
+  hence, the interval is [lb(x) - ub(y), ub(x) - lb(y)]
+  clearly, lb(x) - ub(y) <= ub(x) - lb(y) since lb(y) - ub(y) <= ub(x) - lb(x) because
+  ub(x) - lb(x) >= 0
+  lb(y) - ub(y) <= 0
+  |#
+  (define (sub-interval x y)
+    (make-interval (- (lower-bound x) (upper-bound y))
+                   (- (upper-bound x) (lower-bound y))))
+
+  ;; or we could simply refactor mul-interval
+  (define (sub-interval-check x y)
+    (let ((p1 (- (lower-bound x) (lower-bound y)))
+          (p2 (- (lower-bound x) (upper-bound y)))
+          (p3 (- (upper-bound x) (lower-bound y)))
+          (p4 (- (upper-bound x) (upper-bound y))))
+      (make-interval (min p1 p2 p3 p4)
+                     (max p1 p2 p3 p4))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.8 ====================\n")
+
+    (let* ([x (make-interval -1 2)]
+           [res-sub (sub-interval x x)]
+           [res-sub-check (sub-interval-check x x)])
+      (check-equal? (lower-bound res-sub) (lower-bound res-sub-check))
+      (check-equal? (upper-bound res-sub) (upper-bound res-sub-check)))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -346,4 +426,6 @@
            (submod ".." Exercise/2.3 test-representation-2))
   (require (submod ".." Exercise/2.4 test))
   (require (submod ".." Exercise/2.5 test))
-  (require (submod ".." Exercise/2.6 test)))
+  (require (submod ".." Exercise/2.6 test))
+  (require (submod ".." Exercise/2.7 test))
+  (require (submod ".." Exercise/2.8 test)))
