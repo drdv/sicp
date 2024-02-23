@@ -296,10 +296,54 @@
          (check-equal? (car c) a)
          (check-equal? (cdr c) b))))
 
+(module Exercise/2.6 sicp
+  (#%require (only racket/base module+))
+
+  (define zero (lambda (f) (lambda (x) x)))
+  (define (add-1 n)
+    (lambda (f) (lambda (x) (f ((n f) x)))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.6 ====================\n")
+
+    #|
+    (lambda (f) (lambda (x) (f ((zero f) x)))) ->
+    (lambda (f) (lambda (x) (f ((lambda (x) x) x)))) ->
+    (lambda (f) (lambda (x) (f x)))
+    |#
+    (define one (lambda (f) (lambda (x) (f x))))
+
+    #|
+    (lambda (f) (lambda (x) (f ((one f) x)))) ->
+    (lambda (f) (lambda (x) (f (((lambda (f) (lambda (x) (f x))) f) x)))) ->
+    (lambda (f) (lambda (x) (f (f x))))
+    |#
+    (define two (lambda (f) (lambda (x) (f (f x)))))
+
+    (define three (lambda (f) (lambda (x) (f (f (f x))))))
+    (define four (lambda (f) (lambda (x) (f (f (f (f x)))))))
+
+    (define (church-add m n)
+      (lambda (f) (lambda (x) ((m f) ((n f) x)))))
+
+    (let ([f inc]
+          [n0 0])
+      (check-equal? ((zero f) n0) 0)
+      (check-equal? ((one f) n0) 1)
+      (check-equal? ((two f) n0) 2)
+      (check-equal? ((three f) n0) 3)
+      (check-equal? ((four f) n0) 4)
+      (check-equal? (((add-1 four) f) n0) 5)
+      (check-equal? (((church-add four two) f) n0) 6)
+      (check-equal? (((church-add four three) f) n0) 7))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
   (require (submod ".." Exercise/2.3 test)
            (submod ".." Exercise/2.3 test-representation-1)
            (submod ".." Exercise/2.3 test-representation-2))
-  (require (submod ".." Exercise/2.4 test)))
+  (require (submod ".." Exercise/2.4 test))
+  (require (submod ".." Exercise/2.5 test))
+  (require (submod ".." Exercise/2.6 test)))
