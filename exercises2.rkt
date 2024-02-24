@@ -427,6 +427,7 @@
       (check-equal? (upper-bound res-sub) (upper-bound res-sub-check)))))
 
 (module Exercise/2.9 sicp
+  (#%provide width-interval)
   (#%require (only racket/base module+)
              (only (submod ".." Exercise/2.7)
                    make-interval
@@ -615,6 +616,34 @@
       (check-equal? (mul-interval       (car pair) (cdr pair))
                     (mul-interval-cases (car pair) (cdr pair))))))
 
+(module Exercise/2.12 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Exercise/2.7)
+                   make-interval
+                   lower-bound
+                   upper-bound)
+             (only (submod ".." Exercise/2.9) width-interval))
+
+  (define (make-center-percent center percent)
+    (let ([width (/ (* center percent) 100.0)])
+      (make-interval (- center width) (+ center width))))
+
+  (define (center interval)
+    (/ (+ (lower-bound interval) (upper-bound interval)) 2))
+
+  (define (percent interval)
+    (* 100.0 (/ (width-interval interval) (center interval))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.12 ====================\n")
+
+    (let* ([c 5.0]
+           [p 10.0]
+           [interval (make-center-percent c p)])
+      (check-equal? (center interval) c)
+      (check-equal? (percent interval) p))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -628,4 +657,5 @@
   (require (submod ".." Exercise/2.8 test))
   (require (submod ".." Exercise/2.9 test))
   (require (submod ".." Exercise/2.10 test))
-  (require (submod ".." Exercise/2.11 test)))
+  (require (submod ".." Exercise/2.11 test))
+  (require (submod ".." Exercise/2.12 test)))
