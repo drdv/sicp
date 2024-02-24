@@ -232,6 +232,30 @@ of $1$ modulo $n$ because
 Of course, we could say the same thing about $n+1$ but in the Miller-Rabin test we care
 only about numbers smaller than $n$.
 
+\section{Exercise 2.13}
+
+Let $x$ represent an interval. We use the following notation:
+\begin{itemize}
+\item $x_c$: the center of interval $x$
+\item $x_w$: the width of interval $x$
+\item $x_{\ell} = x_c - x_w$: interval lower-bound
+\item $x_{u} = x_c + x_w$: interval upper-bound
+\item $x_p = 100\frac{x_w}{x_c}$: what percent of $x_c$ is $x_w$.
+\end{itemize}
+We have to find a simplified expression for $z_p$ in terms of $x_p$ and $y_p$, where
+$x$, $y$ and $z$ are intervals such that $z = x * y$~\footnote{The operator $*$ denotes
+multiplication of intervals.}. In this exercise we are allowed to assume that $x_{\ell},
+y_{\ell} \geq 0$ (see ``case 1'' in exercise 2.11 in \cc{exercises2.rkt}) - this implies
+that:
+\begin{itemize}
+\item $z_{\ell} = x_{\ell} y_{\ell} = (x_c - x_w)(y_c - y_w) = x_cy_c - x_cy_w - x_wy_c + x_wy_w$
+\item $z_{u} = x_{u} y_{u} = (x_c + x_w)(y_c + y_w) = x_cy_c + x_cy_w + x_wy_c + x_wy_w$
+\item $z_w = \frac{1}{2}(z_u - z_{\ell}) = x_cy_w + x_wy_c$
+\item $z_c = \frac{1}{2}(z_u + z_{\ell}) = x_cy_c + x_wy_w$
+\item $z_p = 100\frac{z_w}{z_c} = 100\frac{x_cy_w + x_wy_c}{x_cy_c + x_wy_w} \approx 100\frac{x_cy_w + x_wy_c}{x_cy_c}$ because $x_w$ and $y_w$ are assumed small.
+\end{itemize}
+The expression for $z_p$ can be further reduced to $z_p = x_p + y_p$ by expressing $x_w$ and $y_w$ in terms of $x_p$ and $y_p$.
+
 \appendix
 \appendixpage
 

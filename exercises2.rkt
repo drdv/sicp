@@ -617,6 +617,9 @@
                     (mul-interval-cases (car pair) (cdr pair))))))
 
 (module Exercise/2.12 sicp
+  (#%provide make-center-percent
+             center
+             percent)
   (#%require (only racket/base module+)
              (only (submod ".." Exercise/2.7)
                    make-interval
@@ -644,6 +647,30 @@
       (check-equal? (center interval) c)
       (check-equal? (percent interval) p))))
 
+(module Exercise/2.13 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Exercise/2.7) mul-interval)
+             (only (submod ".." Exercise/2.12)
+                   make-center-percent
+                   percent))
+
+  ;; see latex note Exercise 2.13
+  (define (mul-percent-approx-case1 x y)
+    (+ (percent x)
+       (percent y)))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.13 ====================\n")
+
+    (let* ([p 1]
+           [x (make-center-percent 5 p)]
+           [y (make-center-percent 10 p)]
+           [tolerance 1e-3])
+      (check-within (percent (mul-interval x y))
+                    (mul-percent-approx-case1 x y)
+                    tolerance))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -658,4 +685,5 @@
   (require (submod ".." Exercise/2.9 test))
   (require (submod ".." Exercise/2.10 test))
   (require (submod ".." Exercise/2.11 test))
-  (require (submod ".." Exercise/2.12 test)))
+  (require (submod ".." Exercise/2.12 test))
+  (require (submod ".." Exercise/2.13 test)))
