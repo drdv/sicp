@@ -242,6 +242,9 @@ Let $x$ represent an interval. We use the following notation:
 \item $x_{u} = x_c + x_w$: interval upper-bound
 \item $x_p = 100\frac{x_w}{x_c}$: what percent of $x_c$ is $x_w$.
 \end{itemize}
+
+\subsection{\cc{mul-interval} (case 1)}
+
 We have to find a simplified expression for $z_p$ in terms of $x_p$ and $y_p$, where
 $x$, $y$ and $z$ are intervals such that $z = x * y$~\footnote{The operator $*$ denotes
 multiplication of intervals.}. In this exercise we are allowed to assume that $x_{\ell},
@@ -255,6 +258,31 @@ that:
 \item $z_p = 100\frac{z_w}{z_c} = 100\frac{x_cy_w + x_wy_c}{x_cy_c + x_wy_w} \approx 100\frac{x_cy_w + x_wy_c}{x_cy_c}$ because $x_w$ and $y_w$ are assumed small.
 \end{itemize}
 The expression for $z_p$ can be further reduced to $z_p = x_p + y_p$ by expressing $x_w$ and $y_w$ in terms of $x_p$ and $y_p$.
+
+\subsection{\cc{add-interval}}
+
+Let us consider $z = x + y$:
+\begin{itemize}
+\item $z_{\ell} = x_{\ell} + y_{\ell} = x_c + y_c - x_w - y_w$
+\item $z_{u} = x_{u} + y_{u} = x_c + y_c + x_w + y_w$
+\item $z_w = \frac{1}{2}(z_u - z_{\ell}) = x_w + y_w$
+\item $z_c = \frac{1}{2}(z_u + z_{\ell}) = x_c + y_c$
+\item $z_p = 100\frac{z_w}{z_c} = 100\frac{x_w + y_w}{x_c + y_c} = \frac{x_px_c + y_py_c}{x_c + y_c}$.
+\end{itemize}
+Hence, $z_p = x_p = y_p$ if $x_p = y_p$.
+
+\subsection{\cc{sub-interval}}
+
+Let us consider $z = x - y$:
+\begin{itemize}
+\item $z_{\ell} = x_{\ell} - y_{u} = x_c - x_w - (y_c + y_w) = x_c - y_c - x_w - y_w$
+\item $z_{u} = x_{u} - y_{\ell} = x_c + x_w - (y_c - y_w) = x_c - y_c + x_w + y_w$
+\item $z_w = \frac{1}{2}(z_u - z_{\ell}) = x_w + y_w$
+\item $z_c = \frac{1}{2}(z_u + z_{\ell}) = x_c - y_c$
+\item $z_p = 100\frac{z_w}{z_c} = 100\frac{x_w + y_w}{x_c - y_c} = \frac{x_px_c + y_py_c}{x_c - y_c}$.
+\end{itemize}
+Hence, $z_p$ is undefined when $x_c = y_c$.
+
 
 \appendix
 \appendixpage

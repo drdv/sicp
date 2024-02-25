@@ -483,6 +483,7 @@
                                                       (offset-interval x offset)))))))
 
 (module Exercise/2.10 sicp
+  (#%provide div-interval)
   (#%require (only racket/base module+ format exn:fail?)
              (only (submod ".." Exercise/2.7)
                    make-interval
@@ -632,10 +633,16 @@
       (make-interval (- center width) (+ center width))))
 
   (define (center interval)
-    (/ (+ (lower-bound interval) (upper-bound interval)) 2))
+    (/ (+ (lower-bound interval)
+          (upper-bound interval))
+       2))
 
   (define (percent interval)
-    (* 100.0 (/ (width-interval interval) (center interval))))
+    (let ([w (width-interval interval)]
+          ;; use abs to make sure that the result is positive
+          [c (abs (center interval))])
+      ;; when the center is 0, the division results in "+inf.0"
+      (* 100.0 (/ w c))))
 
   (module+ test
     (#%require rackunit)
@@ -671,6 +678,151 @@
                     (mul-percent-approx-case1 x y)
                     tolerance))))
 
+(module Exercise/2.14 sicp
+  (#%require (only racket/base module+ format)
+             (only (submod ".." Exercise/2.7)
+                   make-interval
+                   add-interval
+                   mul-interval)
+             (only (submod ".." Exercise/2.8) sub-interval)
+             (only (submod ".." Exercise/2.9) width-interval)
+             (only (submod ".." Exercise/2.10) div-interval)
+             (only (submod ".." Exercise/2.12)
+                   make-center-percent
+                   center
+                   percent))
+
+  (define (par1 r1 r2)
+    (div-interval (mul-interval r1 r2)
+                  (add-interval r1 r2)))
+
+  (define (par2 r1 r2)
+    (let ((one (make-interval 1 1)))
+      (div-interval
+       one (add-interval (div-interval one r1)
+                         (div-interval one r2)))))
+
+  (define (show-center-percent interval)
+    (display (format "center-%: ~a\n" (cons (center interval)
+                                            (percent interval)))))
+
+  (define (show-center-width interval)
+    (display (format "center-w: ~a\n" (cons (center interval)
+                                            (width-interval interval)))))
+
+  (define (show-bounds interval)
+    (display (format "lb-ub   : ~a\n" interval)))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.14 ====================\n")
+
+    ;; conclusion: Lem is right
+    (let* ([R1 (make-center-percent 6.8 10)]
+           [R2 (make-center-percent 4.7 5)]
+           [res1 (par1 R1 R2)]
+           [res2 (par2 R1 R2)])
+      (show-center-percent res1)
+      (show-bounds res1)
+      ;; this is the original example from Section 2.1.4 with interval (2.58 . 2.97)
+      (show-center-percent res2)
+      (show-bounds res2)
+      (check-within res2 (make-interval 2.58 2.97) 1e-2))
+
+    ;; the two expressions are equivalent in the deterministic case so the difference
+    ;; above is due to the way uncertainty is propagated in the operations we define
+    (let* ([R1 (make-center-percent 6.8 0)]
+           [R2 (make-center-percent 4.7 0)]
+           [res1 (par1 R1 R2)]
+           [res2 (par2 R1 R2)])
+      (show-center-percent res1)
+      (show-bounds res1)
+      (show-center-percent res2)
+      (show-bounds res2)))
+
+  ;; ---------------------
+  ;; play with the system
+  ;; ---------------------
+  (module+ test
+    (define one (make-center-percent 1 0))
+    (define two (make-center-percent 2 0))
+    (define A (make-center-percent 10 1))
+    (define B (make-center-percent 20 1))
+
+    ;; center changes but uncertainty remains the same
+    (show-center-percent (div-interval one A))
+
+    ;; division is multiplication with reciprocal interval (whose uncertainty is the
+    ;; same), hence we expect for the uncertainty to approximately double
+    ;; (see Exercise/2.13) and the center to be 1 (which is nearly the case)
+    (show-center-percent (div-interval A A))
+
+    ;; it is as if we have two different (identical) measurements whose uncertainty
+    ;; propagates (according to the given expression)
+    (show-center-percent (mul-interval A A))
+    (let ([interval (sub-interval A A)])
+      (show-center-width interval)
+      (show-center-percent interval))
+
+    ;; since A and B have the same uncertainty 1, so does the result (see latex note)
+    (show-center-percent (add-interval A B))
+
+    ;; in both cases the uncertainty of the result is approximately the sum of the
+    ;; uncertainties
+    (show-center-percent (mul-interval A B))
+    (show-center-percent (div-interval A B))
+
+    ;; see latex note (percent is undefined)
+    (let ([c 5])
+      (show-center-percent (sub-interval (make-center-percent c 20)
+                                         (make-center-percent c 40))))
+
+    ;; ----------------------------------------------
+    ;; try other algebraically equivalent expressions
+    ;; ----------------------------------------------
+    ;; the uncertainty of A*A/(A*A) is approximately double that of A/A
+    (show-center-percent (div-interval (mul-interval A A)
+                                       (mul-interval A A)))
+
+    (show-center-percent (sub-interval (add-interval A A) A))
+
+    (check-true (> (percent (sub-interval (add-interval A B) A))
+                   (percent B)))
+    (check-true (> (percent (sub-interval (add-interval A B) B))
+                   (percent A)))
+    (check-true (> (percent (div-interval (mul-interval A B) A))
+                   (percent B)))
+    (check-true (> (percent (div-interval (mul-interval A B) B))
+                   (percent A)))
+
+    ;; A + A + A = 3*A
+    ;; this hinges on two facts:
+    ;; 1. uncertainty(A) = uncertainty(A + A)
+    ;; 2. uncertainty(two * A) = uncertainty(A) because uncertainty(two) = 0
+    (show-center-percent (add-interval (add-interval A A) A))
+    (show-center-percent (mul-interval (add-interval two one) A))))
+
+(module Exercise/2.15 sicp
+  (#%require (only racket/base module+ format)
+             (only (submod ".." Exercise/2.7)
+                   make-interval
+                   add-interval
+                   mul-interval)
+             (only (submod ".." Exercise/2.8) sub-interval)
+             (only (submod ".." Exercise/2.10) div-interval)
+             (only (submod ".." Exercise/2.12)
+                   make-center-percent
+                   center
+                   percent))
+
+  ;; demonstrate that our operations cannot reduce uncertainty
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.15 ====================\n")
+
+    ))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -686,4 +838,5 @@
   (require (submod ".." Exercise/2.10 test))
   (require (submod ".." Exercise/2.11 test))
   (require (submod ".." Exercise/2.12 test))
-  (require (submod ".." Exercise/2.13 test)))
+  (require (submod ".." Exercise/2.13 test))
+  (require (submod ".." Exercise/2.14 test)))
