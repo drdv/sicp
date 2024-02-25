@@ -629,7 +629,7 @@
              (only (submod ".." Exercise/2.9) width-interval))
 
   (define (make-center-percent center percent)
-    (let ([width (/ (* center percent) 100.0)])
+    (let ([width (abs (/ (* center percent) 100.0))])
       (make-interval (- center width) (+ center width))))
 
   (define (center interval)
@@ -639,10 +639,10 @@
 
   (define (percent interval)
     (let ([w (width-interval interval)]
-          ;; use abs to make sure that the result is positive
-          [c (abs (center interval))])
-      ;; when the center is 0, the division results in "+inf.0"
-      (* 100.0 (/ w c))))
+          ;; when the center is 0, the division below results in "+inf.0"
+          [c (center interval)])
+      ;; I want to get a positive result
+      (abs (* 100.0 (/ w c)))))
 
   (module+ test
     (#%require rackunit)
@@ -679,6 +679,9 @@
                     tolerance))))
 
 (module Exercise/2.14 sicp
+  (#%provide show-center-percent
+             show-center-width
+             show-bounds)
   (#%require (only racket/base module+ format)
              (only (submod ".." Exercise/2.7)
                    make-interval
@@ -729,8 +732,7 @@
       (show-bounds res2)
       (check-within res2 (make-interval 2.58 2.97) 1e-2))
 
-    ;; the two expressions are equivalent in the deterministic case so the difference
-    ;; above is due to the way uncertainty is propagated in the operations we define
+    ;; verify that the two expressions are equivalent in the deterministic case
     (let* ([R1 (make-center-percent 6.8 0)]
            [R2 (make-center-percent 4.7 0)]
            [res1 (par1 R1 R2)]
@@ -764,7 +766,7 @@
       (show-center-width interval)
       (show-center-percent interval))
 
-    ;; since A and B have the same uncertainty 1, so does the result (see latex note)
+    ;; uncertainty of the result is 1 (see latex note for add-interval)
     (show-center-percent (add-interval A B))
 
     ;; in both cases the uncertainty of the result is approximately the sum of the
@@ -772,7 +774,7 @@
     (show-center-percent (mul-interval A B))
     (show-center-percent (div-interval A B))
 
-    ;; see latex note (percent is undefined)
+    ;; see latex note for sub-interval (percent is undefined)
     (let ([c 5])
       (show-center-percent (sub-interval (make-center-percent c 20)
                                          (make-center-percent c 40))))
@@ -803,25 +805,58 @@
     (show-center-percent (mul-interval (add-interval two one) A))))
 
 (module Exercise/2.15 sicp
-  (#%require (only racket/base module+ format)
+  (#%require (only racket/base module+)
              (only (submod ".." Exercise/2.7)
                    make-interval
                    add-interval
                    mul-interval)
              (only (submod ".." Exercise/2.8) sub-interval)
+             (only (submod ".." Exercise/2.9) width-interval)
              (only (submod ".." Exercise/2.10) div-interval)
              (only (submod ".." Exercise/2.12)
                    make-center-percent
                    center
-                   percent))
+                   percent)
+             (only (submod ".." Exercise/2.14)
+                   show-center-percent
+                   show-center-width
+                   show-bounds))
 
-  ;; demonstrate that our operations cannot reduce uncertainty
+  #|
+  In the latex note we demonstrate that add-interval, sub-interval, mul-interval and
+  div-interval (for the last two we handled only case 1 in Exercise/2.13)
+  cannot reduce uncertainty of intervals x and y below min(x_p, y_p). So in general,
+  performing fewer number of operations is likely to lead to smaller uncertainty. For
+  example x+x-x would have larger uncertainty than x. Similarly for x/x and x*x/(x*x),
+  see Exercise/2.14. However we have also seen that the uncertainty of some operations
+  can be much larger than max(x_p, y_p) depending on the particular intervals x and y.
+  I don't know if there are cases where fewer operations lead to larger uncertinty but
+  it is easy to find cases where having a variable appear multiple times leads to the
+  same uncetainty as when it appears only once. For example the uncertainty of 3*x and
+  x+x+x is the same (see test below).
+
+  Regarding Eva's statements:
+  1. we get tighter error bounds if the expression can be written in a way that no
+     uncertain intervals are used more than once
+  Answer: not all operations on intervals are born equal so, the pedantic answer is
+  NO, we don't get "tighter" bounds with 3*x compared to x+x+x (we get the same bounds).
+  Of course, according to https://en.wikipedia.org/wiki/Interval_arithmetic#Dependency_problem
+
+  "In general, it can be shown that the exact range of values can be achieved, if each variable
+  appears only once and if the expression is continuous" inside the intervals.
+
+  2. par2 a “better” program for parallel resistances than par1?
+  Answer: yes, see Exercise/2.14.
+  |#
 
   (module+ test
     (#%require rackunit)
     (display "==================== Exercise/2.15 ====================\n")
 
-    ))
+    (let ([x (make-center-percent 10 50)]
+          [three (make-center-percent 3 0)])
+      (check-equal? (percent (mul-interval three x))
+                    (percent (add-interval (add-interval x x) x))))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test))
