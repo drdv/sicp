@@ -756,11 +756,11 @@
 
     ;; division is multiplication with reciprocal interval (whose uncertainty is the
     ;; same), hence we expect for the uncertainty to approximately double
-    ;; (see Exercise/2.13) and the center to be 1 (which is nearly the case)
+    ;; (see Exercise/2.13) and the center to be nearly 1 (which is the case)
     (show-center-percent (div-interval A A))
 
-    ;; it is as if we have two different (identical) measurements whose uncertainty
-    ;; propagates (according to the given expression)
+    ;; we have two different (identical) measurements whose uncertainty propagates
+    ;; (according to the given expression)
     (show-center-percent (mul-interval A A))
     (let ([interval (sub-interval A A)])
       (show-center-width interval)
@@ -805,58 +805,16 @@
     (show-center-percent (mul-interval (add-interval two one) A))))
 
 (module Exercise/2.15 sicp
-  (#%require (only racket/base module+)
-             (only (submod ".." Exercise/2.7)
-                   make-interval
-                   add-interval
-                   mul-interval)
-             (only (submod ".." Exercise/2.8) sub-interval)
-             (only (submod ".." Exercise/2.9) width-interval)
-             (only (submod ".." Exercise/2.10) div-interval)
-             (only (submod ".." Exercise/2.12)
-                   make-center-percent
-                   center
-                   percent)
-             (only (submod ".." Exercise/2.14)
-                   show-center-percent
-                   show-center-width
-                   show-bounds))
-
   #|
-  In the latex note we demonstrate that add-interval, sub-interval, mul-interval and
-  div-interval (for the last two we handled only case 1 in Exercise/2.13)
-  cannot reduce uncertainty of intervals x and y below min(x_p, y_p). So in general,
-  performing fewer number of operations is likely to lead to smaller uncertainty. For
-  example x+x-x would have larger uncertainty than x. Similarly for x/x and x*x/(x*x),
-  see Exercise/2.14. However we have also seen that the uncertainty of some operations
-  can be much larger than max(x_p, y_p) depending on the particular intervals x and y.
-  I don't know if there are cases where fewer operations lead to larger uncertinty but
-  it is easy to find cases where having a variable appear multiple times leads to the
-  same uncetainty as when it appears only once. For example the uncertainty of 3*x and
-  x+x+x is the same (see test below).
+  Eva's statement regarding tighter error bounds (in general) is discussed in the latex
+  note. Regarding whether par2 a “better” program for parallel resistances than par1,
+  the answer is yes (see Exercise/2.14 above).
+  |#)
 
-  Regarding Eva's statements:
-  1. we get tighter error bounds if the expression can be written in a way that no
-     uncertain intervals are used more than once
-  Answer: not all operations on intervals are born equal so, the pedantic answer is
-  NO, we don't get "tighter" bounds with 3*x compared to x+x+x (we get the same bounds).
-  Of course, according to https://en.wikipedia.org/wiki/Interval_arithmetic#Dependency_problem
-
-  "In general, it can be shown that the exact range of values can be achieved, if each variable
-  appears only once and if the expression is continuous" inside the intervals.
-
-  2. par2 a “better” program for parallel resistances than par1?
-  Answer: yes, see Exercise/2.14.
-  |#
-
-  (module+ test
-    (#%require rackunit)
-    (display "==================== Exercise/2.15 ====================\n")
-
-    (let ([x (make-center-percent 10 50)]
-          [three (make-center-percent 3 0)])
-      (check-equal? (percent (mul-interval three x))
-                    (percent (add-interval (add-interval x x) x))))))
+(module Exercise/2.16 sicp
+  #|
+  The answer is no (see the latex note for details).
+  |#)
 
 (module+ test
   (require (submod ".." Exercise/2.1 test))
@@ -874,4 +832,7 @@
   (require (submod ".." Exercise/2.11 test))
   (require (submod ".." Exercise/2.12 test))
   (require (submod ".." Exercise/2.13 test))
-  (require (submod ".." Exercise/2.14 test)))
+  (require (submod ".." Exercise/2.14 test))
+  ;; 2.15: no tests
+  ;; 2.16: no tests
+  )

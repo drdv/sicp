@@ -232,9 +232,9 @@ of $1$ modulo $n$ because
 Of course, we could say the same thing about $n+1$ but in the Miller-Rabin test we care
 only about numbers smaller than $n$.
 
-\section{Exercise 2.13}
+\section{Exercise 2.13, 2.14, 2.15, 2.16}
 
-Let $x$ represent an interval. We use the following notation:
+Let $x$ denotes an interval. We use the following notation:
 \begin{itemize}
 \item $x_c$: the center of interval $x$
 \item $x_w$: the width of interval $x$
@@ -245,11 +245,11 @@ Let $x$ represent an interval. We use the following notation:
 
 \subsection{\cc{mul-interval} (case 1)}
 
-We have to find a simplified expression for $z_p$ in terms of $x_p$ and $y_p$, where
-$x$, $y$ and $z$ are intervals such that $z = x * y$~\footnote{The operator $*$ denotes
-multiplication of intervals.}. In this exercise we are allowed to assume that $x_{\ell},
-y_{\ell} \geq 0$ (see ``case 1'' in exercise 2.11 in \cc{exercises2.rkt}) - this implies
-that:
+In Exercise 2.13 we have to find a simplified expression for $z_p$ in terms of $x_p$ and
+$y_p$, where $x$, $y$ and $z$ are intervals such that $z = x * y$~\footnote{The operator
+$*$ denotes multiplication of intervals.}. In this exercise we are allowed to assume
+that $x_{\ell}, y_{\ell} \geq 0$ (see ``case 1'' in exercise 2.11 in
+\cc{exercises2.rkt}) - this implies that:
 \begin{itemize}
 \item $z_{\ell} = x_{\ell} y_{\ell} = (x_c - x_w)(y_c - y_w) = x_cy_c - x_cy_w - x_wy_c + x_wy_w$
 \item $z_{u} = x_{u} y_{u} = (x_c + x_w)(y_c + y_w) = x_cy_c + x_cy_w + x_wy_c + x_wy_w$
@@ -257,7 +257,9 @@ that:
 \item $z_c = \frac{1}{2}(z_u + z_{\ell}) = x_cy_c + x_wy_w$
 \item $z_p = 100\frac{z_w}{z_c} = 100\frac{x_cy_w + x_wy_c}{x_cy_c + x_wy_w} \approx 100\frac{x_cy_w + x_wy_c}{x_cy_c}$ because $x_w$ and $y_w$ are assumed small.
 \end{itemize}
-The expression for $z_p$ can be further reduced to $z_p = x_p + y_p$ by expressing $x_w$ and $y_w$ in terms of $x_p$ and $y_p$.
+The expression for $z_p$ can be further reduced to $z_p = x_p + y_p$ by substituting
+$x_w = \frac{x_cx_p}{100}$ and $y_w = \frac{y_cy_p}{100}$ (note that $x_c, y_c \geq 0$
+by assumption).
 
 \subsection{\cc{add-interval}}
 
@@ -267,7 +269,9 @@ Let us consider $z = x + y$:
 \item $z_{u} = x_{u} + y_{u} = x_c + y_c + x_w + y_w$
 \item $z_w = \frac{1}{2}(z_u - z_{\ell}) = x_w + y_w$
 \item $z_c = \frac{1}{2}(z_u + z_{\ell}) = x_c + y_c$
-\item $z_p = \abs{100\frac{z_w}{z_c}} = \abs{100\frac{x_w + y_w}{x_c + y_c}} = \abs{\frac{x_p\abs{x_c} + y_p\abs{y_c}}{x_c + y_c}} = \abs{x_p\frac{\abs{x_c}}{x_c + y_c} + y_p\frac{\abs{y_c}}{x_c + y_c}}$.
+\item $z_p = \abs{100\frac{z_w}{z_c}} = \abs{100\frac{x_w + y_w}{x_c + y_c}} =
+  \abs{\frac{x_p\abs{x_c} + y_p\abs{y_c}}{x_c + y_c}} = \abs{x_p\frac{\abs{x_c}}{x_c +
+      y_c} + y_p\frac{\abs{y_c}}{x_c + y_c}}$.
 \end{itemize}
 $z_p$ is undefined when $z_c = 0$ and is a weighted average of $x_p$ and $y_p$:
 \begin{align*}
@@ -278,8 +282,8 @@ $z_p$ is undefined when $z_c = 0$ and is a weighted average of $x_p$ and $y_p$:
 The weighting coefficients $\alpha$ and $\beta$ can be greater than 1 as $x_c,
 y_c\in\mathbb{R}$, \emph{i.e.,} $(x+y)_p$ could be greater than $\max(x_p, y_p)$. On the
 other hand, for any choice of $x_c$ and $y_c$, $\alpha + \beta \geq 1$. Hence $z_p \geq
-\min(x_p, y_p)$. That is, the addition operation cannot reduce the uncertainty below
-$\min(x_p, y_p)$.
+\min(x_p, y_p)$. That is, as expected, the addition operation cannot reduce the
+uncertainty below $\min(x_p, y_p)$.
 
 \subsection{\cc{sub-interval}}
 
@@ -289,11 +293,93 @@ Let us consider $z = x - y$:
 \item $z_{u} = x_{u} - y_{\ell} = x_c + x_w - (y_c - y_w) = x_c - y_c + x_w + y_w$
 \item $z_w = \frac{1}{2}(z_u - z_{\ell}) = x_w + y_w$
 \item $z_c = \frac{1}{2}(z_u + z_{\ell}) = x_c - y_c$
-\item $z_p = \abs{100\frac{z_w}{z_c}} = \abs{100\frac{x_w + y_w}{x_c - y_c}} = \abs{\frac{x_p\abs{x_c} + y_p\abs{y_c}}{x_c - y_c}} = x_p\underbrace{\abs{\frac{x_c}{x_c - y_c}}}_{\alpha} + y_p\underbrace{\abs{\frac{y_c}{x_c - y_c}}}_{\beta}$.
+\item $z_p = \abs{100\frac{z_w}{z_c}} = \abs{100\frac{x_w + y_w}{x_c - y_c}} =
+  \abs{\frac{x_p\abs{x_c} + y_p\abs{y_c}}{x_c - y_c}} =
+  x_p\underbrace{\abs{\frac{x_c}{x_c - y_c}}}_{\alpha} +
+  y_p\underbrace{\abs{\frac{y_c}{x_c - y_c}}}_{\beta}$.
 \end{itemize}
 $z_p$ is undefined when $x_c = y_c$. For any choice of $x_c$ and $y_c$, $\alpha + \beta
-\geq 1$. Hence, $z_p \geq \min(x_p, y_p)$. That is, the subtraction operation cannot
-reduce the uncertainty below $\min(x_p, y_p)$.
+\geq 1$. Hence, $z_p \geq \min(x_p, y_p)$. That is, as expected, the subtraction
+operation cannot reduce the uncertainty below $\min(x_p, y_p)$.
+
+\subsection{Analysis}
+
+If $f: \mathbb{R} \to \mathbb{R}$ is a continuous function over a closed and bounded
+interval $[x_{\ell}, x_u]$, then its image is a closed and bounded interval
+\begin{align} \label{eq.range_of_func_of_interval}
+  f([x_{\ell}, x_u]) = \left[\min_{v\in[x_{\ell}, x_u]}f(v), \max_{v\in[x_{\ell}, x_u]}f(v)\right].
+\end{align}
+In the case of the four basic arithmetic operations~\footnote{Assuming that 0 is not
+contained in the denominator interval for division.}, $f$ is monotone and computing the
+minimum and maximum above becomes trivial~\cite{interval-operators}:
+\begin{align*}
+  [x_{\ell}, x_u] \star [y_{\ell}, y_u] = [\min(\mathcal{C}), \max(\mathcal{C})],
+\end{align*}
+where $\star$ denotes one of our four binary arithmetic operations and $\mathcal{C} =
+\{x_{\ell}y_{\ell}, x_{\ell}y_{u}, x_{u}y_{\ell}, x_{u}y_{u}\}$. This is equivalent to
+\begin{align*}
+  [x_{\ell}, x_u] \star [y_{\ell}, y_u] = \{v_1 \star v_2 \, | \, v_1 \in [x_{\ell}, x_u], v_2 \in [y_{\ell}, y_u]\}.
+\end{align*}
+Let us consider now two algebraically equivalent expressions:
+\begin{itemize}
+\item $f_1(x) = x^2$ (uses a unary operator $(\cdot)^2$)
+\item $f_2(x) = xx$ (uses a binary multiplication operator)
+\end{itemize}
+When $x$ is a real number, we have $f_1(x) = f_2(x)$. However, when $x$ is an interval
+($[x_{\ell}, x_u]$), the unary operator and the binary operator might lead to different
+results depending on the way we choose to implement them (\emph{i.e,} depending on the
+assumptions we take into account when solving the two optimization problems in
+\eqref{eq.range_of_func_of_interval}). Concretely,
+\begin{itemize}
+\item the unary operator could be defined as $[x_{\ell}, x_u]^2 = \{v^2 \, | \,
+  v\in[x_{\ell}, x_u]\}$, \emph{e.g.,} $[-1, 1]^2 = [0, 1]$
+\item in the definition of the binary operator we could (for simplicity) ignore the fact
+  that the two operands are the same and, in effect, compute $f_3(x, y) = xy$ (instead
+  of $f_2(x)$) assuming that we could simply use it with argument $y = x$. This,
+  however, is not equivalent because the solutions of the optimization problems in
+  \eqref{eq.range_of_func_of_interval} with and without the $y=x$ assumption are
+  different. For example, using the multiplication procedure we have defined, $[-1, 1] *
+  [-1, 1] = [-1, 1]$.
+\end{itemize}
+In Exercise 2.15, we are asked whether tighter error bounds can be produced if the
+expression can be written in a form such that no variable that represents an uncertain
+number is repeated. This is clearly the case for the two examples above, but not true in
+general. For example we get exactly the same bounds for $3 * x$ as for $x+x+x$ (for some
+interval $x$, where $3$ can be seen as the interval $[3, 3]$), \emph{i.e.,} the bounds
+obtained using $3 * x$ are not ``tighter''~\footnote{I guess I am being a bit pedantic
+here. Note that the uncertainty of some operations can be much larger than $\max(x_p,
+y_p)$ depending on the particular intervals $x$ and $y$.}.
+
+According to~\cite{interval-operators} ``... it can be shown that the exact range of
+values can be achieved, if each variable appears only once ...''. Intuitively, this is
+the case because:
+\begin{itemize}
+\item As we have shown in the preceding sections, our four operations cannot reduce
+  uncertainty of intervals $x$ and $y$ below $\min(x_p, y_p)$. So in general, performing
+  fewer number of operations is likely to lead to smaller uncertainty. For example
+  $x+x-x$ would have larger uncertainty compared to $x$. Similarly for $x*x/(x*x)$ and
+  $x/x$.
+\item Not taking into account the assumption $y=x$ in our binary operations, leads to
+  more relaxed bounds. Reformulating the expression to have a single occurrence of
+  uncertain variables is an attempt to avoid having to deal with the $y=x$ assumption.
+\end{itemize}
+The second point above addresses the first part of exercise 2.16 (why equivalent
+algebraic expressions may lead to different answers). The second part (namely ``can you
+devise an interval-arithmetic package that does not have this shortcoming?'') is
+interesting. The answer is ``no'' in general but we can improve things in the following
+ways:
+\begin{itemize}
+\item we can imagine to implement a library of functions (\emph{e.g.,} $(\cdot)^2$)
+  where various assumptions (\emph{e.g.,} $y=x$) are handled explicitly. In theory this
+  would lead to exact bounds in the situations we can handle but one cannot handle all
+  situations of interest exactly as the solutions of the optimization problems
+  in~\eqref{eq.range_of_func_of_interval} might be untractable.
+\item Implement an automated system for reformulating an expression in terms of an
+  existing library of primitives. This might not always be possible (see the
+  ``dependency problem'' in~\cite{interval-operators}).
+\item In cases where exact form of the range of an expression cannot be computed, we
+  could switch to using various approximations (\emph{e.g.,} sampling based methods).
+\end{itemize}
 
 \appendix
 \appendixpage
