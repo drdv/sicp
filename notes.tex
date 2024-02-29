@@ -309,7 +309,7 @@ interval $[x_{\ell}, x_u]$, then its image is a closed and bounded interval
 \begin{align} \label{eq.range_of_func_of_interval}
   f([x_{\ell}, x_u]) = \left[\min_{v\in[x_{\ell}, x_u]}f(v), \max_{v\in[x_{\ell}, x_u]}f(v)\right].
 \end{align}
-In the case of the four basic arithmetic operations~\footnote{Assuming that 0 is not
+In the case of our four basic arithmetic operations~\footnote{Assuming that 0 is not
 contained in the denominator interval for division.}, $f$ is monotone and computing the
 minimum and maximum above becomes trivial~\cite{interval-operators}:
 \begin{align*}
@@ -395,6 +395,18 @@ ways:
   You have to believe~\footnote{He is talking about the Hanoi towers problem.}.
 \item Wishful thinking - essential to good engineering, and certainly essential to good
   computer-science.
+\item We divorce the task of building things from the task of implementing the parts.
+\item H. Abelson comments on the axiom ``doing your design before any of your code'':
+  ``this is the axiom of a person that hasn't implemented very large computer systems
+  ... the real power is when you can pretend that you have made the decision and later
+  on decide which is the decision that you should have made (then you have the best of
+  both worlds)''~\footnote{He is talking about data abstraction and designing systems in
+  layers. Making important decisions is best done as late as possible (to put in a
+  different way, we should have a proper parameterization and decide on the parameters
+  only when necessary). Of course, it very much depends on what one means by ``design''
+  here.}.
+\item When you look at means of combination, you should ask yourself whether things are
+  closed under that means of combination.
 \end{itemize}
 
 \nocite{*}

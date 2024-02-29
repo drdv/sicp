@@ -816,6 +816,46 @@
   The answer is no (see the latex note for details).
   |#)
 
+(module Exercise/2.17 sicp
+  (#%require (only racket/base module+))
+
+  (define (last-pair lst)
+    (let ([tail (cdr lst)])
+      (cond [(null? tail) lst]
+            [else (last-pair tail)])))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.17 ====================\n")
+
+    (check-equal? (last-pair (list 23 72 149 34)) (cons 34 nil))))
+
+(module Exercise/2.18 sicp
+  (#%require (only racket/base module+))
+
+  ;; using an iterative process
+  (define (reverse lst)
+    (define (iter l acc)
+      (cond [(null? l) acc]
+            [else (iter (cdr l)
+                        (cons (car l) acc))]))
+    (iter lst '()))
+
+  ;; using a recursive process (not the best of ideas)
+  (define (reverse-recur-append lst)
+    (cond [(null? lst) lst]
+          [else (append (reverse-recur-append (cdr lst))
+                        (list (car lst)))]))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.18 ====================\n")
+
+    (let ([lst (list 1 4 9 16 25)]
+          [res (list 25 16 9 4 1)])
+      (check-equal? (reverse-recur-append lst) res)
+      (check-equal? (reverse lst) res))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -835,4 +875,5 @@
   (require (submod ".." Exercise/2.14 test))
   ;; 2.15: no tests
   ;; 2.16: no tests
-  )
+  (require (submod ".." Exercise/2.17 test))
+  (require (submod ".." Exercise/2.18 test)))
