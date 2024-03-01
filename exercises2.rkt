@@ -816,6 +816,74 @@
   The answer is no (see the latex note for details).
   |#)
 
+(module Section/2.2.1 sicp
+  (#%require (only racket/base module+ format))
+
+  (define (list-ref items n)
+    (if (= n 0)
+        (car items)
+        (list-ref (cdr items) (- n 1))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Section/2.2.1 ====================\n")
+
+    (check-equal? (list-ref (list 1 4 9 16 25) 3) 16))
+
+  (define (length-custom items)
+    (if (null? items)
+        0
+        (+ 1 (length-custom (cdr items)))))
+
+  (module+ test
+    (check-equal? (length-custom '(1 2 3 4 5 6)) 6))
+
+  (define (append-custom l1 l2)
+    (cond [(null? l1) l2]
+          [else (cons (car l1)
+                      (append-custom (cdr l1) l2))]))
+
+  (module+ test
+    (check-equal? (append-custom (list 1 2 3) (list 4 5)) (list 1 2 3 4 5)))
+
+  (define (scale-list-recur s lst)
+    (cond [(null? lst) nil]
+          [else (cons (* s (car lst))
+                      (scale-list-recur s
+                                        (cdr lst)))]))
+
+  (define (scale-list-iter s lst acc)
+    (cond [(null? lst) (reverse acc)]
+          [else (scale-list-iter s
+                                 (cdr lst)
+                                 (cons (* s (car lst)) acc))]))
+
+  ;; not a good idea to use append in this case
+  (define (scale-list-iter-append s lst acc)
+    (cond [(null? lst) acc]
+          [else (scale-list-iter-append s
+                                        (cdr lst)
+                                        (append acc (list (* s (car lst)))))]))
+
+  (module+ test
+    (check-equal? (scale-list-recur 2 (list 1 2 3)) (list 2 4 6))
+    (check-equal? (scale-list-iter 2 (list 1 2 3) '()) (list 2 4 6))
+    (check-equal? (scale-list-iter-append 2 (list 1 2 3) '()) (list 2 4 6)))
+
+  (define (for-each-custom f lst)
+    (cond [(null? lst) (newline)]
+          [else
+           (f (car lst))
+           (for-each-custom f (cdr lst))]))
+
+  (module+ test
+    (let ([lst '(1 2 3)]
+          [scale 4]
+          [show (lambda (x) (display (format "~a " x)))])
+      (for-each-custom show (scale-list-recur scale lst))
+      (for-each-custom show (scale-list-iter scale lst '()))
+      (for-each-custom show (scale-list-iter-append scale lst '())))))
+
 (module Exercise/2.17 sicp
   (#%require (only racket/base module+))
 
@@ -856,6 +924,49 @@
       (check-equal? (reverse-recur-append lst) res)
       (check-equal? (reverse lst) res))))
 
+(module Exercise/2.19 sicp
+  (#%require (only racket/base module+)
+             (only (submod "exercises1.rkt" Section/1.2.2) count-change))
+
+  ;; this is nearly how I had defined it in Section/1.2.2 in exercises1.rkt
+  (define no-more? null?)
+  (define except-first-denomination cdr)
+  (define first-denomination car)
+
+  (define (cc amount coin-values)
+    (cond ((= amount 0) 1)
+          ((or (< amount 0) (no-more? coin-values)) 0)
+          (else
+           (+ (cc amount
+                  (except-first-denomination
+                   coin-values))
+              (cc (- amount
+                     (first-denomination
+                      coin-values))
+                  coin-values)))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.19 ====================\n")
+
+    ;; The order of coins has no impact (our tree recursion is an exostive search).
+    (let ([us-coins (list 50 25 10 5 1)]
+          [us-coins-reordered (list 1 5 10 25 50)]
+          [uk-coins (list 100 50 20 10 5 2 1 0.5)]
+          [amount 100])
+      (check-equal? (cc amount us-coins) (count-change amount us-coins))
+      (check-equal? (cc amount us-coins-reordered) (cc amount us-coins))
+      (check-equal? (cc amount uk-coins) (count-change amount uk-coins)))))
+
+(module Exercise/2.20 sicp
+  (#%require (only racket/base module+))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.20 ====================\n")
+
+    ))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -875,5 +986,7 @@
   (require (submod ".." Exercise/2.14 test))
   ;; 2.15: no tests
   ;; 2.16: no tests
+  (require (submod ".." Section/2.2.1 test))
   (require (submod ".." Exercise/2.17 test))
-  (require (submod ".." Exercise/2.18 test)))
+  (require (submod ".." Exercise/2.18 test))
+  (require (submod ".." Exercise/2.19 test)))
