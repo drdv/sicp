@@ -959,13 +959,53 @@
       (check-equal? (cc amount uk-coins) (count-change amount uk-coins)))))
 
 (module Exercise/2.20 sicp
-  (#%require (only racket/base module+))
+  (#%require (only racket/base module+ format))
+
+  (define (f1 . x) (display (format "~a\n" x)))
+  (define f2 (lambda x (display (format "~a\n" x)))) ; rather peculiar!
+  (define (f3 x . y) (display (format "~a\n~a\n" x y)))
+  (define f4 (lambda (x . y) (display (format "~a\n~a\n" x y))))
+
+  (define (check-even-odd-parity a b)
+    (= (abs (remainder a 2))
+       (abs (remainder b 2))))
+
+  (define (same-parity-iter x . y)
+    (define (iter ys acc)
+      (cond [(null? ys) acc]
+            [(check-even-odd-parity x (car ys)) (iter (cdr ys) (cons (car ys) acc))]
+            [else (iter (cdr ys) acc)]))
+    (reverse (iter y (list x))))
+
+  (define (same-parity-recur x . y)
+    (define (recur ys)
+      (cond [(null? ys) nil]
+            [(check-even-odd-parity x (car ys)) (cons (car ys)
+                                                      (recur (cdr ys)))]
+            [else (recur (cdr ys))]))
+    (cons x (recur y)))
 
   (module+ test
     (#%require rackunit)
     (display "==================== Exercise/2.20 ====================\n")
 
-    ))
+    (f1 1 2 3 4)
+    (f2 1 2 3 4)
+    (f3 1 2 3 4)
+    (f4 1 2 3 4)
+
+    (check-true (check-even-odd-parity -1 3))
+    (check-true (check-even-odd-parity -2 4))
+    (check-true (check-even-odd-parity 1 3))
+    (check-true (check-even-odd-parity 2 4))
+    (check-false (check-even-odd-parity -3 6))
+
+    (check-equal? (same-parity-iter 1 2 3 4 5 6 7) (list 1 3 5 7))
+    (check-equal? (same-parity-iter 0 3 4 5 6 7) (list 0 4 6))
+    (check-equal? (same-parity-iter 2 3 4 5 6 7) (list 2 4 6))
+    (check-equal? (same-parity-recur 1 2 3 4 5 6 7) (list 1 3 5 7))
+    (check-equal? (same-parity-recur 0 3 4 5 6 7) (list 0 4 6))
+    (check-equal? (same-parity-recur 2 3 4 5 6 7) (list 2 4 6))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test))
@@ -989,4 +1029,5 @@
   (require (submod ".." Section/2.2.1 test))
   (require (submod ".." Exercise/2.17 test))
   (require (submod ".." Exercise/2.18 test))
-  (require (submod ".." Exercise/2.19 test)))
+  (require (submod ".." Exercise/2.19 test))
+  (require (submod ".." Exercise/2.20 test)))
