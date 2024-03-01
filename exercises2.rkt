@@ -817,6 +817,7 @@
   |#)
 
 (module Section/2.2.1 sicp
+  (#%provide for-each-custom)
   (#%require (only racket/base module+ format))
 
   (define (list-ref items n)
@@ -856,7 +857,8 @@
     (cond [(null? lst) (reverse acc)]
           [else (scale-list-iter s
                                  (cdr lst)
-                                 (cons (* s (car lst)) acc))]))
+                                 (cons (* s (car lst))
+                                       acc))]))
 
   ;; not a good idea to use append in this case
   (define (scale-list-iter-append s lst acc)
@@ -865,10 +867,22 @@
                                         (cdr lst)
                                         (append acc (list (* s (car lst)))))]))
 
+  (define (map proc items)
+    (if (null? items)
+        nil
+        (cons (proc (car items))
+              (map proc (cdr items)))))
+
+  (define (scale-list-map factor items)
+    (map (lambda (x) (* x factor))
+         items))
+
   (module+ test
     (check-equal? (scale-list-recur 2 (list 1 2 3)) (list 2 4 6))
     (check-equal? (scale-list-iter 2 (list 1 2 3) '()) (list 2 4 6))
-    (check-equal? (scale-list-iter-append 2 (list 1 2 3) '()) (list 2 4 6)))
+    (check-equal? (scale-list-iter-append 2 (list 1 2 3) '()) (list 2 4 6))
+    (check-equal? (scale-list-map 2 (list 1 2 3)) (list 2 4 6))
+    (check-equal? (map abs (list -10 2.5 -11.6 17)) (list 10 2.5 11.6 17)))
 
   (define (for-each-custom f lst)
     (cond [(null? lst) (newline)]
@@ -1007,6 +1021,84 @@
     (check-equal? (same-parity-recur 0 3 4 5 6 7) (list 0 4 6))
     (check-equal? (same-parity-recur 2 3 4 5 6 7) (list 2 4 6))))
 
+(module Exercise/2.21 sicp
+  (#%require (only racket/base module+ format)
+             (only (submod "exercises1.rkt" common-utils) square))
+
+  (define (square-list items)
+    (if (null? items)
+        nil
+        (cons (square (car items))
+              (square-list (cdr items)))))
+
+  (define (square-list-map items)
+    (map square items))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.21 ====================\n")
+
+    (let ([lst (list 1 2 3 4)]
+          [res (list 1 4 9 16)])
+      (check-equal? (square-list lst) res)
+      (check-equal? (square-list-map lst) res))))
+
+(module Exercise/2.22 sicp
+  (#%require (only racket/base module+)
+             (only (submod "exercises1.rkt" common-utils) square))
+
+  #|
+  The order is reversed because we take the elements in turn and prepend them to dest:
+  src: (1 2 3), dest: ()
+  src:   (2 3), dest: (cost 1 ()) -> (1)
+  src:     (3), dest: (cost 2 (1)) -> (2 1)
+  src:      (), dest: (cost 3 (2 1)) -> (3 2 1)
+  |#
+  (define (square-list-1 items)
+    (define (iter things answer)
+      (if (null? things)
+          answer
+          (iter (cdr things)
+                (cons (square (car things))
+                      answer))))
+    (iter items nil))
+
+  #|
+  We are simply forming a different data-structure here (not a list):
+  src: (1 2 3), dest: ()
+  src:   (2 3), dest: (cost () 1) -> (() . 1)
+  src:     (3), dest: (cost (() . 1) 2) -> ((() . 1) . 4)
+  src:      (), dest: (cost ((() . 1) . 4) 3) -> (((() . 1) . 4) . 9)
+  |#
+  (define (square-list-2 items)
+    (define (iter things answer)
+      (if (null? things)
+          answer
+          (iter (cdr things)
+                (cons answer
+                      (square (car things))))))
+    (iter items nil))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.22 ====================\n")
+
+    (check-equal? (square-list-1 (list 1 2 3)) (list 9 4 1))
+    (check-equal? (square-list-2 (list 1 2 3)) (cons (cons (cons '() 1) 4) 9))))
+
+(module Exercise/2.23 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.2.1) for-each-custom))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.23 ====================\n")
+
+    (let ([lst (list 57 321 88)]
+          [f (lambda (x) (newline) (display x))])
+      (for-each        f lst)
+      (for-each-custom f lst))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -1030,4 +1122,7 @@
   (require (submod ".." Exercise/2.17 test))
   (require (submod ".." Exercise/2.18 test))
   (require (submod ".." Exercise/2.19 test))
-  (require (submod ".." Exercise/2.20 test)))
+  (require (submod ".." Exercise/2.20 test))
+  (require (submod ".." Exercise/2.21 test))
+  (require (submod ".." Exercise/2.22 test))
+  (require (submod ".." Exercise/2.23 test)))
