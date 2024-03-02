@@ -913,6 +913,7 @@
     (check-equal? (last-pair (list 23 72 149 34)) (cons 34 nil))))
 
 (module Exercise/2.18 sicp
+  (#%provide reverse)
   (#%require (only racket/base module+))
 
   ;; using an iterative process
@@ -1181,6 +1182,51 @@
     (display (format "(cons x y)  : ~a\n" (cons x y)))
     (display (format "(list x y)  : ~a\n" (list x y)))))
 
+(module Exercise/2.27 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Exercise/2.18) reverse))
+
+  (define (deep-reverse-v1 lst-or-number)
+    (define (iter l acc)
+      (cond [(null? l) acc]
+            [(not (pair? l)) l]
+            [else (iter (cdr l)
+                        (cons (deep-reverse-v1 (car l)) acc))]))
+    (iter lst-or-number '()))
+
+  (define (deep-reverse-v2 lst)
+    (define (iter l acc)
+      (cond [(null? l) acc]
+            [else (let ([head (car l)]
+                        [tail (cdr l)])
+                    (iter tail
+                          (cons (if (pair? head)
+                                    (deep-reverse-v1 head)
+                                    head)
+                                acc)))]))
+    (iter lst '()))
+
+  (define (deep-reverse-v3 lst-or-number)
+    (display lst-or-number)
+    (newline)
+    (cond [(pair? lst-or-number)
+           (map deep-reverse-v3 (reverse lst-or-number))]
+          [else lst-or-number]))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.27 ====================\n")
+
+    (reverse '((1 2 (11 (12 13)) 3) 4 (5 6)))
+    ;; lst: (list (list 1 2 (list 11 (list 12 13)) 3) 4 (list 5 6))
+    (let ([lst '((1 2 (11 (12 13)) 3) 4 (5 6))]
+          [res-rev '((5 6) 4 (1 2 (11 (12 13)) 3))]
+          [res-deep-rev '((6 5) 4 (3 ((13 12) 11) 2 1))])
+      (check-equal? (reverse lst) res-rev)
+      (check-equal? (deep-reverse-v1 lst) res-deep-rev)
+      (check-equal? (deep-reverse-v2 lst) res-deep-rev)
+      (check-equal? (deep-reverse-v3 lst) res-deep-rev))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -1210,4 +1256,5 @@
   (require (submod ".." Exercise/2.23 test))
   (require (submod ".." Exercise/2.24 test))
   (require (submod ".." Exercise/2.25 test))
-  (require (submod ".." Exercise/2.26 test)))
+  (require (submod ".." Exercise/2.26 test))
+  (require (submod ".." Exercise/2.27 test)))
