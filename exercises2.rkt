@@ -1099,6 +1099,50 @@
       (for-each        f lst)
       (for-each-custom f lst))))
 
+(module Exercise/2.24 sicp
+  (#%require (only racket/base module+ format)
+             sdraw)
+
+  (define (count-leaves x)
+    (cond ((null? x) 0)
+          ((not (pair? x)) 1)
+          (else (+ (count-leaves (car x))
+                   (count-leaves (cdr x))))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.24 ====================\n")
+
+    (define x (cons (list 1 2) (list 3 4)))
+    (count-leaves x)
+    (count-leaves (list x x))
+
+    (define y (list 1 (list 2 (list 3 4))))
+    (display (format "y: ~a\n" y))
+    (count-leaves y)
+
+    #|
+    t0 -> (1 . (t1 . nil))
+    t1 -> (2 . (t2 . nil))
+    t2 -> (3 . ( 4 . nil))
+            t0
+           /  \
+          1   t1
+             /  \
+            2    t2
+                /  \
+               3    4
+    |#
+    (check-equal? y
+                  (cons 1
+                        (cons (cons 2
+                                    (cons (cons 3
+                                                (cons 4 '()))
+                                          '()))
+                              '())))
+
+    (sdraw y #:null-style '/)))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -1125,4 +1169,5 @@
   (require (submod ".." Exercise/2.20 test))
   (require (submod ".." Exercise/2.21 test))
   (require (submod ".." Exercise/2.22 test))
-  (require (submod ".." Exercise/2.23 test)))
+  (require (submod ".." Exercise/2.23 test))
+  (require (submod ".." Exercise/2.24 test)))

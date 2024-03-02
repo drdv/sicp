@@ -24,3 +24,7 @@
   (let-values ([(a b) (values x y)])
     (display (format "a: ~a, b: ~a" a b))))
 ;; ===============================================================
+;; raco pkg install sdraw
+;; (#%require sdraw)
+;; (sdraw (list 1) #:null-style '/)
+;; ===============================================================
