@@ -1143,6 +1143,44 @@
 
     (sdraw y #:null-style '/)))
 
+(module Exercise/2.25 sicp
+  (#%require (only racket/base module+))
+
+  (define x (list 1 3 (list 5 7) 9))
+  (define y (list (list 7)))
+  (define z (list 1 (list 2 (list 3 (list 4 (list 5 (list 6 7)))))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.25 ====================\n")
+
+    (check-equal? (car (cdaddr x)) 7)
+    (check-equal? (car (cdr (car (cdr (cdr x))))) 7)
+
+    (check-equal? (caar y) 7)
+    (check-equal? (car (car y)) 7)
+
+    (check-equal? (cadadr (cadadr (cadadr z))) 7)
+    (check-equal? (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr
+                                                                (car
+                                                                 (cdr z)))))))))))) 7)))
+
+(module Exercise/2.26 sicp
+  (#%require (only racket/base module+ format))
+
+  (define x (list 1 2 3))
+  (define y (list 4 5 6))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.26 ====================\n")
+
+    (display (format "x: ~a\n" x))
+    (display (format "y: ~a\n" y))
+    (display (format "(append x y): ~a\n" (append x y)))
+    (display (format "(cons x y)  : ~a\n" (cons x y)))
+    (display (format "(list x y)  : ~a\n" (list x y)))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -1170,4 +1208,6 @@
   (require (submod ".." Exercise/2.21 test))
   (require (submod ".." Exercise/2.22 test))
   (require (submod ".." Exercise/2.23 test))
-  (require (submod ".." Exercise/2.24 test)))
+  (require (submod ".." Exercise/2.24 test))
+  (require (submod ".." Exercise/2.25 test))
+  (require (submod ".." Exercise/2.26 test)))
