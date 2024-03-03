@@ -1318,8 +1318,8 @@
   ;; D
   ;; ==========================================
   #|
-  The alternative representation requires to change right-branch and branch-structure to
-  use cdr instead of cadr.
+  The alternative representation (based on cons instead of list) requires to change
+  right-branch and branch-structure to use cdr instead of cadr.
   |#
 
   (module+ test
