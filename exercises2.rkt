@@ -1363,6 +1363,71 @@
     (check-equal? (total-weight bm-2) 100)
     (check-true (balanced? bm-2))))
 
+(module Section/2.2.2 sicp
+  (#%require (only racket/base module+))
+  ;; This is only the "Mapping over trees" part of Section 2.2.2
+
+  #|
+  The pattern is:
+  1. check if done
+  2. check if dealing with a leaf
+  3. break cons into car and cdr and handle them recursively
+  |#
+  (define (scale-tree-seq tree factor)
+    (cond ((null? tree) nil)
+          ((not (pair? tree)) (* tree factor))
+          (else (cons (scale-tree-seq (car tree) factor)
+                      (scale-tree-seq (cdr tree) factor)))))
+
+  #|
+  The pattern is:
+  1. process a tree as a sequence of elements using map
+  2. each element could be a tree or a leaf (treat accordingly)
+
+  I used it in deep-reverse-v3 in Exercise/2.27
+  |#
+  (define (scale-tree-map tree factor)
+    (map (lambda (sub-tree)
+           (if (pair? sub-tree)
+               (scale-tree-map sub-tree factor)
+               (* sub-tree factor)))
+         tree))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Section/2.2.2 ====================\n")
+
+    (let ([tree (list 1 (list 2 (list 3 4) 5) (list 6 7))]
+          [scaled-tree (list 10 (list 20 (list 30 40) 50) (list 60 70))])
+      (check-equal? (scale-tree-seq tree 10) scaled-tree)
+      (check-equal? (scale-tree-map tree 10) scaled-tree))))
+
+(module Exercise/2.30 sicp
+  (#%require (only racket/base module+)
+             (only (submod "exercises1.rkt" common-utils) square))
+
+  (define (square-tree-seq tree)
+    (cond ((null? tree) nil)
+          ((not (pair? tree)) (square tree))
+          (else (cons (square-tree-seq (car tree))
+                      (square-tree-seq (cdr tree))))))
+
+  (define (square-tree-map tree)
+    (map (lambda (sub-tree)
+           (if (pair? sub-tree)
+               (square-tree-map sub-tree)
+               (square sub-tree)))
+         tree))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.30 ====================\n")
+
+    (let ([tree (list 1 (list 2 (list 3 4) 5) (list 6 7))]
+          [res '(1 (4 (9 16) 25) (36 49))])
+      (check-equal? (square-tree-seq tree) res)
+      (check-equal? (square-tree-map tree) res))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -1395,4 +1460,6 @@
   (require (submod ".." Exercise/2.26 test))
   (require (submod ".." Exercise/2.27 test))
   (require (submod ".." Exercise/2.28 test))
-  (require (submod ".." Exercise/2.29 test)))
+  (require (submod ".." Exercise/2.29 test))
+  (require (submod ".." Section/2.2.2 test))
+  (require (submod ".." Exercise/2.30 test)))
