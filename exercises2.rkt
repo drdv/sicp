@@ -1472,6 +1472,36 @@
           [powerset '(() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3))])
       (check-equal? (subsets s) powerset))))
 
+(module Section/2.2.3 sicp
+  (#%require (only racket/base module+)
+             (only (submod "exercises1.rkt" common-utils) square)
+             (only (submod "exercises1.rkt" Exercise/1.19) fib))
+
+  (define (sum-odd-squares tree)
+    (cond [(null? tree) 0]
+          [(not (pair? tree)) (if (odd? tree) (square tree) 0)]
+          (else (+ (sum-odd-squares (car tree))
+                   (sum-odd-squares (cdr tree))))))
+
+  (define (even-fibs n)
+    (define (next k)
+      (if (> k n)
+          nil
+          (let ((f (fib k)))
+            (if (even? f)
+                (cons f (next (+ k 1)))
+                (next (+ k 1))))))
+    (next 0))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Section/2.2.3 ====================\n")
+
+    (check-equal? (sum-odd-squares '(1 2 (3 4 5) (6))) 35)
+    (check-equal? (even-fibs 20) '(0 2 8 34 144 610 2584))
+
+    ))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))

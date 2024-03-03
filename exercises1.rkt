@@ -733,6 +733,7 @@
     (check-equal? (mult.v2 5 9 0 #t) 45)))
 
 (module Exercise/1.19 sicp
+  (#%provide fib)
   (#%require (only racket/base module+))
 
   (define (fib n)
