@@ -1449,6 +1449,24 @@
           [res '(1 (4 (9 16) 25) (36 49))])
       (check-equal? (square-tree tree) res))))
 
+(module Exercise/2.32 sicp
+  (#%require (only racket/base module+))
+
+  (define (subsets s)
+    (if (null? s)
+        (list nil)
+        (let ([rest (subsets (cdr s))])
+          (append rest (map (lambda (x)
+                              (cons (car s) x)) rest)))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.32 ====================\n")
+
+    (let ([s (list 1 2 3)]
+          [powerset '(() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3))])
+      (check-equal? (subsets s) powerset))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -1484,4 +1502,5 @@
   (require (submod ".." Exercise/2.29 test))
   (require (submod ".." Section/2.2.2 test))
   (require (submod ".." Exercise/2.30 test))
-  (require (submod ".." Exercise/2.31 test)))
+  (require (submod ".." Exercise/2.31 test))
+  (require (submod ".." Exercise/2.32 test)))
