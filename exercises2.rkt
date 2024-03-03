@@ -1246,6 +1246,10 @@
     (#%require rackunit)
     (display "==================== Exercise/2.28 ====================\n")
 
+    (define x (list (list 1 2) (list 3 4)))
+    (check-equal? (fringe x) '(1 2 3 4))
+    (check-equal? (fringe (list x x)) '(1 2 3 4 1 2 3 4))
+
     (check-equal? (fringe '(1 ())) '(1 ()))
     (check-equal? (fringe '(() 1)) '(() 1))
     (check-equal? (fringe '((1 2 (11 (12 13)) 3 ()) 4 (5 6)))
