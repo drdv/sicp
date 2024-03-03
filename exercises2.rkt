@@ -1340,30 +1340,26 @@
                                                 (make-branch 2 17)
                                                 (make-branch 1 20)))))))
 
-    ;; compute l2 = l1*w1 / w2 so that we have a balanced mobile
-    (define (balanced-weight l1 w1 w2)
-      (/ (* l1 w1) w2))
-
-    (define t1 (make-mobile (make-branch 2 15)
-                            (make-branch (balanced-weight 2 15 25) 25)))
-
-    (define t2 (make-mobile (make-branch 2 t1)
-                            (make-branch (balanced-weight 2 (total-weight t1) 20) 20)))
-
-    (define t3 (make-mobile (make-branch 2 17)
-                            (make-branch (balanced-weight 2 17 20) 20)))
-
-    (define t4 (make-mobile (make-branch 2 3)
-                            (make-branch (balanced-weight 2 3 (total-weight t3)) t3)))
-
-    ;; same weight as bm-1 but with adjusted lengths to get a balanced binary mobile
-    (define bm-2 (make-mobile (make-branch 1 t2)
-                              (make-branch (balanced-weight 1
-                                                            (total-weight t2)
-                                                            (total-weight t4)) t4)))
-
     (check-equal? (total-weight bm-1) 100)
     (check-false (balanced? bm-1))
+
+    ;; same weight as bm-1 but with adjusted lengths to get a balanced binary mobile
+    (define bm-2
+      (let*
+          ([balanced-weight (lambda (l1 w1 w2) (/ (* l1 w1) w2))]
+           [t1 (make-mobile (make-branch 2 15)
+                            (make-branch (balanced-weight 2 15 25) 25))]
+           [t2 (make-mobile (make-branch 2 t1)
+                            (make-branch (balanced-weight 2 (total-weight t1) 20) 20))]
+           [t3 (make-mobile (make-branch 2 17)
+                            (make-branch (balanced-weight 2 17 20) 20))]
+           [t4 (make-mobile (make-branch 2 3)
+                            (make-branch (balanced-weight 2 3 (total-weight t3)) t3))])
+        (make-mobile (make-branch 1 t2)
+                     (make-branch (balanced-weight 1
+                                                   (total-weight t2)
+                                                   (total-weight t4)) t4))))
+
     (check-equal? (total-weight bm-2) 100)
     (check-true (balanced? bm-2))))
 
