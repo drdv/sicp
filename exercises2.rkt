@@ -1217,15 +1217,41 @@
     (#%require rackunit)
     (display "==================== Exercise/2.27 ====================\n")
 
-    (reverse '((1 2 (11 (12 13)) 3) 4 (5 6)))
-    ;; lst: (list (list 1 2 (list 11 (list 12 13)) 3) 4 (list 5 6))
-    (let ([lst '((1 2 (11 (12 13)) 3) 4 (5 6))]
-          [res-rev '((5 6) 4 (1 2 (11 (12 13)) 3))]
-          [res-deep-rev '((6 5) 4 (3 ((13 12) 11) 2 1))])
+    (define x (list (list 1 2) (list 3 4)))
+    (check-equal? (deep-reverse-v1 x) '((4 3) (2 1)))
+
+    ;; lst: (list (list 1 2 (list 11 (list 12 13)) 3 '()) 4 (list 5 6))
+    (let ([lst '((1 2 (11 (12 13)) 3 ()) 4 (5 6))]
+          [res-rev '((5 6) 4 (1 2 (11 (12 13)) 3 ()))]
+          [res-deep-rev '((6 5) 4 (() 3 ((13 12) 11) 2 1))])
       (check-equal? (reverse lst) res-rev)
       (check-equal? (deep-reverse-v1 lst) res-deep-rev)
       (check-equal? (deep-reverse-v2 lst) res-deep-rev)
       (check-equal? (deep-reverse-v3 lst) res-deep-rev))))
+
+(module Exercise/2.28 sicp
+  (#%require (only racket/base module+))
+
+  (define (fringe lst)
+    (cond [(null? lst) lst]
+          [(not (pair? lst)) (list lst)]
+          [else (let ([head (fringe (car lst))]
+                      [tail (fringe (cdr lst))])
+                  (if (null? head)
+                      ;; otherwise append would drop an empty head
+                      (cons head tail)
+                      (append head tail)))]))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.28 ====================\n")
+
+    (check-equal? (fringe '(1 ())) '(1 ()))
+    (check-equal? (fringe '(() 1)) '(() 1))
+    (check-equal? (fringe '((1 2 (11 (12 13)) 3 ()) 4 (5 6)))
+                  '(1 2 11 12 13 3 () 4 5 6))
+    (check-equal? (append '() (list 2 3)) (list 2 3))
+    (check-equal? (append (list 1 '()) (list 2 3)) (list 1 '() 2 3))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test))
@@ -1257,4 +1283,5 @@
   (require (submod ".." Exercise/2.24 test))
   (require (submod ".." Exercise/2.25 test))
   (require (submod ".." Exercise/2.26 test))
-  (require (submod ".." Exercise/2.27 test)))
+  (require (submod ".." Exercise/2.27 test))
+  (require (submod ".." Exercise/2.28 test)))
