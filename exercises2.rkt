@@ -1257,6 +1257,116 @@
     (check-equal? (append '() (list 2 3)) (list 2 3))
     (check-equal? (append (list 1 '()) (list 2 3)) (list 1 '() 2 3))))
 
+(module Exercise/2.29 sicp
+  (#%require (only racket/base module+))
+
+  (define (make-mobile left right)
+    (list left right))
+
+  ;; a better name for "structure" would probably be "mobile-or-weight"
+  (define (make-branch length structure)
+    (list length structure))
+
+  ;; ==========================================
+  ;; A
+  ;; ==========================================
+  (define (left-branch mobile)
+    (car mobile))
+
+  (define (right-branch mobile)
+    (cadr mobile))
+
+  (define (branch-length branch)
+    (car branch))
+
+  (define (branch-structure branch)
+    (cadr branch))
+
+  ;; ==========================================
+  ;; B
+  ;; ==========================================
+  (define (total-weight mobile-or-weight)
+    (define (branch-weight branch)
+      (let ([mobile-or-weight (branch-structure branch)])
+        (if (pair? mobile-or-weight)
+            (total-weight mobile-or-weight)
+            mobile-or-weight)))
+    (cond [(pair? mobile-or-weight) (+ (branch-weight (left-branch mobile-or-weight))
+                                       (branch-weight (right-branch mobile-or-weight)))]
+          ;; directly return the weight
+          [else mobile-or-weight]))
+
+  ;; ==========================================
+  ;; C
+  ;; ==========================================
+  (define (balanced? mobile)
+    (define (torque branch mobile-or-weight)
+      (* (branch-length branch)
+         (total-weight mobile-or-weight)))
+
+    (cond [(not (pair? mobile)) #t]
+          [else (let* ([l-branch (left-branch mobile)]
+                       [r-branch (right-branch mobile)]
+                       [l-mobile-or-weight (branch-structure l-branch)]
+                       [r-mobile-or-weight (branch-structure r-branch)])
+                  (and (= (torque l-branch l-mobile-or-weight)
+                          (torque r-branch r-mobile-or-weight))
+                       (balanced? l-mobile-or-weight)
+                       (balanced? r-mobile-or-weight)))]))
+
+  ;; ==========================================
+  ;; D
+  ;; ==========================================
+  #|
+  The alternative representation requires to change right-branch and branch-structure to
+  use cdr instead of cadr.
+  |#
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.29 ====================\n")
+
+    (define bm-1 (make-mobile
+                  (make-branch 1
+                               (make-mobile
+                                (make-branch 2 (make-mobile
+                                                (make-branch 2 15)
+                                                (make-branch 1 25)))
+                                (make-branch 1 20)))
+                  (make-branch 2
+                               (make-mobile
+                                (make-branch 2 3)
+                                (make-branch 1 (make-mobile
+                                                (make-branch 2 17)
+                                                (make-branch 1 20)))))))
+
+    ;; compute l2 = l1*w1 / w2 so that we have a balanced mobile
+    (define (balanced-weight l1 w1 w2)
+      (/ (* l1 w1) w2))
+
+    (define t1 (make-mobile (make-branch 2 15)
+                            (make-branch (balanced-weight 2 15 25) 25)))
+
+    (define t2 (make-mobile (make-branch 2 t1)
+                            (make-branch (balanced-weight 2 (total-weight t1) 20) 20)))
+
+    (define t3 (make-mobile (make-branch 2 17)
+                            (make-branch (balanced-weight 2 17 20) 20)))
+
+    (define t4 (make-mobile (make-branch 2 3)
+                            (make-branch (balanced-weight 2 3 (total-weight t3)) t3)))
+
+    ;; same weight as bm-1 but with adjusted lengths to get a balanced binary mobile
+    (define bm-2 (make-mobile (make-branch 1 t2)
+                              (make-branch (balanced-weight 1
+                                                            (total-weight t2)
+                                                            (total-weight t4)) t4)))
+
+    (check-equal? (total-weight bm-1) 100)
+    (check-false (balanced? bm-1))
+    (check-equal? (total-weight bm-2) 100)
+    (check-true (balanced? bm-2))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -1288,4 +1398,5 @@
   (require (submod ".." Exercise/2.25 test))
   (require (submod ".." Exercise/2.26 test))
   (require (submod ".." Exercise/2.27 test))
-  (require (submod ".." Exercise/2.28 test)))
+  (require (submod ".." Exercise/2.28 test))
+  (require (submod ".." Exercise/2.29 test)))
