@@ -1452,6 +1452,11 @@
 (module Exercise/2.32 sicp
   (#%require (only racket/base module+))
 
+  #|
+  We construct rest using wishful thinking and then cons the car of the input set with
+  each of its elements. We hit the base case when the cdr of the input set is nil and
+  return (list '()). Note that (append '(()) '((1))) -> '(() (1)).
+  |#
   (define (subsets s)
     (if (null? s)
         (list nil)
