@@ -1428,6 +1428,27 @@
       (check-equal? (square-tree-seq tree) res)
       (check-equal? (square-tree-map tree) res))))
 
+(module Exercise/2.31 sicp
+  (#%require (only racket/base module+)
+             (only (submod "exercises1.rkt" common-utils) square))
+
+  (define (tree-map f tree)
+    (map (lambda (sub-tree)
+           (if (pair? sub-tree)
+               (tree-map f sub-tree)
+               (f sub-tree)))
+         tree))
+
+  (define (square-tree tree) (tree-map square tree))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.31 ====================\n")
+
+    (let ([tree (list 1 (list 2 (list 3 4) 5) (list 6 7))]
+          [res '(1 (4 (9 16) 25) (36 49))])
+      (check-equal? (square-tree tree) res))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -1462,4 +1483,5 @@
   (require (submod ".." Exercise/2.28 test))
   (require (submod ".." Exercise/2.29 test))
   (require (submod ".." Section/2.2.2 test))
-  (require (submod ".." Exercise/2.30 test)))
+  (require (submod ".." Exercise/2.30 test))
+  (require (submod ".." Exercise/2.31 test)))
