@@ -1474,6 +1474,7 @@
       (check-equal? (subsets s) powerset))))
 
 (module Section/2.2.3 sicp
+  (#%provide accumulate)
   (#%require (only racket/base module+)
              (only (submod "exercises1.rkt" common-utils) square)
              (only (submod "exercises1.rkt" Exercise/1.19) fib)
@@ -1592,6 +1593,29 @@
 
     (check-equal? (salary-of-highest-paid-programmer records) 5)))
 
+(module Exercise/2.33 sicp
+  (#%require (only racket/base module+)
+             (only (submod "exercises1.rkt" common-utils) square)
+             (only (submod ".." Section/2.2.3) accumulate))
+
+  (define (map p sequence)
+    (accumulate (lambda (x y) (cons (p x) y)) nil sequence))
+
+  (define (append seq1 seq2)
+    (accumulate cons seq2 seq1))
+
+  (define (length sequence)
+    (accumulate (lambda (x length-tail) (+ 1 length-tail)) 0 sequence))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.33 ====================\n")
+
+    (let ([1-to-5 '(1 2 3 4 5)])
+      (check-equal? (map square 1-to-5) '(1 4 9 16 25))
+      (check-equal? (append '(1 2 3) '(4 5)) 1-to-5)
+      (check-equal? (length 1-to-5) 5))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -1629,4 +1653,5 @@
   (require (submod ".." Exercise/2.30 test))
   (require (submod ".." Exercise/2.31 test))
   (require (submod ".." Exercise/2.32 test))
-  (require (submod ".." Section/2.2.3 test)))
+  (require (submod ".." Section/2.2.3 test))
+  (require (submod ".." Exercise/2.33 test)))
