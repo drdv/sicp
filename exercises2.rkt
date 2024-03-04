@@ -1568,7 +1568,29 @@
     (let ([tree '(1 2 (3 4 5) (6))])
       (check-equal? (sum-odd-squares-signal tree) (sum-odd-squares tree)))
     (check-equal? (list-fib-squares 10) '(0 1 1 4 9 25 64 169 441 1156 3025))
-    (check-equal?(product-of-squares-of-odd-elements (list 1 2 3 4 5)) 225)))
+    (check-equal?(product-of-squares-of-odd-elements (list 1 2 3 4 5)) 225))
+
+  ;; here it would probably be better to use a dict
+  (define (make-record name type salary)
+    (list name type salary))
+
+  (define (salary record)
+    (caddr record))
+
+  (define (programmer? record)
+    (equal? (cadr record) "programmer"))
+
+  (define (salary-of-highest-paid-programmer records)
+    (accumulate max 0 (map salary (filter programmer? records))))
+
+  (module+ test
+    (define records (list (make-record "Dimitar" "programmer" 1)
+                          (make-record "Chika" "CEO" 2)
+                          (make-record "Elena" "PO" 3)
+                          (make-record "Marina" "HR" 4)
+                          (make-record "Other" "programmer" 5)))
+
+    (check-equal? (salary-of-highest-paid-programmer records) 5)))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test))
