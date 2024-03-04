@@ -1662,6 +1662,24 @@
       (check-equal? (count-leaves-signal-v1 xx) res)
       (check-equal? (count-leaves-signal-v2 xx) res))))
 
+(module Exercise/2.36 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.2.3) accumulate))
+
+  (define (accumulate-n op init seqs)
+    (if (null? (car seqs))
+        nil
+        (cons (accumulate op init (map car seqs))
+              (accumulate-n op init (map cdr seqs)))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.36 ====================\n")
+
+    (let ([seqs '((1 2 3) (4 5 6) (7 8 9) (10 11 12))]
+          [res '(22 26 30)])
+      (check-equal? (accumulate-n + 0 seqs) res))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -1702,4 +1720,5 @@
            (submod ".." Section/2.2.3 test)
            (submod ".." Exercise/2.33 test)
            (submod ".." Exercise/2.34 test)
-           (submod ".." Exercise/2.35 test)))
+           (submod ".." Exercise/2.35 test)
+           (submod ".." Exercise/2.36 test)))
