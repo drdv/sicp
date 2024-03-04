@@ -1101,6 +1101,7 @@
       (for-each-custom f lst))))
 
 (module Exercise/2.24 sicp
+  (#%provide count-leaves)
   (#%require (only racket/base module+ format)
              sdraw)
 
@@ -1474,7 +1475,8 @@
       (check-equal? (subsets s) powerset))))
 
 (module Section/2.2.3 sicp
-  (#%provide accumulate)
+  (#%provide accumulate
+             enumerate-tree)
   (#%require (only racket/base module+)
              (only (submod "exercises1.rkt" common-utils) square)
              (only (submod "exercises1.rkt" Exercise/1.19) fib)
@@ -1634,6 +1636,32 @@
 
     (check-equal? (horner-eval 2 (list 1 3 0 5 0 1)) 79)))
 
+(module Exercise/2.35 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.2.3) accumulate enumerate-tree)
+             (only (submod ".." Exercise/2.24) count-leaves))
+
+  ;; see scale-tree-map in Section/2.2.2
+  (define (count-leaves-signal-v1 t)
+    (accumulate + 0 (map (lambda (sub-tree)
+                           (if (pair? sub-tree)
+                               (count-leaves-signal-v1 sub-tree)
+                               1))
+                         t)))
+
+  (define (count-leaves-signal-v2 t)
+    (accumulate + 0 (map (lambda (x) 1) (enumerate-tree t))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.35 ====================\n")
+
+    (let* ([x '((1 2 (3)) 4 (5 6))]
+           [xx (list x x)]
+           [res (count-leaves xx)])
+      (check-equal? (count-leaves-signal-v1 xx) res)
+      (check-equal? (count-leaves-signal-v2 xx) res))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -1673,4 +1701,5 @@
   (require (submod ".." Exercise/2.32 test))
   (require (submod ".." Section/2.2.3 test))
   (require (submod ".." Exercise/2.33 test))
-  (require (submod ".." Exercise/2.34 test)))
+  (require (submod ".." Exercise/2.34 test))
+  (require (submod ".." Exercise/2.35 test)))
