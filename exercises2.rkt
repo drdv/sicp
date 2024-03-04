@@ -1230,6 +1230,7 @@
       (check-equal? (deep-reverse-v3 lst) res-deep-rev))))
 
 (module Exercise/2.28 sicp
+  (#%provide fringe)
   (#%require (only racket/base module+))
 
   (define (fringe lst)
@@ -1475,7 +1476,8 @@
 (module Section/2.2.3 sicp
   (#%require (only racket/base module+)
              (only (submod "exercises1.rkt" common-utils) square)
-             (only (submod "exercises1.rkt" Exercise/1.19) fib))
+             (only (submod "exercises1.rkt" Exercise/1.19) fib)
+             (only (submod ".." Exercise/2.28) fringe))
 
   (define (sum-odd-squares tree)
     (cond [(null? tree) 0]
@@ -1498,9 +1500,75 @@
     (display "==================== Section/2.2.3 ====================\n")
 
     (check-equal? (sum-odd-squares '(1 2 (3 4 5) (6))) 35)
-    (check-equal? (even-fibs 20) '(0 2 8 34 144 610 2584))
+    (check-equal? (even-fibs 20) '(0 2 8 34 144 610 2584)))
 
-    ))
+  (define (filter predicate sequence)
+    (cond [(null? sequence) nil]
+          [(predicate (car sequence))
+           (cons (car sequence)
+                 (filter predicate (cdr sequence)))]
+          [else (filter predicate (cdr sequence))]))
+
+  ;; a slightly reorganized version
+  (define (filter-v2 predicate sequence)
+    (if (null? sequence)
+        nil
+        (let ([head (car sequence)]
+              [tail (cdr sequence)])
+          (if (predicate head)
+              (cons head (filter-v2 predicate tail))
+              (filter-v2 predicate tail)))))
+
+  (define (accumulate op initial sequence)
+    (if (null? sequence)
+        initial
+        (op (car sequence)
+            (accumulate op initial (cdr sequence)))))
+
+  (define (enumerate-interval low high)
+    (if (> low high)
+        nil
+        (cons low (enumerate-interval (+ low 1) high))))
+
+  (define (enumerate-tree tree)
+    (cond ((null? tree) nil)
+          ((not (pair? tree)) (list tree))
+          (else (append (enumerate-tree (car tree))
+                        (enumerate-tree (cdr tree))))))
+
+  (module+ test
+    (let ([1-to-5 '(1 2 3 4 5)])
+      (check-equal? (filter odd? 1-to-5) '(1 3 5))
+      (check-equal? (filter-v2 odd? 1-to-5) '(1 3 5))
+      (check-equal? (accumulate + 0 1-to-5) 15)
+      (check-equal? (accumulate * 1 1-to-5) 120)
+      (check-equal? (accumulate cons nil 1-to-5) 1-to-5)
+      (check-equal? (enumerate-tree (list 1 (list 2 (list 3 4)) 5)) 1-to-5))
+    (check-equal? (enumerate-interval 2 7) '(2 3 4 5 6 7))
+
+    ;; In my implementation of fringe, I intentionaly keep track of nil leaves
+    ;; this is not the case in enumerate-tree (this could be a design choice)
+    (let ([tree '(1 2 (3 () 4) (5 6))])
+      (check-not-equal? (fringe tree) (enumerate-tree tree))))
+
+  (define (sum-odd-squares-signal tree)
+    (accumulate + 0 (map square (filter odd? (enumerate-tree tree)))))
+
+  (define (even-fibs-signal n)
+    (accumulate cons nil (filter even? (map fib (enumerate-interval 0 n)))))
+
+  (define (list-fib-squares n)
+    (accumulate cons nil (map square (map fib (enumerate-interval 0 n)))))
+
+  (define (product-of-squares-of-odd-elements sequence)
+    (accumulate * 1 (map square (filter odd? sequence))))
+
+  (module+ test
+    (check-equal? (even-fibs-signal 20) (even-fibs 20))
+    (let ([tree '(1 2 (3 4 5) (6))])
+      (check-equal? (sum-odd-squares-signal tree) (sum-odd-squares tree)))
+    (check-equal? (list-fib-squares 10) '(0 1 1 4 9 25 64 169 441 1156 3025))
+    (check-equal?(product-of-squares-of-odd-elements (list 1 2 3 4 5)) 225)))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test))
@@ -1538,4 +1606,5 @@
   (require (submod ".." Section/2.2.2 test))
   (require (submod ".." Exercise/2.30 test))
   (require (submod ".." Exercise/2.31 test))
-  (require (submod ".." Exercise/2.32 test)))
+  (require (submod ".." Exercise/2.32 test))
+  (require (submod ".." Section/2.2.3 test)))
