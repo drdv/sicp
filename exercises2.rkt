@@ -1616,6 +1616,24 @@
       (check-equal? (append '(1 2 3) '(4 5)) 1-to-5)
       (check-equal? (length 1-to-5) 5))))
 
+(module Exercise/2.34 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.2.3) accumulate))
+
+  (define (horner-eval x coefficient-sequence)
+    (accumulate (lambda (this-coeff higher-terms)
+                  (+ this-coeff
+                     (* higher-terms
+                        x)))
+                0
+                coefficient-sequence))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.34 ====================\n")
+
+    (check-equal? (horner-eval 2 (list 1 3 0 5 0 1)) 79)))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test))
   (require (submod ".." Exercise/2.2 test))
@@ -1654,4 +1672,5 @@
   (require (submod ".." Exercise/2.31 test))
   (require (submod ".." Exercise/2.32 test))
   (require (submod ".." Section/2.2.3 test))
-  (require (submod ".." Exercise/2.33 test)))
+  (require (submod ".." Exercise/2.33 test))
+  (require (submod ".." Exercise/2.34 test)))
