@@ -49,7 +49,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.1 ====================\n")
+    (display "--> Exercise/2.1\n")
 
     (let* ([one-third (make-rat 1 3)]
            [res (add-rat one-third one-third)])
@@ -103,7 +103,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.2 ====================\n")
+    (display "--> Exercise/2.2\n")
 
     (let ([point (midpoint-segment (make-segment (make-point 1 2)
                                                  (make-point 3 4)))])
@@ -162,7 +162,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.3 ====================\n")
+    (display "--> Exercise/2.3\n")
 
     (let* ([a (make-point 1 0)]
            [b (add-points a (rot-point a (/ pi 2)))]
@@ -180,7 +180,7 @@
 
   (module+ test-representation-1
     (#%require rackunit)
-    (display "-------------------> Exercise/2.3 (representation-1) \n")
+    (display "--> Exercise/2.3 (representation-1)\n")
 
     ;; --------------------------------------
     ;; representation using two segments
@@ -210,7 +210,7 @@
 
   (module+ test-representation-2
     (#%require rackunit)
-    (display "-------------------> Exercise/2.3 (representation-2) \n")
+    (display "--> Exercise/2.3 (representation-2)\n")
 
     ;; --------------------------------------
     ;; representation using three points
@@ -253,7 +253,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.4 ====================\n")
+    (display "--> Exercise/2.4\n")
 
     #|
     (cons x y) -> (lambda (m) (m x y)) where x and y are stored in the closure
@@ -288,7 +288,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.5 ====================\n")
+    (display "--> Exercise/2.5\n")
 
     (let* ([a 5]
            [b 7]
@@ -305,7 +305,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.6 ====================\n")
+    (display "--> Exercise/2.6\n")
 
     #|
     (lambda (f) (lambda (x) (f ((zero f) x)))) ->
@@ -374,7 +374,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.7 ====================\n")
+    (display "--> Exercise/2.7\n")
 
     (let* ([x (make-interval -1 2)]
            [res-add (add-interval x x)]
@@ -418,7 +418,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.8 ====================\n")
+    (display "--> Exercise/2.8\n")
 
     (let* ([x (make-interval -1 2)]
            [res-sub (sub-interval x x)]
@@ -466,7 +466,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.9 ====================\n")
+    (display "--> Exercise/2.9\n")
 
     (let* ([x (make-interval -1 2)]
            [w (width-interval x)]
@@ -502,7 +502,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.10 ====================\n")
+    (display "--> Exercise/2.10\n")
 
     (let* ([x (make-interval -1 2)]
            [res-div (div-interval x (make-interval -2 -1))])
@@ -578,7 +578,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.11 ====================\n")
+    (display "--> Exercise/2.11\n")
 
     ;; case 1
     (check-equal? (mul-interval       (make-interval 1 2) (make-interval 3 4))
@@ -646,7 +646,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.12 ====================\n")
+    (display "--> Exercise/2.12\n")
 
     (let* ([c 5.0]
            [p 10.0]
@@ -668,7 +668,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.13 ====================\n")
+    (display "--> Exercise/2.13\n")
 
     (let* ([p 1]
            [x (make-center-percent 5 p)]
@@ -718,7 +718,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.14 ====================\n")
+    (display "--> Exercise/2.14\n")
 
     ;; conclusion: Lem is right
     (let* ([R1 (make-center-percent 6.8 10)]
@@ -827,7 +827,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Section/2.2.1 ====================\n")
+    (display "--> Section/2.2.1\n")
 
     (check-equal? (list-ref (list 1 4 9 16 25) 3) 16))
 
@@ -908,7 +908,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.17 ====================\n")
+    (display "--> Exercise/2.17\n")
 
     (check-equal? (last-pair (list 23 72 149 34)) (cons 34 nil))))
 
@@ -932,7 +932,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.18 ====================\n")
+    (display "--> Exercise/2.18\n")
 
     (let ([lst (list 1 4 9 16 25)]
           [res (list 25 16 9 4 1)])
@@ -962,7 +962,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.19 ====================\n")
+    (display "--> Exercise/2.19\n")
 
     ;; The order of coins has no impact (our tree recursion is an exostive search).
     (let ([us-coins (list 50 25 10 5 1)]
@@ -1002,7 +1002,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.20 ====================\n")
+    (display "--> Exercise/2.20\n")
 
     (f1 1 2 3 4)
     (f2 1 2 3 4)
@@ -1037,7 +1037,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.21 ====================\n")
+    (display "--> Exercise/2.21\n")
 
     (let ([lst (list 1 2 3 4)]
           [res (list 1 4 9 16)])
@@ -1082,7 +1082,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.22 ====================\n")
+    (display "--> Exercise/2.22\n")
 
     (check-equal? (square-list-1 (list 1 2 3)) (list 9 4 1))
     (check-equal? (square-list-2 (list 1 2 3)) (cons (cons (cons '() 1) 4) 9))))
@@ -1093,7 +1093,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.23 ====================\n")
+    (display "--> Exercise/2.23\n")
 
     (let ([lst (list 57 321 88)]
           [f (lambda (x) (newline) (display x))])
@@ -1113,7 +1113,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.24 ====================\n")
+    (display "--> Exercise/2.24\n")
 
     (define x (cons (list 1 2) (list 3 4)))
     (count-leaves x)
@@ -1154,7 +1154,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.25 ====================\n")
+    (display "--> Exercise/2.25\n")
 
     (check-equal? (car (cdaddr x)) 7)
     (check-equal? (car (cdr (car (cdr (cdr x))))) 7)
@@ -1175,7 +1175,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.26 ====================\n")
+    (display "--> Exercise/2.26\n")
 
     (display (format "x: ~a\n" x))
     (display (format "y: ~a\n" y))
@@ -1216,7 +1216,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.27 ====================\n")
+    (display "--> Exercise/2.27\n")
 
     (define x (list (list 1 2) (list 3 4)))
     (check-equal? (deep-reverse-v1 x) '((4 3) (2 1)))
@@ -1246,7 +1246,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.28 ====================\n")
+    (display "--> Exercise/2.28\n")
 
     (define x (list (list 1 2) (list 3 4)))
     (check-equal? (fringe x) '(1 2 3 4))
@@ -1326,7 +1326,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.29 ====================\n")
+    (display "--> Exercise/2.29\n")
 
     (define bm-1 (make-mobile
                   (make-branch 1
@@ -1365,9 +1365,8 @@
     (check-equal? (total-weight bm-2) 100)
     (check-true (balanced? bm-2))))
 
-(module Section/2.2.2 sicp
+(module Section/2.2.2/mapping-over-trees sicp
   (#%require (only racket/base module+))
-  ;; This is only the "Mapping over trees" part of Section 2.2.2
 
   #|
   The pattern is:
@@ -1397,7 +1396,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Section/2.2.2 ====================\n")
+    (display "--> Section/2.2.2/mapping-over-trees\n")
 
     (let ([tree (list 1 (list 2 (list 3 4) 5) (list 6 7))]
           [scaled-tree (list 10 (list 20 (list 30 40) 50) (list 60 70))])
@@ -1423,7 +1422,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.30 ====================\n")
+    (display "--> Exercise/2.30\n")
 
     (let ([tree (list 1 (list 2 (list 3 4) 5) (list 6 7))]
           [res '(1 (4 (9 16) 25) (36 49))])
@@ -1445,7 +1444,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.31 ====================\n")
+    (display "--> Exercise/2.31\n")
 
     (let ([tree (list 1 (list 2 (list 3 4) 5) (list 6 7))]
           [res '(1 (4 (9 16) 25) (36 49))])
@@ -1468,7 +1467,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.32 ====================\n")
+    (display "--> Exercise/2.32\n")
 
     (let ([s (list 1 2 3)]
           [powerset '(() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3))])
@@ -1500,7 +1499,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Section/2.2.3 ====================\n")
+    (display "--> Section/2.2.3\n")
 
     (check-equal? (sum-odd-squares '(1 2 (3 4 5) (6))) 35)
     (check-equal? (even-fibs 20) '(0 2 8 34 144 610 2584)))
@@ -1611,7 +1610,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.33 ====================\n")
+    (display "--> Exercise/2.33\n")
 
     (let ([1-to-5 '(1 2 3 4 5)])
       (check-equal? (map square 1-to-5) '(1 4 9 16 25))
@@ -1632,7 +1631,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.34 ====================\n")
+    (display "--> Exercise/2.34\n")
 
     (check-equal? (horner-eval 2 (list 1 3 0 5 0 1)) 79)))
 
@@ -1641,7 +1640,7 @@
              (only (submod ".." Section/2.2.3) accumulate enumerate-tree)
              (only (submod ".." Exercise/2.24) count-leaves))
 
-  ;; see scale-tree-map in Section/2.2.2
+  ;; see scale-tree-map in Section/2.2.2/mapping-over-trees
   (define (count-leaves-signal-v1 t)
     (accumulate + 0 (map (lambda (sub-tree)
                            (if (pair? sub-tree)
@@ -1654,7 +1653,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.35 ====================\n")
+    (display "--> Exercise/2.35\n")
 
     (let* ([x '((1 2 (3)) 4 (5 6))]
            [xx (list x x)]
@@ -1675,7 +1674,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.36 ====================\n")
+    (display "--> Exercise/2.36\n")
 
     (let ([seqs '((1 2 3) (4 5 6) (7 8 9) (10 11 12))]
           [res '(22 26 30)])
@@ -1721,7 +1720,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.37 ====================\n")
+    (display "--> Exercise/2.37\n")
 
     (define A '((1 2 3 4) (4 5 6 6) (6 7 8 9)))
     (define A.T '((1 4 6) (2 5 7) (3 6 8) (4 6 9)))
@@ -1767,7 +1766,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.38 ====================\n")
+    (display "--> Exercise/2.38\n")
 
     (check-equal? (fold-right / 1 (list 1 2 3)) (/ 1 (/ 2 3))) ; 1/(2/(3/1)) -> 1/(2/3) -> 3/2
     (check-equal? (fold-left / 1 (list 1 2 3)) (/ (/ 1 2) 3)) ; ((1/1)/2)/3 -> (1/2)/3
@@ -1794,7 +1793,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/2.39 ====================\n")
+    (display "--> Exercise/2.39\n")
 
     (let ([1-to-5 '(1 2 3 4 5)]
           [5-to-1 '(5 4 3 2 1)])
@@ -1834,7 +1833,7 @@
            (submod ".." Exercise/2.27 test)
            (submod ".." Exercise/2.28 test)
            (submod ".." Exercise/2.29 test)
-           (submod ".." Section/2.2.2 test)
+           (submod ".." Section/2.2.2/mapping-over-trees test)
            (submod ".." Exercise/2.30 test)
            (submod ".." Exercise/2.31 test)
            (submod ".." Exercise/2.32 test)

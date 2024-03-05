@@ -41,7 +41,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.1 ====================\n")
+    (display "--> Exercise/1.1\n")
 
     (check-equal? 10 10)
     (check-equal? (+ 5 3 4) 12)
@@ -69,7 +69,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.2 ====================\n")
+    (display "--> Exercise/1.2\n")
 
     (check-equal? (an-expression) (/ (- 37) 150))))
 
@@ -82,7 +82,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.3 ====================\n")
+    (display "--> Exercise/1.3\n")
 
     (check-equal? (sum-squares.v1 9 5 7) 130))
 
@@ -126,7 +126,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Section/1.1.7 ====================\n")
+    (display "--> Section/1.1.7\n")
 
     (check-within (* (sqrt-v1 2) (sqrt-v1 2)) 2 tolerance)))
 
@@ -157,7 +157,7 @@
     (sqrt-recursive 0.0 1.0 x))
 
   (module+ test
-    (display "==================== Exercise/1.7 ====================\n")
+    (display "--> Exercise/1.7\n")
 
     (display (format "computation terminates: ~a\n"
                      (sqrt-v2 999999999999999999999999999999999999)))
@@ -183,7 +183,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.8 ====================\n")
+    (display "--> Exercise/1.8\n")
 
     (check-within (* (cube-root 9) (cube-root 9) (cube-root 9)) 9 tolerance)))
 
@@ -203,7 +203,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Section/1.2.1 ====================\n")
+    (display "--> Section/1.2.1\n")
 
     (check-equal? (factorial-v1 5) 120))
 
@@ -262,7 +262,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.9 ====================\n")
+    (display "--> Exercise/1.9\n")
 
     (check-equal? (plus.rec 4 5) 9)
     #| recursive process
@@ -304,7 +304,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.10 ====================\n")
+    (display "--> Exercise/1.10\n")
 
     ;; I have to define A in the test module because I want to use (trace A) later
     (define (A x y)
@@ -398,7 +398,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Section/1.2.2 ====================\n")
+    (display "--> Section/1.2.2\n")
 
     (check-equal? (fib.v1 10) 55))
 
@@ -450,7 +450,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.11 ====================\n")
+    (display "--> Exercise/1.11\n")
 
     (check-equal? (f.v1 10) 1892))
 
@@ -498,7 +498,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.12 ====================\n")
+    (display "--> Exercise/1.12\n")
 
     (check-equal? (pascal-triangle.v1 0 #f) '())
     (check-equal? (pascal-triangle.v1 1 #f) '(1))
@@ -536,7 +536,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.14 ====================\n")
+    (display "--> Exercise/1.14\n")
 
     (check-equal? (count-change 11 '(50 25 10 5 1)) 4))
 
@@ -606,7 +606,7 @@
         (p (sine (/ angle 3.0) (+ iter 1)))))
 
   (module+ test
-    (display "==================== Exercise/1.15 ====================\n")
+    (display "--> Exercise/1.15\n")
 
     #|
     At every call of sine, the angle is divided by 3 so the number of steps is
@@ -675,7 +675,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.16 ====================\n")
+    (display "--> Exercise/1.16\n")
 
     (check-equal? (fast-expt-recursive 5 21 1) 476837158203125)
     (check-equal? (fast-expt-iterative.v1 5 21 1 1) 476837158203125)
@@ -691,7 +691,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.17 ====================\n")
+    (display "--> Exercise/1.17\n")
 
     (check-equal? (mult.v1 5 7) 35))
 
@@ -727,7 +727,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.18 ====================\n")
+    (display "--> Exercise/1.18\n")
 
     ;; I implemented Exercise 1.17 taking into account the conditions of Exercise 1.18
     (check-equal? (mult.v2 5 9 0 #t) 45)))
@@ -755,7 +755,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.19 ====================\n")
+    (display "--> Exercise/1.19\n")
 
     (check-equal? (fib 10) 55)))
 
@@ -773,7 +773,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.20 ====================\n")
+    (display "--> Exercise/1.20\n")
 
     (check-equal? (gcd 206 40) 2)
     #|
@@ -835,7 +835,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.21 ====================\n")
+    (display "--> Exercise/1.21\n")
 
     (check-equal? (smallest-divisor 199) 199)
     (check-equal? (smallest-divisor 1999) 1999)
@@ -875,7 +875,7 @@
               (serch-for-primes (+ n 2) numb-primes)))))
 
   (module+ test
-    (display "==================== Exercise/1.22 ====================\n")
+    (display "--> Exercise/1.22\n")
 
     (for ([n '(1e3 1e4 1e5 1e6 1e7)])
       (serch-for-primes n 3))
@@ -966,7 +966,7 @@
   ;; ---------------------------------------------
 
   (module+ test
-    (display "==================== Exercise/1.23 ====================\n")
+    (display "--> Exercise/1.23\n")
 
     (let ([numb-evals 1000])
       (for ([prime-number prime-numbers])
@@ -1062,7 +1062,7 @@
     (start-prime-test n (runtime)))
 
   (module+ test
-    (display "==================== Exercise/1.24 ====================\n")
+    (display "--> Exercise/1.24\n")
 
     (let ([numb-evals 1000])
       (for ([prime-number prime-numbers])
@@ -1141,7 +1141,7 @@
            (fast-expt b (- n 1) (* a b))]))
 
   (module+ test
-    (display "==================== Exercise/1.25 ====================\n")
+    (display "--> Exercise/1.25\n")
 
     (let ([x 2]
           [n 1000])
@@ -1195,7 +1195,7 @@
     numb-calls)
 
   (module+ test
-    (display "==================== Exercise/1.26 ====================\n")
+    (display "--> Exercise/1.26\n")
 
     (define n-to-test '(1e1 1e2 1e3 1e4 1e5 1e6))
     (display "-------------------------------------\n")
@@ -1234,7 +1234,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.27 ====================\n")
+    (display "--> Exercise/1.27\n")
 
     (check-true (test-carmichael-numbers fermat-test-exhaustive carmichael-numbers))
     (check-false (test-carmichael-numbers fermat-test-exhaustive
@@ -1281,7 +1281,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.28 ====================\n")
+    (display "--> Exercise/1.28\n")
 
     (for ([n carmichael-numbers])
       (check-false (fast-prime? n 100)))
@@ -1350,7 +1350,7 @@
                 (move-v2-counts (- n 1) extra dest src counts)]))
 
   (module+ test
-    (display "==================== Lecture/1B ====================\n")
+    (display "--> Lecture/1B\n")
 
     ;; (move-v1 4 "S" "D" "E")
     ;; (move-v2 4 "S" "D" "E")
@@ -1421,7 +1421,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.29 ====================\n")
+    (display "--> Exercise/1.29\n")
 
     (check-equal? (sum cube (lambda (x) (+ x 1)) 1 10) 3025)
     (check-equal? (sum (lambda (x) x) (lambda (x) (+ x 1)) 1 10) 55)
@@ -1452,7 +1452,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.30 ====================\n")
+    (display "--> Exercise/1.30\n")
 
     (check-equal? (sum cube (lambda (x) (+ x 1)) 1 10) 3025)
     (check-equal? (sum (lambda (x) x) (lambda (x) (+ x 1)) 1 10) 55)
@@ -1481,7 +1481,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.31 ====================\n")
+    (display "--> Exercise/1.31\n")
 
     (define (I x) x)
     (define (incr x) (+ x 1))
@@ -1535,7 +1535,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.32 ====================\n")
+    (display "--> Exercise/1.32\n")
 
     (check-equal? (accumulate-recursion + 0 cube (lambda (x) (+ x 1)) 1 10) 3025)
     (check-equal? (accumulate-iter + 0 cube (lambda (x) (+ x 1)) 1 10) 3025)
@@ -1568,7 +1568,7 @@
   (module+ test
     (#%require rackunit
                (only racket/list range))
-    (display "==================== Exercise/1.33 ====================\n")
+    (display "--> Exercise/1.33\n")
 
     ;; Note: (prime? 1) -> #t
     (check-equal?
@@ -1594,7 +1594,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.34 ====================\n")
+    (display "--> Exercise/1.34\n")
 
     ;; expect to raise
     (check-exn
@@ -1636,7 +1636,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Section/1.3.3 ====================\n")
+    (display "--> Section/1.3.3\n")
 
     (check-within (half-interval-method sin 2.0 4.0)
                   3.14111328125
@@ -1684,7 +1684,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.35 ====================\n")
+    (display "--> Exercise/1.35\n")
 
     #| Solution
     Using the characteritic equation x^2 - x -1 = 0 (see latex note Exercise 1.13),
@@ -1701,7 +1701,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.36 ====================\n")
+    (display "--> Exercise/1.36\n")
 
     ;; original fixed-point problem: 33 iterations
     ;; fixed-point problem with damping: 8 iterations
@@ -1734,7 +1734,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.37 ====================\n")
+    (display "--> Exercise/1.37\n")
 
     (let ([inverse-golden-ratio (/ 1 golden-ratio)]
           [tolerance 1e-4])
@@ -1757,7 +1757,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.38 ====================\n")
+    (display "--> Exercise/1.38\n")
 
     #|
     [0] 0 1 2
@@ -1793,7 +1793,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.39 ====================\n")
+    (display "--> Exercise/1.39\n")
 
     (let ([x 0.2])
       (check-within (tan-cf x 100) (tan x) tolerance))))
@@ -1817,7 +1817,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Section/1.3.4 ====================\n")
+    (display "--> Section/1.3.4\n")
 
     (check-equal? ((average-damp square) 10) 55.0)
     (check-within (sqrt-v1 4) 2.0 tolerance)
@@ -1870,7 +1870,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.40 ====================\n")
+    (display "--> Exercise/1.40\n")
 
     (let ([a 1]
           [b 2]
@@ -1888,7 +1888,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.41 ====================\n")
+    (display "--> Exercise/1.41\n")
 
     (check-equal? (((double (double double)) inc) 5) 21)))
 
@@ -1902,7 +1902,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.42 ====================\n")
+    (display "--> Exercise/1.42\n")
 
     (check-equal? ((compose square inc) 6) 49)))
 
@@ -1919,7 +1919,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.43 ====================\n")
+    (display "--> Exercise/1.43\n")
 
     (check-equal? ((repeated square 1) 5) 25)
     (check-equal? ((repeated square 2) 5) 625)))
@@ -1940,7 +1940,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.44 ====================\n")
+    (display "--> Exercise/1.44\n")
 
     (check-within ((smooth square 0.1) 2) 12.02 tolerance)
     (check-within ((smooth-n 2 square 0.1) 2) 433.4612 tolerance)))
@@ -1970,7 +1970,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.45 ====================\n")
+    (display "--> Exercise/1.45\n")
 
     #|
     When using (floor (log n 2)) damping steps, the computation does not cycle
@@ -2021,7 +2021,7 @@
 
   (module+ test
     (#%require rackunit)
-    (display "==================== Exercise/1.46 ====================\n")
+    (display "--> Exercise/1.46\n")
 
     (let ([x 4]
           [x0 1]
