@@ -1750,6 +1750,35 @@
      exn:fail?
      (lambda () (matrix-*-matrix A A)))))
 
+(module Exercise/2.38 sicp
+  (#%require (only racket/base module+)
+             ;; (rename raw-module-path local-id exported-id)
+             (rename (submod ".." Section/2.2.3) fold-right accumulate))
+
+  (define (fold-left op initial sequence)
+    (define (iter result rest)
+      (if (null? rest)
+          result
+          (iter (op result (car rest))
+                (cdr rest))))
+    (iter initial sequence))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.38 ====================\n")
+
+    (check-equal? (fold-right / 1 (list 1 2 3)) (/ 1 (/ 2 3))) ; 1/(2/(3/1)) -> 1/(2/3) -> 3/2
+    (check-equal? (fold-left / 1 (list 1 2 3)) (/ (/ 1 2) 3)) ; ((1/1)/2)/3 -> (1/2)/3
+    (check-equal? (fold-right list nil (list 1 2 3)) '(1 (2 (3 ()))))
+    (check-equal? (fold-left list nil (list 1 2 3)) '(((() 1) 2) 3)))
+
+  ;; fold-right and fold-left would produce the same result if (op x y) = (op y x)
+  (module+ test
+    (check-equal? (fold-right * 1 (list 1 2 3))
+                  (fold-left * 1 (list 1 2 3)))
+    (check-equal? (fold-right + 1 (list 1 2 3))
+                  (fold-left + 1 (list 1 2 3)))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -1792,4 +1821,5 @@
            (submod ".." Exercise/2.34 test)
            (submod ".." Exercise/2.35 test)
            (submod ".." Exercise/2.36 test)
-           (submod ".." Exercise/2.37 test)))
+           (submod ".." Exercise/2.37 test)
+           (submod ".." Exercise/2.38 test)))
