@@ -28,3 +28,10 @@
 ;; (#%require sdraw)
 ;; (sdraw (list 1) #:null-style '/)
 ;; ===============================================================
+;; https://stackoverflow.com/a/36915357
+(define (welcome #:first [first-name "Anonymous"]
+                 #:last [last-name "Person"])
+  (display (string-append "Welcome, " first-name " " last-name "!")))
+
+(welcome #:last "Doe")
+;; ===============================================================

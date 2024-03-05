@@ -1663,6 +1663,7 @@
       (check-equal? (count-leaves-signal-v2 xx) res))))
 
 (module Exercise/2.36 sicp
+  (#%provide accumulate-n)
   (#%require (only racket/base module+)
              (only (submod ".." Section/2.2.3) accumulate))
 
@@ -1679,6 +1680,65 @@
     (let ([seqs '((1 2 3) (4 5 6) (7 8 9) (10 11 12))]
           [res '(22 26 30)])
       (check-equal? (accumulate-n + 0 seqs) res))))
+
+(module Exercise/2.37 sicp
+  (#%require (only racket/base module+)
+             (only racket/format ~a)
+             (only racket/math exact-round)
+             (only (submod ".." Section/2.2.3) accumulate)
+             (only (submod ".." Exercise/2.28) fringe)
+             (only (submod ".." Exercise/2.36) accumulate-n))
+
+  (define (show-mat mat)
+    (define (max-element mat) (accumulate max -inf.0 (fringe mat)))
+    ;; assume integer coefficients
+    (define (count-digits n) (exact-round (+ 1 (floor (log n 10)))))
+    (for-each (lambda (row)
+                (display "|")
+                (for-each (lambda (x)
+                            (display
+                             (~a x
+                                 #:min-width (inc (count-digits (max-element mat)))
+                                 #:align 'right
+                                 #:left-pad-string " ")))
+                          row)
+                (display " |")
+                (newline))
+              mat))
+
+  (define (dot-product v w)
+    (accumulate + 0 (map * v w)))
+
+  (define (matrix-*-vector m v)
+    (map (lambda (w) (dot-product v w)) m))
+
+  (define (transpose mat)
+    (accumulate-n cons nil mat))
+
+  (define (matrix-*-matrix m n)
+    (let ([n.T (transpose n)])
+      (map (lambda (x) (matrix-*-vector n.T x)) m)))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.37 ====================\n")
+
+    (define A '((1 2 3 4) (4 5 6 6) (6 7 8 9)))
+    (define A.T '((1 4 6) (2 5 7) (3 6 8) (4 6 9)))
+    (show-mat A)
+    (show-mat (transpose A))
+    (show-mat (matrix-*-matrix A A.T))
+
+    (let ([x '(1 2 3 4)])
+      (check-equal? (dot-product x x) 30)
+      (check-equal? (matrix-*-vector A x)
+                    (list (dot-product (car A) x)
+                          (dot-product (cadr A) x)
+                          (dot-product (caddr A) x)))
+      (check-equal? (transpose A) A.T))
+    (check-equal? (matrix-*-matrix A A.T) '((30 56 80)
+                                            (56 113 161)
+                                            (80 161 230)))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
@@ -1721,4 +1781,5 @@
            (submod ".." Exercise/2.33 test)
            (submod ".." Exercise/2.34 test)
            (submod ".." Exercise/2.35 test)
-           (submod ".." Exercise/2.36 test)))
+           (submod ".." Exercise/2.36 test)
+           (submod ".." Exercise/2.37 test)))
