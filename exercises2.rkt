@@ -1751,6 +1751,8 @@
      (lambda () (matrix-*-matrix A A)))))
 
 (module Exercise/2.38 sicp
+  (#%provide fold-right
+             fold-left)
   (#%require (only racket/base module+)
              ;; (rename raw-module-path local-id exported-id)
              (rename (submod ".." Section/2.2.3) fold-right accumulate))
@@ -1779,6 +1781,25 @@
                     (fold-left * 1 x))
       (check-equal? (fold-right + 1 x)
                     (fold-left + 1 x)))))
+
+(module Exercise/2.39 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Exercise/2.38) fold-right fold-left))
+
+  (define (reverse-fold-right sequence)
+    (fold-right (lambda (x y) (append y (list x))) nil sequence))
+
+  (define (reverse-fold-left sequence)
+    (fold-left (lambda (x y) (cons y x)) nil sequence))
+
+  (module+ test
+    (#%require rackunit)
+    (display "==================== Exercise/2.39 ====================\n")
+
+    (let ([1-to-5 '(1 2 3 4 5)]
+          [5-to-1 '(5 4 3 2 1)])
+      (check-equal? (reverse-fold-right 1-to-5) 5-to-1)
+      (check-equal? (reverse-fold-left 1-to-5) 5-to-1))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
@@ -1823,4 +1844,5 @@
            (submod ".." Exercise/2.35 test)
            (submod ".." Exercise/2.36 test)
            (submod ".." Exercise/2.37 test)
-           (submod ".." Exercise/2.38 test)))
+           (submod ".." Exercise/2.38 test)
+           (submod ".." Exercise/2.39 test)))
