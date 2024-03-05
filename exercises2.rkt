@@ -1682,7 +1682,7 @@
       (check-equal? (accumulate-n + 0 seqs) res))))
 
 (module Exercise/2.37 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ exn:fail?)
              (only racket/format ~a)
              (only racket/math exact-round)
              (only (submod ".." Section/2.2.3) accumulate)
@@ -1725,6 +1725,9 @@
 
     (define A '((1 2 3 4) (4 5 6 6) (6 7 8 9)))
     (define A.T '((1 4 6) (2 5 7) (3 6 8) (4 6 9)))
+    (define I3 '((1 0 0) (0 1 0) (0 0 1)))
+    (define I4 '((1 0 0 0) (0 1 0 0) (0 0 1 0) (0 0 0 1)))
+    (show-mat I4)
     (show-mat A)
     (show-mat (transpose A))
     (show-mat (matrix-*-matrix A A.T))
@@ -1738,7 +1741,14 @@
       (check-equal? (transpose A) A.T))
     (check-equal? (matrix-*-matrix A A.T) '((30 56 80)
                                             (56 113 161)
-                                            (80 161 230)))))
+                                            (80 161 230)))
+    (check-equal? (matrix-*-matrix A.T I3) A.T)
+    (check-equal? (matrix-*-matrix I4 A.T) A.T)
+    (check-equal? (matrix-*-matrix A I4) A)
+    (check-equal? (matrix-*-matrix I3 A) A)
+    (check-exn
+     exn:fail?
+     (lambda () (matrix-*-matrix A A)))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
