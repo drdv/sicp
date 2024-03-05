@@ -1774,10 +1774,11 @@
 
   ;; fold-right and fold-left would produce the same result if (op x y) = (op y x)
   (module+ test
-    (check-equal? (fold-right * 1 (list 1 2 3))
-                  (fold-left * 1 (list 1 2 3)))
-    (check-equal? (fold-right + 1 (list 1 2 3))
-                  (fold-left + 1 (list 1 2 3)))))
+    (let ([x (list 1 2 3)])
+      (check-equal? (fold-right * 1 x)
+                    (fold-left * 1 x))
+      (check-equal? (fold-right + 1 x)
+                    (fold-left + 1 x)))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
