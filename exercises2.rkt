@@ -1895,6 +1895,42 @@
     (let ([n 6])
       (check-equal? (prime-sum-pairs-updated n) (prime-sum-pairs n)))))
 
+(module Exercise/2.41 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.2.3) filter accumulate enumerate-interval)
+             (only (submod ".." Section/2.2.3/nested-mapings) flatmap))
+
+  (define (ordered-triplets n)
+    (flatmap (lambda (i)
+               (flatmap (lambda (j)
+                          (map (lambda (k)
+                                 (list k j i))
+                               (enumerate-interval 1 (- j 1))))
+                        (enumerate-interval 1 (- i 1))))
+             (enumerate-interval 1 n)))
+
+  (define (filter-sum-to s sequence-of-triplets)
+    (filter (lambda (triplet) (= (accumulate + 0 triplet) s))
+            sequence-of-triplets))
+
+  (define (ordered-triplets-sum-to-s n s)
+    (filter-sum-to s (ordered-triplets n)))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.41\n")
+
+    ;; show all triplets with their sum (verify results)
+    (for-each (lambda (item) (display item) (newline))
+              (map
+               (lambda (x) (cons (accumulate + 0 x) x))
+               (ordered-triplets 6)))
+
+    (let* ([n 6]
+           [s (* 2 n)]
+           [res '((3 4 5) (2 4 6) (1 5 6))])
+      (check-equal? (ordered-triplets-sum-to-s n s) res))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -1941,4 +1977,5 @@
            (submod ".." Exercise/2.38 test)
            (submod ".." Exercise/2.39 test)
            (submod ".." Section/2.2.3/nested-mapings test)
-           (submod ".." Exercise/2.40 test)))
+           (submod ".." Exercise/2.40 test)
+           (submod ".." Exercise/2.41 test)))
