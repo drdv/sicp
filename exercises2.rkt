@@ -1803,9 +1803,13 @@
       (check-equal? (reverse-fold-left 1-to-5) 5-to-1))))
 
 (module Section/2.2.3/nested-mapings sicp
+  (#%provide flatmap
+             prime-sum?
+             make-pair-sum
+             prime-sum-pairs)
   (#%require (only racket/base module+)
              (only (submod "exercises1.rkt" Exercise/1.22) prime?)
-             (only (submod ".." Section/2.2.3) accumulate filter  enumerate-interval))
+             (only (submod ".." Section/2.2.3) accumulate filter enumerate-interval))
 
   (define (flatmap proc seq)
     (accumulate append nil (map proc seq)))
@@ -1865,6 +1869,32 @@
       (check-equal? (permutations '(1 2 3)) res)
       (for-each show res))))
 
+(module Exercise/2.40 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.2.3) filter enumerate-interval)
+             (only (submod ".." Section/2.2.3/nested-mapings)
+                   flatmap
+                   prime-sum?
+                   make-pair-sum
+                   prime-sum-pairs))
+
+  (define (unique-pairs n)
+    (flatmap
+     (lambda (i)
+       (map (lambda (j) (list i j))
+            (enumerate-interval 1 (- i 1))))
+     (enumerate-interval 1 n)))
+
+  (define (prime-sum-pairs-updated n)
+    (map make-pair-sum (filter prime-sum? (unique-pairs n))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.40\n")
+
+    (let ([n 6])
+      (check-equal? (prime-sum-pairs-updated n) (prime-sum-pairs n)))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -1910,4 +1940,5 @@
            (submod ".." Exercise/2.37 test)
            (submod ".." Exercise/2.38 test)
            (submod ".." Exercise/2.39 test)
-           (submod ".." Section/2.2.3/nested-mapings test)))
+           (submod ".." Section/2.2.3/nested-mapings test)
+           (submod ".." Exercise/2.40 test)))
