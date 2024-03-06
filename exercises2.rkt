@@ -1475,7 +1475,9 @@
 
 (module Section/2.2.3 sicp
   (#%provide accumulate
-             enumerate-tree)
+             filter
+             enumerate-tree
+             enumerate-interval)
   (#%require (only racket/base module+)
              (only (submod "exercises1.rkt" common-utils) square)
              (only (submod "exercises1.rkt" Exercise/1.19) fib)
@@ -1800,6 +1802,69 @@
       (check-equal? (reverse-fold-right 1-to-5) 5-to-1)
       (check-equal? (reverse-fold-left 1-to-5) 5-to-1))))
 
+(module Section/2.2.3/nested-mapings sicp
+  (#%require (only racket/base module+)
+             (only (submod "exercises1.rkt" Exercise/1.22) prime?)
+             (only (submod ".." Section/2.2.3) accumulate filter  enumerate-interval))
+
+  (define (flatmap proc seq)
+    (accumulate append nil (map proc seq)))
+
+  (define (prime-sum? pair)
+    (prime? (+ (car pair)
+               (cadr pair))))
+
+  (define (make-pair-sum pair)
+    (let ([first (car pair)]
+          [last (cadr pair)])
+      (list first
+            last
+            (+ first last))))
+
+  (define (prime-sum-pairs n)
+    (map make-pair-sum
+         (filter prime-sum? (flatmap
+                             (lambda (i)
+                               (map (lambda (j) (list i j))
+                                    (enumerate-interval 1 (- i 1))))
+                             (enumerate-interval 1 n)))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Section/2.2.3/nested-mapings\n")
+
+    (define (show x) (display x) (newline))
+
+    ;; two for loops using nested maps
+    (for-each show
+              (map (lambda (i)
+                     (map (lambda (j) (cons i j))
+                          '(4 5)))
+                   '(1 2 3)))
+
+    (let ([res '((2 1 3) (3 2 5) (4 1 5) (4 3 7) (5 2 7) (6 1 7) (6 5 11))])
+      (check-equal? (prime-sum-pairs 6) res)
+      (for-each show res)))
+
+  (define (remove item sequence)
+    (filter (lambda (x) (not (= x item)))
+            sequence))
+
+  (define (permutations s)
+    (if (null? s)
+        (list nil)
+        (flatmap (lambda (x)
+                   (map (lambda (other-permutations)
+                          (cons x other-permutations))
+                        (permutations (remove x s))))
+                 s)))
+
+  (module+ test
+    (check-equal? (remove 3 '(1 2 3 4 5)) '(1 2 4 5))
+    (let ([res '((1 2 3) (1 3 2) (2 1 3) (2 3 1) (3 1 2) (3 2 1))])
+      (check-equal? (permutations '(1 2 3)) res)
+      (for-each show res))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -1844,4 +1909,5 @@
            (submod ".." Exercise/2.36 test)
            (submod ".." Exercise/2.37 test)
            (submod ".." Exercise/2.38 test)
-           (submod ".." Exercise/2.39 test)))
+           (submod ".." Exercise/2.39 test)
+           (submod ".." Section/2.2.3/nested-mapings test)))
