@@ -1920,7 +1920,7 @@
     (#%require rackunit)
     (display "--> Exercise/2.41\n")
 
-    ;; show all triplets with their sum (verify results)
+    ;; show all triplets with their sum (to verify results)
     (for-each (lambda (item) (display item) (newline))
               (map
                (lambda (x) (cons (accumulate + 0 x) x))
@@ -1930,6 +1930,84 @@
            [s (* 2 n)]
            [res '((3 4 5) (2 4 6) (1 5 6))])
       (check-equal? (ordered-triplets-sum-to-s n s) res))))
+
+(module Exercise/2.42 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.2.3) filter accumulate enumerate-interval)
+             (only (submod ".." Section/2.2.3/nested-mapings) flatmap))
+
+  (define (make-empty-board n)
+    ;; (cons size list-of-cells)
+    (cons n '()))
+  (define (board-size board) (car board))
+  (define (board-cells board) (cdr board))
+  (define (add-cell board cell) (cons (board-size board)
+                                      (cons cell (board-cells board))))
+
+  (define (make-cell row col) (cons row col))
+  (define (cell-row cell) (car cell))
+  (define (cell-col cell) (cdr cell))
+  (define (check? board new-cell) ; return #t if there is a check
+    ;; FIXME: why can't we pass directly `and` (maybe because it is a special form)?
+    (not (accumulate (lambda (x y) (and x y)) #t
+                     (map (lambda (cell)
+                            (let ([re (cell-row cell)]
+                                  [rn (cell-row new-cell)]
+                                  [ce (cell-col cell)]
+                                  [cn (cell-col new-cell)])
+                              (not (or (= rn re)
+                                       (= cn ce)
+                                       (= (+ rn cn)
+                                          (+ re ce))
+                                       (= (- rn cn)
+                                          (- re ce))))))
+                          (board-cells board)))))
+
+  ;; column and row indexes are in [1 n]
+  (define (add-new-col boards col)
+    (flatmap (lambda (board)
+               (filter (lambda (new-board)
+                         (not (null? (car (board-cells new-board)))))
+                       (map (lambda (row)
+                              (let ([new-cell (make-cell row col)])
+                                (add-cell board
+                                          (if (check? board new-cell)
+                                              nil
+                                              new-cell))))
+                            (enumerate-interval 1 (board-size board)))))
+             boards))
+
+  (define (queens n)
+    (define (queens-helper col)
+      (cond [(= col 1) (add-new-col (list (make-empty-board n)) 1)]
+            [else (add-new-col (queens-helper (- col 1)) col)]))
+    (queens-helper n))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.42\n")
+
+    (define (all seq)
+      (accumulate
+       (lambda (x y) (and x y))
+       #t
+       seq))
+
+    (check-equal? (map (lambda (board) (board-cells board))
+                       (queens 6))
+                  '(((5 . 6) (3 . 5) (1 . 4) (6 . 3) (4 . 2) (2 . 1))
+                    ((4 . 6) (1 . 5) (5 . 4) (2 . 3) (6 . 2) (3 . 1))
+                    ((3 . 6) (6 . 5) (2 . 4) (5 . 3) (1 . 2) (4 . 1))
+                    ((2 . 6) (4 . 5) (6 . 4) (1 . 3) (3 . 2) (5 . 1))))
+    (check-true
+     (all
+      (let ([dimensions (enumerate-interval 1 10)]
+            ;; https://en.wikipedia.org/wiki/Eight_queens_puzzle#Exact_enumeration
+            [numb-solutions '(1 0 0 2 10 4 40 92 352 724)])
+        (map (lambda (n m)
+               (= (length (queens n)) m))
+             dimensions
+             numb-solutions))))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
