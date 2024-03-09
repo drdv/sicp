@@ -2093,14 +2093,15 @@
   the current column. This is inefficient.
 
   For the original implementation the time to execute (queen-cols k) is approximately
-  given by T[k] = T[k-1] + N*H[k], where H[k] is a constant term depending on the
-  number of solutions maintained up to column k (see queen-cols-original-8 and H below). The
-  total effort can be computed using effort-original.
+  given by T[k] = T[k-1] + N*H[k], where N = 8 is the board size and H[k] is a constant
+  term depending on the number of solutions maintained up to column k (see
+  queen-cols-original-8 and H below). The total effort can be computed using
+  effort-original.
 
   For the inverted procedure the time to execute (queen-cols k) is approximately given
-  by Z[k] = 8*Z[k-1] + H[k] - N, where the `- N` models the time we save by not having
-  to call enumerate-interval for each solution (this is a bit too much actually). The total
-  effort can be computed using effort-inverted.
+  by Z[k] = N*Z[k-1] + H[k] - N, where the `- N` models the time we save by not having
+  to call enumerate-interval for each solution (this is a bit too much actually). The
+  total effort can be computed using effort-inverted.
   |#
   (define (queens-inverted board-size)
     (define (queen-cols k)
