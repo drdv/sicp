@@ -1942,7 +1942,7 @@
     (display "--> Exercise/2.42\n")
 
     (define (make-empty-board n)
-      ;; (cons size list-of-cells)
+      ;; (cons size list-of-cells-with-queens)
       (cons n '()))
     (define (board-size board) (car board))
     (define (board-cells board) (cdr board))
@@ -1952,8 +1952,11 @@
     (define (make-cell row col) (cons row col))
     (define (cell-row cell) (car cell))
     (define (cell-col cell) (cdr cell))
-    (define (check? board new-cell) ; return #t if there is a check
-      ;; FIXME: why can't we pass directly `and` (maybe because it is a special form)?
+
+    ; return #t if the new-cell threatens any of the existing queens
+    (define (check? board new-cell)
+      ;; FIXME: I have to pass (lambda (x y) (and x y)) because there is a problem when
+      ;; directly passing `and`. Maybe this is because `and` is a special form?
       (not (accumulate (lambda (x y) (and x y)) #t
                        (map (lambda (cell)
                               (let ([re (cell-row cell)]
