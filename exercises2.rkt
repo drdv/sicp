@@ -1936,56 +1936,59 @@
              (only (submod ".." Section/2.2.3) filter accumulate enumerate-interval)
              (only (submod ".." Section/2.2.3/nested-mapings) flatmap))
 
-  (define (make-empty-board n)
-    ;; (cons size list-of-cells)
-    (cons n '()))
-  (define (board-size board) (car board))
-  (define (board-cells board) (cdr board))
-  (define (add-cell board cell) (cons (board-size board)
-                                      (cons cell (board-cells board))))
-
-  (define (make-cell row col) (cons row col))
-  (define (cell-row cell) (car cell))
-  (define (cell-col cell) (cdr cell))
-  (define (check? board new-cell) ; return #t if there is a check
-    ;; FIXME: why can't we pass directly `and` (maybe because it is a special form)?
-    (not (accumulate (lambda (x y) (and x y)) #t
-                     (map (lambda (cell)
-                            (let ([re (cell-row cell)]
-                                  [rn (cell-row new-cell)]
-                                  [ce (cell-col cell)]
-                                  [cn (cell-col new-cell)])
-                              (not (or (= rn re)
-                                       (= cn ce)
-                                       (= (+ rn cn)
-                                          (+ re ce))
-                                       (= (- rn cn)
-                                          (- re ce))))))
-                          (board-cells board)))))
-
-  ;; column and row indexes are in [1 n]
-  (define (add-new-col boards col)
-    (flatmap (lambda (board)
-               (filter (lambda (new-board)
-                         (not (null? (car (board-cells new-board)))))
-                       (map (lambda (row)
-                              (let ([new-cell (make-cell row col)])
-                                (add-cell board
-                                          (if (check? board new-cell)
-                                              nil
-                                              new-cell))))
-                            (enumerate-interval 1 (board-size board)))))
-             boards))
-
-  (define (queens n)
-    (define (queens-helper col)
-      (cond [(= col 1) (add-new-col (list (make-empty-board n)) 1)]
-            [else (add-new-col (queens-helper (- col 1)) col)]))
-    (queens-helper n))
-
-  (module+ test
+  ;; contains my implementation before seeing the code provided with the exercise
+  (module+ test-my-version
     (#%require rackunit)
     (display "--> Exercise/2.42\n")
+
+    (define (make-empty-board n)
+      ;; (cons size list-of-cells)
+      (cons n '()))
+    (define (board-size board) (car board))
+    (define (board-cells board) (cdr board))
+    (define (add-cell board cell) (cons (board-size board)
+                                        (cons cell (board-cells board))))
+
+    (define (make-cell row col) (cons row col))
+    (define (cell-row cell) (car cell))
+    (define (cell-col cell) (cdr cell))
+    (define (check? board new-cell) ; return #t if there is a check
+      ;; FIXME: why can't we pass directly `and` (maybe because it is a special form)?
+      (not (accumulate (lambda (x y) (and x y)) #t
+                       (map (lambda (cell)
+                              (let ([re (cell-row cell)]
+                                    [rn (cell-row new-cell)]
+                                    [ce (cell-col cell)]
+                                    [cn (cell-col new-cell)])
+                                (not (or (= rn re)
+                                         (= cn ce)
+                                         (= (+ rn cn)
+                                            (+ re ce))
+                                         (= (- rn cn)
+                                            (- re ce))))))
+                            (board-cells board)))))
+
+    (define (feasible-board? board)
+      (not (null? (car (board-cells board)))))
+
+    ;; column and row indexes are in [0 n-1]
+    (define (add-new-col boards col)
+      (flatmap (lambda (board)
+                 (filter feasible-board?
+                         (map (lambda (row)
+                                (let ([new-cell (make-cell row col)])
+                                  (add-cell board
+                                            (if (check? board new-cell)
+                                                nil
+                                                new-cell))))
+                              (enumerate-interval 0 (- (board-size board) 1)))))
+               boards))
+
+    (define (queens n)
+      (define (queens-helper col)
+        (cond [(= col 0) (add-new-col (list (make-empty-board n)) 0)]
+              [else (add-new-col (queens-helper (- col 1)) col)]))
+      (queens-helper (- n 1)))
 
     (define (all seq)
       (accumulate
@@ -1995,10 +1998,10 @@
 
     (check-equal? (map (lambda (board) (board-cells board))
                        (queens 6))
-                  '(((5 . 6) (3 . 5) (1 . 4) (6 . 3) (4 . 2) (2 . 1))
-                    ((4 . 6) (1 . 5) (5 . 4) (2 . 3) (6 . 2) (3 . 1))
-                    ((3 . 6) (6 . 5) (2 . 4) (5 . 3) (1 . 2) (4 . 1))
-                    ((2 . 6) (4 . 5) (6 . 4) (1 . 3) (3 . 2) (5 . 1))))
+                  '(((4 . 5) (2 . 4) (0 . 3) (5 . 2) (3 . 1) (1 . 0))
+                    ((3 . 5) (0 . 4) (4 . 3) (1 . 2) (5 . 1) (2 . 0))
+                    ((2 . 5) (5 . 4) (1 . 3) (4 . 2) (0 . 1) (3 . 0))
+                    ((1 . 5) (3 . 4) (5 . 3) (0 . 2) (2 . 1) (4 . 0))))
     (check-true
      (all
       (let ([dimensions (enumerate-interval 1 10)]
@@ -2007,7 +2010,12 @@
         (map (lambda (n m)
                (= (length (queens n)) m))
              dimensions
-             numb-solutions))))))
+             numb-solutions)))))
+
+  (module+ test
+    (#%require rackunit)
+
+    ))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
@@ -2056,4 +2064,5 @@
            (submod ".." Exercise/2.39 test)
            (submod ".." Section/2.2.3/nested-mapings test)
            (submod ".." Exercise/2.40 test)
-           (submod ".." Exercise/2.41 test)))
+           (submod ".." Exercise/2.41 test)
+           (submod ".." Exercise/2.42 test-my-version)))
