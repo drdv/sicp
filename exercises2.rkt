@@ -1932,6 +1932,10 @@
       (check-equal? (ordered-triplets-sum-to-s n s) res))))
 
 (module Exercise/2.42 sicp
+  (#%provide empty-board
+             safe?
+             adjoin-position
+             queens)
   (#%require (only racket/base module+)
              (only (submod ".." Section/2.2.3) filter accumulate enumerate-interval)
              (only (submod ".." Section/2.2.3/nested-mapings) flatmap))
@@ -1955,6 +1959,35 @@
           (= (- rn cn)
              (- re ce)))))
 
+  (define (adjoin-position new-row k rest-of-queens)
+    (cons (make-cell new-row k)
+          rest-of-queens))
+
+  ;; I don't use the column index k (but keep it in the function signature)
+  (define (safe? k board)
+    (let ([head-cell (car board)]
+          [tail-cells (cdr board)])
+      (accumulate (lambda (x y) (and x y)) #t
+                  (map (lambda (cell)
+                         (not (visible-cells cell head-cell)))
+                       tail-cells))))
+
+  (define (queens board-size)
+    (define (queen-cols k)
+      (if (= k 0)
+          (list empty-board)
+          (filter
+           (lambda (positions)
+             (safe? k positions))
+           (flatmap
+            (lambda (rest-of-queens)
+              (map (lambda (new-row)
+                     (adjoin-position
+                      new-row k rest-of-queens))
+                   (enumerate-interval 1 board-size)))
+            (queen-cols (- k 1))))))
+    (queen-cols board-size))
+
   (define (all seq)
     (accumulate
      (lambda (x y) (and x y))
@@ -1974,35 +2007,6 @@
     (#%require rackunit)
     (display "--> Exercise/2.42\n")
 
-    ;; I don't use the column index k (but keep it in the function signature)
-    (define (safe? k board)
-      (let ([head-cell (car board)]
-            [tail-cells (cdr board)])
-        (accumulate (lambda (x y) (and x y)) #t
-                    (map (lambda (cell)
-                           (not (visible-cells cell head-cell)))
-                         tail-cells))))
-
-    (define (adjoin-position new-row k rest-of-queens)
-      (cons (make-cell new-row k)
-            rest-of-queens))
-
-    (define (queens board-size)
-      (define (queen-cols k)
-        (if (= k 0)
-            (list empty-board)
-            (filter
-             (lambda (positions)
-               (safe? k positions))
-             (flatmap
-              (lambda (rest-of-queens)
-                (map (lambda (new-row)
-                       (adjoin-position
-                        new-row k rest-of-queens))
-                     (enumerate-interval 1 board-size)))
-              (queen-cols (- k 1))))))
-      (queen-cols board-size))
-
     (check-true (visible-cells (make-cell 1 5) (make-cell 1 3)))
     (check-true (visible-cells (make-cell 1 5) (make-cell 3 5)))
     (check-true (visible-cells (make-cell 1 1) (make-cell 5 5)))
@@ -2017,7 +2021,10 @@
            queens-dimensions
            queens-numb-solutions))))
 
-  ;; contains my implementation before seeing the code provided with the exercise
+  #|
+  test-my-version contains my implementation before seeing the code provided with the
+  exercise (I have factored out some common parts post factum)
+  |#
   (module+ test-my-version
     (#%require rackunit)
     (display "--> Exercise/2.42 (my version)\n")
@@ -2070,6 +2077,112 @@
            queens-dimensions
            queens-numb-solutions)))))
 
+(module Exercise/2.43 sicp
+  (#%require (only racket/base module+ format)
+             (only (submod ".." Section/2.2.3) filter enumerate-interval)
+             (only (submod ".." Section/2.2.3/nested-mapings) flatmap)
+             (only (submod ".." Exercise/2.18) reverse)
+             (only (submod ".." Exercise/2.42)
+                   empty-board
+                   safe?
+                   adjoin-position
+                   queens))
+
+  #|
+  In queens-inverted, queen-cols is recursively evaluated for every row starting from
+  the current column. This is inefficient.
+
+  For the original implementation the time to execute (queen-cols k) is approximately
+  given by T[k] = T[k-1] + N*H[k], where H[k] is a constant term depending on the
+  number of solutions maintained up to column k (see queen-cols-original-8 and H below). The
+  total effort can be computed using effort-original.
+
+  For the inverted procedure the time to execute (queen-cols k) is approximately given
+  by Z[k] = 8*Z[k-1] + H[k] - N, where the `- N` models the time we save by not having
+  to call enumerate-interval for each solution (this is a bit too much actually). The total
+  effort can be computed using effort-inverted.
+  |#
+  (define (queens-inverted board-size)
+    (define (queen-cols k)
+      (if (= k 0)
+          (list empty-board)
+          (filter
+           (lambda (positions)
+             (safe? k positions))
+           (flatmap
+            (lambda (new-row)
+              (map (lambda (rest-of-queens)
+                     (adjoin-position new-row k rest-of-queens))
+                   (queen-cols (- k 1))))
+            (enumerate-interval 1 board-size)))))
+    (queen-cols board-size))
+
+  (define board-size 8)
+  (define (queen-cols-original-8 k)
+    (if (= k 0)
+        (list empty-board)
+        (filter
+         (lambda (positions)
+           (safe? k positions))
+         (flatmap
+          (lambda (rest-of-queens)
+            (map (lambda (new-row)
+                   (adjoin-position
+                    new-row k rest-of-queens))
+                 (enumerate-interval 1 board-size)))
+          (queen-cols-original-8 (- k 1))))))
+
+  (define H (map (lambda (n)
+                   (length (queen-cols-original-8 n)))
+                 (enumerate-interval 1 8)))
+
+  (define (effort-original n H)
+    (if (= n 0)
+        0
+        (+ (* board-size (car H))
+           (effort-original (- n 1)
+                            (cdr H)))))
+
+  (define (effort-inverted n H)
+    (if (= n 0)
+        0
+        (- (+ (car H)
+              (* board-size (effort-inverted (- n 1)
+                                             (cdr H))))
+           board-size)))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.43\n")
+
+    ;; show solutions we maintain at a given column for an 8x8 board
+    (for-each (lambda (k h)
+                (display (format "[column ~a] ~a\n" k h)))
+              (enumerate-interval 1 board-size)
+              H)
+
+    (define (get-time queens-procedure n)
+      (let ([start-time (runtime)])
+        (queens-procedure n)
+        (* (- (runtime) start-time)
+           1e-6)))
+
+    (let ([n 6])
+      (check-equal?
+       (queens n)
+       (reverse (queens-inverted n))))
+
+    (display
+     (format "The inverted version is expected to be ~a times slower.\n"
+             (round (/ (effort-inverted board-size (reverse H))
+                       (effort-original board-size (reverse H))))))
+
+    ;; for n = 8, empirically queens-inverted is ~1000 times slower than queens
+    (let ([n 6])
+      (display (format "[n: ~a] empirical check: ~a\n" n
+                       (/ (get-time queens-inverted n)
+                          (get-time queens n)))))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -2119,4 +2232,5 @@
            (submod ".." Exercise/2.40 test)
            (submod ".." Exercise/2.41 test)
            (submod ".." Exercise/2.42 test)
-           (submod ".." Exercise/2.42 test-my-version)))
+           (submod ".." Exercise/2.42 test-my-version)
+           (submod ".." Exercise/2.43 test)))
