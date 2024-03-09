@@ -1936,14 +1936,86 @@
              (only (submod ".." Section/2.2.3) filter accumulate enumerate-interval)
              (only (submod ".." Section/2.2.3/nested-mapings) flatmap))
 
-  (define (empty-board n)
-    (cons n '()))
+  (define empty-board '())
+  ;; column and row indexes are in [1 board-size]
+  (define (make-cell row col) (cons row col))
+  (define (cell-row cell) (car cell))
+  (define (cell-col cell) (cdr cell))
+
+  ;; return true if the two cells share a row, a column or are on the same diagonal
+  (define (visible-cells cell-a cell-b)
+    (let ([re (cell-row cell-a)]
+          [rn (cell-row cell-b)]
+          [ce (cell-col cell-a)]
+          [cn (cell-col cell-b)])
+      (or (= rn re)
+          (= cn ce)
+          (= (+ rn cn)
+             (+ re ce))
+          (= (- rn cn)
+             (- re ce)))))
+
+  (define (all seq)
+    (accumulate
+     (lambda (x y) (and x y))
+     #t
+     seq))
+
+  (define queens-dimensions (enumerate-interval 1 10))
+  ;; https://en.wikipedia.org/wiki/Eight_queens_puzzle#Exact_enumeration
+  (define queens-numb-solutions '(1 0 0 2 10 4 40 92 352 724))
+  (define queens-6-solutions
+    '(((5 . 6) (3 . 5) (1 . 4) (6 . 3) (4 . 2) (2 . 1))
+      ((4 . 6) (1 . 5) (5 . 4) (2 . 3) (6 . 2) (3 . 1))
+      ((3 . 6) (6 . 5) (2 . 4) (5 . 3) (1 . 2) (4 . 1))
+      ((2 . 6) (4 . 5) (6 . 4) (1 . 3) (3 . 2) (5 . 1))))
 
   (module+ test
     (#%require rackunit)
     (display "--> Exercise/2.42\n")
 
-    )
+    ;; I don't use the column index k (but keep it in the function signature)
+    (define (safe? k board)
+      (let ([head-cell (car board)]
+            [tail-cells (cdr board)])
+        (accumulate (lambda (x y) (and x y)) #t
+                    (map (lambda (cell)
+                           (not (visible-cells cell head-cell)))
+                         tail-cells))))
+
+    (define (adjoin-position new-row k rest-of-queens)
+      (cons (make-cell new-row k)
+            rest-of-queens))
+
+    (define (queens board-size)
+      (define (queen-cols k)
+        (if (= k 0)
+            (list empty-board)
+            (filter
+             (lambda (positions)
+               (safe? k positions))
+             (flatmap
+              (lambda (rest-of-queens)
+                (map (lambda (new-row)
+                       (adjoin-position
+                        new-row k rest-of-queens))
+                     (enumerate-interval 1 board-size)))
+              (queen-cols (- k 1))))))
+      (queen-cols board-size))
+
+    (check-true (visible-cells (make-cell 1 5) (make-cell 1 3)))
+    (check-true (visible-cells (make-cell 1 5) (make-cell 3 5)))
+    (check-true (visible-cells (make-cell 1 1) (make-cell 5 5)))
+    (check-true (visible-cells (make-cell 1 3) (make-cell 3 1)))
+    (check-false (visible-cells (make-cell 1 3) (make-cell 2 5)))
+
+    (check-equal? (queens 6) queens-6-solutions)
+    (check-true
+     (all
+      (map (lambda (n m)
+             (= (length (queens n)) m))
+           queens-dimensions
+           queens-numb-solutions))))
 
   ;; contains my implementation before seeing the code provided with the exercise
   (module+ test-my-version
@@ -1952,38 +2024,24 @@
 
     (define (make-empty-board n)
       ;; (cons size list-of-cells-with-queens)
-      (cons n '()))
+      (cons n empty-board))
     (define (board-size board) (car board))
     (define (board-cells board) (cdr board))
     (define (add-cell board cell) (cons (board-size board)
                                         (cons cell (board-cells board))))
 
-    (define (make-cell row col) (cons row col))
-    (define (cell-row cell) (car cell))
-    (define (cell-col cell) (cdr cell))
-
     ; return #t if the new-cell threatens any of the existing queens on the board
     (define (threatens? new-cell board)
-      ;; FIXME: I have to pass (lambda (x y) (and x y)) because there is a problem when
-      ;; directly passing `and`. Maybe this is because `and` is a special form?
-      (not (accumulate (lambda (x y) (and x y)) #t
-                       (map (lambda (cell)
-                              (let ([re (cell-row cell)]
-                                    [rn (cell-row new-cell)]
-                                    [ce (cell-col cell)]
-                                    [cn (cell-col new-cell)])
-                                (not (or (= rn re)
-                                         (= cn ce)
-                                         (= (+ rn cn)
-                                            (+ re ce))
-                                         (= (- rn cn)
-                                            (- re ce))))))
-                            (board-cells board)))))
+      ;; FIXME: I have to pass (lambda (x y) (or x y)) because there is a problem when
+      ;; directly passing `or`. Maybe this is because `or` is a special form?
+      (accumulate (lambda (x y) (or x y)) #f
+                  (map (lambda (cell)
+                         (visible-cells cell new-cell))
+                       (board-cells board))))
 
     (define (feasible-board? board)
       (not (null? (car (board-cells board)))))
 
-    ;; column and row indexes are in [0 n-1]
     (define (add-new-col boards col)
       (flatmap (lambda (board)
                  (filter feasible-board?
@@ -1993,36 +2051,24 @@
                                             (if (threatens? new-cell board)
                                                 nil
                                                 new-cell))))
-                              (enumerate-interval 0 (- (board-size board) 1)))))
+                              (enumerate-interval 1 (board-size board)))))
                boards))
 
     (define (queens n)
       (define (queens-helper col)
-        (cond [(= col 0) (add-new-col (list (make-empty-board n)) 0)]
+        (cond [(= col 1) (add-new-col (list (make-empty-board n)) 1)]
               [else (add-new-col (queens-helper (- col 1)) col)]))
-      (queens-helper (- n 1)))
-
-    (define (all seq)
-      (accumulate
-       (lambda (x y) (and x y))
-       #t
-       seq))
+      (queens-helper n))
 
     (check-equal? (map (lambda (board) (board-cells board))
                        (queens 6))
-                  '(((4 . 5) (2 . 4) (0 . 3) (5 . 2) (3 . 1) (1 . 0))
-                    ((3 . 5) (0 . 4) (4 . 3) (1 . 2) (5 . 1) (2 . 0))
-                    ((2 . 5) (5 . 4) (1 . 3) (4 . 2) (0 . 1) (3 . 0))
-                    ((1 . 5) (3 . 4) (5 . 3) (0 . 2) (2 . 1) (4 . 0))))
+                  queens-6-solutions)
     (check-true
      (all
-      (let ([dimensions (enumerate-interval 1 10)]
-            ;; https://en.wikipedia.org/wiki/Eight_queens_puzzle#Exact_enumeration
-            [numb-solutions '(1 0 0 2 10 4 40 92 352 724)])
-        (map (lambda (n m)
-               (= (length (queens n)) m))
-             dimensions
-             numb-solutions))))))
+      (map (lambda (n m)
+             (= (length (queens n)) m))
+           queens-dimensions
+           queens-numb-solutions)))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
