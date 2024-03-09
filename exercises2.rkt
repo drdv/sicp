@@ -1936,10 +1936,19 @@
              (only (submod ".." Section/2.2.3) filter accumulate enumerate-interval)
              (only (submod ".." Section/2.2.3/nested-mapings) flatmap))
 
+  (define (empty-board n)
+    (cons n '()))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.42\n")
+
+    )
+
   ;; contains my implementation before seeing the code provided with the exercise
   (module+ test-my-version
     (#%require rackunit)
-    (display "--> Exercise/2.42\n")
+    (display "--> Exercise/2.42 (my version)\n")
 
     (define (make-empty-board n)
       ;; (cons size list-of-cells-with-queens)
@@ -1953,8 +1962,8 @@
     (define (cell-row cell) (car cell))
     (define (cell-col cell) (cdr cell))
 
-    ; return #t if the new-cell threatens any of the existing queens
-    (define (check? board new-cell)
+    ; return #t if the new-cell threatens any of the existing queens on the board
+    (define (threatens? new-cell board)
       ;; FIXME: I have to pass (lambda (x y) (and x y)) because there is a problem when
       ;; directly passing `and`. Maybe this is because `and` is a special form?
       (not (accumulate (lambda (x y) (and x y)) #t
@@ -1981,7 +1990,7 @@
                          (map (lambda (row)
                                 (let ([new-cell (make-cell row col)])
                                   (add-cell board
-                                            (if (check? board new-cell)
+                                            (if (threatens? new-cell board)
                                                 nil
                                                 new-cell))))
                               (enumerate-interval 0 (- (board-size board) 1)))))
@@ -2013,12 +2022,7 @@
         (map (lambda (n m)
                (= (length (queens n)) m))
              dimensions
-             numb-solutions)))))
-
-  (module+ test
-    (#%require rackunit)
-
-    ))
+             numb-solutions))))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
@@ -2068,4 +2072,5 @@
            (submod ".." Section/2.2.3/nested-mapings test)
            (submod ".." Exercise/2.40 test)
            (submod ".." Exercise/2.41 test)
+           (submod ".." Exercise/2.42 test)
            (submod ".." Exercise/2.42 test-my-version)))
