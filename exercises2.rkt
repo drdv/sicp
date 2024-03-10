@@ -2093,15 +2093,16 @@
   the current column. This is inefficient.
 
   For the original implementation the time to execute (queen-cols k) is approximately
-  given by T[k] = T[k-1] + N*H[k], where N = 8 is the board size and H[k] is a constant
-  term depending on the number of solutions maintained up to column k (see
-  queen-cols-original-8 and H below). The total effort can be computed using
-  effort-original.
+  given by T[k] = T[k-1] + N*H[k], where N = 8 is the board size, k ranges from 1 to N
+  and H[k] is a term depending on the number of solutions maintained up to column k (see
+  queen-cols-original-8 and H below). Summing up over k gives:
+  T[8] = N*H[1] + ... + N*H[8] assuming that T[0] = 0 (see effort-original).
 
   For the inverted procedure the time to execute (queen-cols k) is approximately given
-  by Z[k] = N*Z[k-1] + H[k] - N, where the `- N` models the time we save by not having
-  to call enumerate-interval for each solution (this is a bit too much actually). The
-  total effort can be computed using effort-inverted.
+  by I[k] = N*I[k-1] + H[k] - N, where subtracting N models the computations we save by
+  not having to call enumerate-interval for each maintained solution. Summing up over k
+  gives: I[8] = N^7*(H[1] - N) + N^6*(H[2] - N) + ... + N*(H[7] - N) + (H[8] - N), where
+  I[0] = T[0] = 0 is assumed (see effort-inverted).
   |#
   (define (queens-inverted board-size)
     (define (queen-cols k)
@@ -2119,6 +2120,7 @@
     (queen-cols board-size))
 
   (define board-size 8)
+  ;; extract the original implementation of queen-cols for an 8x8 board
   (define (queen-cols-original-8 k)
     (if (= k 0)
         (list empty-board)
@@ -2133,6 +2135,7 @@
                  (enumerate-interval 1 board-size)))
           (queen-cols-original-8 (- k 1))))))
 
+  ;; number of maintained solutions (see note above)
   (define H (map (lambda (n)
                    (length (queen-cols-original-8 n)))
                  (enumerate-interval 1 8)))
@@ -2179,7 +2182,7 @@
                        (effort-original board-size (reverse H))))))
 
     ;; for n = 8, empirically queens-inverted is ~1000 times slower than queens
-    (let ([n 6])
+    (let ([n 6]) ; I keep n = 6 here because I don't want to wait too much
       (display (format "[n: ~a] empirical check: ~a\n" n
                        (/ (get-time queens-inverted n)
                           (get-time queens n)))))))
