@@ -2213,8 +2213,13 @@ arguments (or at least I don't know how to implement them).
              corner-split
              square-limit)
   (#%require (only racket/base module+)
+             (only (submod "exercises1.rkt" Exercise/1.42) compose)
              (only (submod ".." pict-utils) save-img)
              sicp-pict)
+
+  (define (flipped-pairs painter)
+    (let ((painter2 (beside painter (flip-vert painter))))
+      (below painter2 painter2)))
 
   (define (right-split painter n)
     (if (= n 0)
@@ -2249,15 +2254,58 @@ arguments (or at least I don't know how to implement them).
       (below (flip-vert half) half)))
 
   (module+ test
+    (#%require rackunit)
     (display "--> Section/2.2.4\n")
 
     (save-img einstein #:file "out/einstein.png")
     (save-img (flip-horiz einstein) #:file "out/flip-horiz-einstein.png")
     (save-img (beside einstein einstein) #:file "out/beside-einstein-einstein.png")
     (save-img (below einstein einstein) #:file "out/below-einstein-einstein.png")
+    (save-img (flipped-pairs einstein) #:file "out/flipped-pairs-einstein.png")
     (save-img (right-split einstein 4) #:file "out/right-split-4-einstein.png")
     (save-img (corner-split einstein 4) #:file "out/corner-split-4-einstein.png")
-    (save-img (square-limit einstein 4) #:file "out/square-limit-4-einstein.png")))
+    (save-img (square-limit einstein 4) #:file "out/square-limit-4-einstein.png"))
+
+  ;; =========================================================
+  ;; Higher-order operations
+  ;; =========================================================
+  (define (square-of-four tl tr bl br)
+    (lambda (painter)
+      (let ((top (beside (tl painter) (tr painter)))
+            (bottom (beside (bl painter) (br painter))))
+        (below bottom top))))
+
+  (define (flipped-pairs-v2 painter)
+    (let ((combine4 (square-of-four identity flip-vert
+                                    identity flip-vert)))
+      (combine4 painter)))
+
+  (define flipped-pairs-v3
+    (square-of-four identity flip-vert
+                    identity flip-vert))
+
+  (define (square-limit-v2 painter n)
+    (let ((combine4 (square-of-four flip-horiz identity
+                                    rotate180 flip-vert)))
+      (combine4 (corner-split painter n))))
+
+  (define (square-limit-v3 painter n)
+    (let ((combine4 (square-of-four flip-horiz identity
+                                    (compose flip-vert flip-horiz) flip-vert)))
+      (combine4 (corner-split painter n))))
+
+  (module+ test
+    (check-equal? (paint (flipped-pairs einstein))
+                  (paint (flipped-pairs-v2 einstein)))
+
+    (check-equal? (paint (flipped-pairs einstein))
+                  (paint (flipped-pairs-v3 einstein)))
+
+    (check-equal? (paint (square-limit einstein 4))
+                  (paint (square-limit-v2 einstein 4)))
+
+    (check-equal? (paint (square-limit einstein 4))
+                  (paint (square-limit-v3 einstein 4)))))
 
 (module Exercise/2.44 sicp
   (#%require (only racket/base module+)
@@ -2269,6 +2317,33 @@ arguments (or at least I don't know how to implement them).
     (display "--> Exercise/2.44\n")
 
     (save-img (up-split einstein 4) #:file "out/up-split-4-einstein.png")))
+
+(module Exercise/2.45 sicp
+  (#%require (only racket/base module+)
+             sicp-pict
+             (only (submod ".." pict-utils) save-img)
+             (only (submod ".." Section/2.2.4) up-split right-split))
+
+  (define (split transform-1 transform-2)
+    (lambda (painter n)
+      (if (= n 0)
+          painter
+          (let* ([split-transformation (split transform-1 transform-2)]
+                 [smaller (split-transformation painter (- n 1))])
+            (transform-1 painter (transform-2 smaller smaller))))))
+
+  (define right-split-v2 (split beside below))
+  (define up-split-v2 (split below beside))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.45\n")
+
+    (check-equal? (paint (right-split einstein 4))
+                  (paint (right-split-v2 einstein 4)))
+
+    (check-equal? (paint (up-split einstein 4))
+                  (paint (up-split-v2 einstein 4)))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
@@ -2322,4 +2397,5 @@ arguments (or at least I don't know how to implement them).
            (submod ".." Exercise/2.42 test-my-version)
            (submod ".." Exercise/2.43 test)
            (submod ".." Section/2.2.4 test)
-           (submod ".." Exercise/2.44 test)))
+           (submod ".." Exercise/2.44 test)
+           (submod ".." Exercise/2.45 test)))
