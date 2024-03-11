@@ -2182,10 +2182,95 @@
                        (effort-original board-size (reverse H))))))
 
     ;; for n = 8, empirically queens-inverted is ~1000 times slower than queens
-    (let ([n 6]) ; I keep n = 6 here because I don't want to wait too much
+    (let ([n 6]) ; I keep n = 6 here because I don't want to wait too much in the tests
       (display (format "[n: ~a] empirical check: ~a\n" n
                        (/ (get-time queens-inverted n)
                           (get-time queens n)))))))
+
+#|
+I define some functions in this separate module because sicp doesn't support defaut
+arguments (or at least I don't know how to implement them).
+|#
+(module pict-utils racket/base
+  (#%provide save-img)
+  (#%require sicp-pict
+             net/sendurl
+             racket/class)
+
+  (define (save-img painter
+                    #:file [filename "/var/tmp/_racket_tmp.png"]
+                    #:size [size 500]
+                    #:open [open-file #f])
+    (send (send (paint painter #:width size #:height size) get-bitmap)
+          save-file filename 'png)
+    (if open-file
+        (send-url/file filename)
+        (display (format "file ~a created\n" filename)))))
+
+(module Section/2.2.4 sicp
+  (#%provide right-split
+             up-split
+             corner-split
+             square-limit)
+  (#%require (only racket/base module+)
+             (only (submod ".." pict-utils) save-img)
+             sicp-pict)
+
+  (define (right-split painter n)
+    (if (= n 0)
+        painter
+        (let ((smaller (right-split painter (- n 1))))
+          (beside painter (below smaller smaller)))))
+
+  #|
+  up-split is supposed to be defined in Exercise/2.44 but the code organization is
+  simpler if I define it here
+  |#
+  (define (up-split painter n)
+    (if (= n 0)
+        painter
+        (let ((smaller (up-split painter (- n 1))))
+          (below painter (beside smaller smaller)))))
+
+  (define (corner-split painter n)
+    (if (= n 0)
+        painter
+        (let ((up (up-split painter (- n 1)))
+              (right (right-split painter (- n 1))))
+          (let ((top-left (beside up up))
+                (bottom-right (below right right))
+                (corner (corner-split painter (- n 1))))
+            (beside (below painter top-left)
+                    (below bottom-right corner))))))
+
+  (define (square-limit painter n)
+    (let ((quarter (corner-split painter n)))
+      (let ((half (beside (flip-horiz quarter) quarter)))
+        (below (flip-vert half) half))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Section/2.2.4\n")
+
+    (save-img einstein #:file "out/einstein.png")
+    (save-img (flip-horiz einstein) #:file "out/flip-horiz-einstein.png")
+    (save-img (beside einstein einstein) #:file "out/beside-einstein-einstein.png")
+    (save-img (below einstein einstein) #:file "out/below-einstein-einstein.png")
+    (save-img (right-split einstein 4) #:file "out/right-split-4-einstein.png")
+    (save-img (corner-split einstein 4) #:file "out/corner-split-4-einstein.png")
+    (save-img (square-limit einstein 4) #:file "out/square-limit-4-einstein.png")))
+
+(module Exercise/2.44 sicp
+  (#%require (only racket/base module+)
+             sicp-pict
+             (only (submod ".." pict-utils) save-img)
+             (only (submod ".." Section/2.2.4) up-split))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.44\n")
+
+    (save-img (up-split einstein 4) #:file "out/up-split-4-einstein.png")))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
@@ -2237,4 +2322,6 @@
            (submod ".." Exercise/2.41 test)
            (submod ".." Exercise/2.42 test)
            (submod ".." Exercise/2.42 test-my-version)
-           (submod ".." Exercise/2.43 test)))
+           (submod ".." Exercise/2.43 test)
+           (submod ".." Section/2.2.4 test)
+           (submod ".." Exercise/2.44 test)))
