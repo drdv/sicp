@@ -2235,21 +2235,20 @@ arguments (or at least I don't know how to implement them).
   (define (corner-split painter n)
     (if (= n 0)
         painter
-        (let ((up (up-split painter (- n 1)))
-              (right (right-split painter (- n 1))))
-          (let ((top-left (beside up up))
-                (bottom-right (below right right))
-                (corner (corner-split painter (- n 1))))
-            (beside (below painter top-left)
-                    (below bottom-right corner))))))
+        (let* ([up (up-split painter (- n 1))]
+               [right (right-split painter (- n 1))]
+               [top-left (beside up up)]
+               [bottom-right (below right right)]
+               [corner (corner-split painter (- n 1))])
+          (beside (below painter top-left)
+                  (below bottom-right corner)))))
 
   (define (square-limit painter n)
-    (let ((quarter (corner-split painter n)))
-      (let ((half (beside (flip-horiz quarter) quarter)))
-        (below (flip-vert half) half))))
+    (let* ([quarter (corner-split painter n)]
+           [half (beside (flip-horiz quarter) quarter)])
+      (below (flip-vert half) half)))
 
   (module+ test
-    (#%require rackunit)
     (display "--> Section/2.2.4\n")
 
     (save-img einstein #:file "out/einstein.png")
@@ -2267,7 +2266,6 @@ arguments (or at least I don't know how to implement them).
              (only (submod ".." Section/2.2.4) up-split))
 
   (module+ test
-    (#%require rackunit)
     (display "--> Exercise/2.44\n")
 
     (save-img (up-split einstein 4) #:file "out/up-split-4-einstein.png")))
