@@ -2301,11 +2301,12 @@ arguments (or at least I don't know how to implement them).
     (check-equal? (paint (flipped-pairs einstein))
                   (paint (flipped-pairs-v3 einstein)))
 
-    (check-equal? (paint (square-limit einstein 4))
-                  (paint (square-limit-v2 einstein 4)))
+    (let ([n 4])
+      (check-equal? (paint (square-limit einstein n))
+                    (paint (square-limit-v2 einstein n)))
 
-    (check-equal? (paint (square-limit einstein 4))
-                  (paint (square-limit-v3 einstein 4)))))
+      (check-equal? (paint (square-limit einstein n))
+                    (paint (square-limit-v3 einstein n))))))
 
 (module Exercise/2.44 sicp
   (#%require (only racket/base module+)
@@ -2339,11 +2340,12 @@ arguments (or at least I don't know how to implement them).
     (#%require rackunit)
     (display "--> Exercise/2.45\n")
 
-    (check-equal? (paint (right-split einstein 4))
-                  (paint (right-split-v2 einstein 4)))
+    (let ([n 4])
+      (check-equal? (paint (right-split einstein n))
+                    (paint (right-split-v2 einstein n)))
 
-    (check-equal? (paint (up-split einstein 4))
-                  (paint (up-split-v2 einstein 4)))))
+      (check-equal? (paint (up-split einstein n))
+                    (paint (up-split-v2 einstein n))))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
