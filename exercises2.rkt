@@ -2347,6 +2347,141 @@ arguments (or at least I don't know how to implement them).
       (check-equal? (paint (up-split einstein n))
                     (paint (up-split-v2 einstein n))))))
 
+(module Section/2.2.4/frames sicp
+  (#%provide make-vect
+             xcor-vect
+             ycor-vect
+             make-frame
+             origin-frame
+             edge1-frame
+             edge2-frame)
+  (#%require (only racket/base module+))
+
+  #|
+  Two versions of make-frame, origin-frame, edge1-frame and edge2-frame are supposed to
+  be defined in Exercise/2.47 but the code organization is simpler if I define one of
+  them here. Same for make-vect, xcor-vect and ycor-vect, which are supposed to be
+  defined in Exercise/2.46.
+  |#
+  (define (make-vect x y)
+    (cons x y))
+
+  (define (xcor-vect vec)
+    (car vec))
+
+  (define (ycor-vect vec)
+    (cdr vec))
+
+  (define (make-frame origin edge1 edge2)
+    (list origin edge1 edge2))
+
+  (define (origin-frame frame)
+    (car frame))
+
+  (define (edge1-frame frame)
+    (cadr frame))
+
+  (define (edge2-frame frame)
+    (caddr frame))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Section/2.2.4/frames\n")
+
+    (let* ([origin (make-vect 1 2)]
+           [frame (make-frame origin
+                              (make-vect 3 4)
+                              (make-vect 5 6))])
+      (check-equal? (origin-frame frame) origin)
+      (check-equal? (edge1-frame frame) (make-vect 3 4))
+      (check-equal? (edge2-frame frame) (make-vect 5 6))
+      (check-equal? (xcor-vect origin) 1)
+      (check-equal? (ycor-vect origin) 2))))
+
+(module Exercise/2.46 sicp
+  (#%provide add-vect
+             sub-vect
+             scale-vect)
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.2.4/frames)
+                   make-vect
+                   xcor-vect
+                   ycor-vect
+                   make-frame
+                   origin-frame
+                   edge1-frame
+                   edge2-frame))
+
+  (define (add-vect vec1 vec2)
+    (make-vect (+ (xcor-vect vec1)
+                  (xcor-vect vec2))
+               (+ (ycor-vect vec1)
+                  (ycor-vect vec2))))
+
+  (define (sub-vect vec1 vec2)
+    (make-vect (- (xcor-vect vec1)
+                  (xcor-vect vec2))
+               (- (ycor-vect vec1)
+                  (ycor-vect vec2))))
+
+  (define (scale-vect s vec)
+    (make-vect (* s (xcor-vect vec))
+               (* s (ycor-vect vec))))
+
+  (define (frame-coord-map frame)
+    (lambda (v)
+      (add-vect
+       (origin-frame frame)
+       (add-vect (scale-vect (xcor-vect v) (edge1-frame frame))
+                 (scale-vect (ycor-vect v) (edge2-frame frame))))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.46\n")
+
+    (let ([vec1 (make-vect 1 2)]
+          [vec2 (make-vect 3 1)])
+      (check-equal? (add-vect vec1 vec2) (make-vect 4 3))
+      (check-equal? (sub-vect vec1 vec2) (make-vect -2 1))
+      (check-equal? (scale-vect 2 vec1) (make-vect 2 4)))
+
+    (let* ([frame (make-frame (make-vect 1 2)
+                              (make-vect 3 4)
+                              (make-vect 5 6))]
+           [x (make-vect 3 2)]
+           [m (frame-coord-map frame)]
+           [mx (m x)])
+      (check-equal? (xcor-vect mx) (+ 1 (* 3 3) (* 2 5)))
+      (check-equal? (ycor-vect mx) (+ 2 (* 3 4) (* 2 6))))))
+
+(module Exercise/2.47 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.2.4/frames) make-vect))
+
+  (define (make-frame origin edge1 edge2)
+    (cons origin (cons edge1 edge2)))
+
+  (define (origin-frame frame)
+    (car frame))
+
+  (define (edge1-frame frame)
+    (cadr frame))
+
+  (define (edge2-frame frame)
+    (cddr frame))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.47\n")
+
+    ;; same test as in Section/2.2.4/frames
+    (let ([frame (make-frame (make-vect 1 2)
+                             (make-vect 3 4)
+                             (make-vect 5 6))])
+      (check-equal? (origin-frame frame) (make-vect 1 2))
+      (check-equal? (edge1-frame frame) (make-vect 3 4))
+      (check-equal? (edge2-frame frame) (make-vect 5 6)))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -2400,4 +2535,6 @@ arguments (or at least I don't know how to implement them).
            (submod ".." Exercise/2.43 test)
            (submod ".." Section/2.2.4 test)
            (submod ".." Exercise/2.44 test)
-           (submod ".." Exercise/2.45 test)))
+           (submod ".." Exercise/2.45 test)
+           (submod ".." Exercise/2.46 test)
+           (submod ".." Exercise/2.47 test)))
