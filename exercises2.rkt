@@ -2482,6 +2482,50 @@ arguments (or at least I don't know how to implement them).
       (check-equal? (edge1-frame frame) (make-vect 3 4))
       (check-equal? (edge2-frame frame) (make-vect 5 6)))))
 
+(module Exercise/2.48 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.2.4/frames) make-vect))
+
+  (define (make-segment origin->start origin->end)
+    (cons origin->start origin->end))
+
+  (define (start-segment vec)
+    (car vec))
+
+  (define (end-segment vec)
+    (cdr vec))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.48\n")
+
+    (let* ([origin->start (make-vect 1 2)]
+           [origin->end (make-vect 2 3)]
+           [segment (make-segment origin->start origin->end)])
+      (check-equal? (start-segment segment) origin->start)
+      (check-equal? (end-segment segment) origin->end))))
+
+(module Exercise/2.49 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.2.4/frames) make-vect))
+
+  (define (segments->painter segment-list)
+    (lambda (frame)
+      (for-each
+       (lambda (segment)
+         (draw-line
+          ((frame-coord-map frame)
+           (start-segment segment))
+          ((frame-coord-map frame)
+           (end-segment segment))))
+       segment-list)))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.49\n")
+
+    ))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -2537,4 +2581,5 @@ arguments (or at least I don't know how to implement them).
            (submod ".." Exercise/2.44 test)
            (submod ".." Exercise/2.45 test)
            (submod ".." Exercise/2.46 test)
-           (submod ".." Exercise/2.47 test)))
+           (submod ".." Exercise/2.47 test)
+           (submod ".." Exercise/2.48 test)))
