@@ -15,12 +15,16 @@ help: ## Show this help
 tex: ## Generate latex note
 	tectonic notes.tex
 
-test-1: ## Run tests for exercise1.rkt
+test-1: clean ## Run tests for exercise1.rkt
 	raco test exercises1.rkt
 
-test-2: ## Run tests for exercise2.rkt
+test-2: clean ## Run tests for exercise2.rkt
 	raco test exercises2.rkt
 
 .PHONY: docs
 docs: ## Generate docs
 	cd docs && scribble mouse.scrbl
+
+.PHONY: clean
+clean:
+	rm -rf out/*.png

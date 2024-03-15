@@ -2510,19 +2510,15 @@ arguments (or at least I don't know how to implement them).
       (check-equal? (end-segment segment) origin->end))))
 
 (module Exercise/2.49 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ format)
              racket/class
              racket/draw
              net/sendurl
-             (only (submod ".." pict-utils) save-img)
              (only (submod ".." Section/2.2.4/frames)
                    make-vect
                    xcor-vect
                    ycor-vect
-                   make-frame
-                   origin-frame
-                   edge1-frame
-                   edge2-frame)
+                   make-frame)
              (only (submod ".." Exercise/2.46) frame-coord-map)
              (only (submod ".." Exercise/2.48)
                    make-segment
@@ -2530,12 +2526,12 @@ arguments (or at least I don't know how to implement them).
                    end-segment))
 
   (define (segments->painter dc segment-list)
-    (define (draw-line segment-start segment-end)
+    (define (draw-line start-point end-point)
       (send dc draw-line
-            (xcor-vect segment-start)
-            (ycor-vect segment-start)
-            (xcor-vect segment-end)
-            (ycor-vect segment-end)))
+            (xcor-vect start-point)
+            (ycor-vect start-point)
+            (xcor-vect end-point)
+            (ycor-vect end-point)))
     (lambda (frame)
       (for-each
        (lambda (segment)
@@ -2571,39 +2567,51 @@ arguments (or at least I don't know how to implement them).
           (make-segment (make-vect 0 0.5)
                         (make-vect 0.5 0))))
 
-  (define task-d
-    (list
-
-     ))
-
-  (define (task->png task frames size filename)
-    (let* ([dc (new bitmap-dc% [bitmap (make-bitmap size size)])])
-      (send dc set-pen "red" 10 'solid)
+  (define (task->png painter task frames size filename open-png)
+    (let ([dc (new bitmap-dc% [bitmap (make-bitmap size size)])]
+          [frame-border (list (make-segment (make-vect 0 0)
+                                            (make-vect 1 0))
+                              (make-segment (make-vect 0 0)
+                                            (make-vect 0 1))
+                              (make-segment (make-vect 0 1)
+                                            (make-vect 1 1))
+                              (make-segment (make-vect 1 0)
+                                            (make-vect 1 1)))])
+      (send dc set-pen "black" 5 'solid)
       (for-each
        (lambda (frame)
-         ((segments->painter dc task) frame))
+         ((painter dc task) frame))
+       frames)
+      (send dc set-pen "red" 5 'short-dash)
+      (for-each
+       (lambda (frame)
+         ((segments->painter dc frame-border) frame))
        frames)
       (send (send dc get-bitmap) save-file filename 'png)
-      filename))
+      (if open-png
+          (send-url/file filename)
+          (display (format "file ~a created\n" filename)))))
 
+  ;; ===================================================================================
+  ;; all frames in Figure. 2.10
+  ;; ===================================================================================
   (define canvas-size 500)
   (define offset (* canvas-size 0.05))
   (define half-size (/ canvas-size 2))
   (define half-size- (- half-size offset))
   (define half-size+ (+ half-size offset))
 
-  ;; ===================================================================================
-  ;; all frames in Figure. 2.10
-  ;; ===================================================================================
   (define frame-top-left (make-frame (make-vect 0 0)
                                      (make-vect half-size- 0)
                                      (make-vect 0 half-size-)))
 
-  (define frame-top-right (make-frame (make-vect half-size+ half-size-)
-                                      (make-vect (* 0.3 half-size-)
-                                                 (* -0.7 half-size-))
-                                      (make-vect (* 0.7 half-size-)
-                                                 (* -0.3 half-size-))))
+  ;; the origin is the top left corner
+  (define frame-top-right (make-frame (make-vect (+ half-size+ (* 0.2 half-size-))
+                                                 (* 0.2 half-size-))
+                                      (make-vect (* 0.8 half-size-)
+                                                 (* -0.2 half-size-))
+                                      (make-vect (* -0.2 half-size-)
+                                                 (* 0.8 half-size-))))
 
   (define frame-bottom-left (make-frame (make-vect 0 half-size+)
                                         (make-vect (/ half-size 2) 0)
@@ -2619,16 +2627,83 @@ arguments (or at least I don't know how to implement them).
                        frame-bottom-right))
   ;; ===================================================================================
 
-  (send-url/file (task->png task-a frames canvas-size "out/task-a.png"))
-  (send-url/file (task->png task-b frames canvas-size "out/task-b.png"))
-  (send-url/file (task->png task-c frames canvas-size "out/task-c.png"))
-  (send-url/file (task->png task-d frames canvas-size "out/task-d.png"))
-
   (module+ test
-    (#%require rackunit)
     (display "--> Exercise/2.49\n")
 
-    ))
+    (task->png segments->painter task-a frames canvas-size "out/task-a.png" #f)
+    (task->png segments->painter task-b frames canvas-size "out/task-b.png" #f)
+    (task->png segments->painter task-c frames canvas-size "out/task-c.png" #f))
+
+  (define (make-spline start-point control-point end-point)
+    (list start-point control-point end-point))
+
+  (define (spline-start spline)
+    (car spline))
+
+  (define (spline-control spline)
+    (cadr spline))
+
+  (define (spline-end spline)
+    (caddr spline))
+
+  ;; I changed the function signature as I don't want to have dc as a global variable
+  (define (splines->painter dc spline-list)
+    (define (draw-spline start-point control-point end-point)
+      (send dc draw-spline
+            (xcor-vect start-point)
+            (ycor-vect start-point)
+            (xcor-vect control-point)
+            (ycor-vect control-point)
+            (xcor-vect end-point)
+            (ycor-vect end-point)))
+    (lambda (frame)
+      (for-each
+       (lambda (spline)
+         (let ([m (frame-coord-map frame)])
+           (draw-spline
+            (m (spline-start spline))
+            (m (spline-control spline))
+            (m (spline-end spline)))))
+       spline-list)))
+
+  ;; the original task is to use segments->painter but I prefer using a splines->painter
+  ;; afterall, this is supposed to be a wave
+  (define task-d
+    (list
+     ;; legs inner
+     (make-spline (make-vect 0.4 1) (make-vect 0.5 0.6) (make-vect 0.6 1))
+
+     ;; outer left leg
+     (make-spline (make-vect 0.4 0.5) (make-vect 0.38 0.7) (make-vect 0.3 1))
+     ;; armpit left
+     (make-spline (make-vect 0.4 0.5) (make-vect 0.4 0.35) (make-vect 0.25 0.45))
+     ;; left arm low
+     (make-spline (make-vect 0.25 0.45) (make-vect 0.15 0.5) (make-vect 0 0.35))
+     ;; left arm high
+     (make-spline (make-vect 0.35 0.29) (make-vect 0.17 0.43) (make-vect 0 0.26))
+     ;; left shoulder
+     (make-spline (make-vect 0.35 0.29) (make-vect 0.39 0.28) (make-vect 0.41 0.29))
+     ;; left neck
+     (make-spline (make-vect 0.41 0.29) (make-vect 0.47 0.27) (make-vect 0.45 0.22))
+
+     ;; outer right leg
+     (make-spline (make-vect 0.6 0.5) (make-vect 0.62 0.7) (make-vect 0.7 1))
+     ;; armpit right
+     (make-spline (make-vect 0.6 0.5) (make-vect 0.6 0.35) (make-vect 0.75 0.45))
+     ;; right arm low
+     (make-spline (make-vect 0.75 0.45) (make-vect 0.84 0.53) (make-vect 1 0.7))
+     ;; right arm high
+     (make-spline (make-vect 0.59 0.29) (make-vect 0.7 0.29) (make-vect 1 0.6))
+     ;; right neck
+     (make-spline (make-vect 0.59 0.29) (make-vect 0.53 0.27) (make-vect 0.55 0.22))
+
+     ;; left head
+     (make-spline (make-vect 0.45 0) (make-vect 0.35 0.1) (make-vect 0.45 0.22))
+     ;; right head
+     (make-spline (make-vect 0.55 0) (make-vect 0.65 0.1) (make-vect 0.55 0.22))))
+
+  (module+ test
+    (task->png splines->painter task-d frames canvas-size "out/task-d.png" #f)))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
@@ -2686,4 +2761,5 @@ arguments (or at least I don't know how to implement them).
            (submod ".." Exercise/2.45 test)
            (submod ".." Exercise/2.46 test)
            (submod ".." Exercise/2.47 test)
-           (submod ".." Exercise/2.48 test)))
+           (submod ".." Exercise/2.48 test)
+           (submod ".." Exercise/2.49 test)))
