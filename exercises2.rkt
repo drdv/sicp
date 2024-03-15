@@ -2723,6 +2723,11 @@ arguments (or at least I don't know how to implement them).
     (task->png splines->painter task-d frames-fig-2.10 canvas-size "out/task-d.png" #f)))
 
 (module Section/2.2.4/transforming-painters sicp
+  (#%provide transform-painter
+             flip-vert
+             rotate-90
+             rotate+90
+             beside)
   (#%require (only racket/base module+)
              racket/class
              net/sendurl
@@ -2758,11 +2763,18 @@ arguments (or at least I don't know how to implement them).
                        (make-vect 1 0)
                        (make-vect 0.5 0.5)))
 
-  (define (rotate90 painter)
+  ;; NOTE: clockwise direction is negative (so I change the name accordingly)
+  (define (rotate-90 painter)
     (transform-painter painter
                        (make-vect 1.0 0.0)
                        (make-vect 1.0 1.0)
                        (make-vect 0.0 0.0)))
+
+  (define (rotate+90 painter)
+    (transform-painter painter
+                       (make-vect 0.0 1.0)
+                       (make-vect 0.0 0.0)
+                       (make-vect 1.0 1.0)))
 
   (define (squash-inwards painter)
     (transform-painter painter
@@ -2805,15 +2817,25 @@ arguments (or at least I don't know how to implement them).
     (let ([dc (get-drawing-context size)])
       ((wave dc) frame)
       (send dc set-pen "red" 5 'solid)
-      ((rotate90 (wave dc)) frame)
-      (save-png dc "out/rotate90-wave.png" #t))
+      ((rotate-90 (wave dc)) frame)
+      (save-png dc "out/rotate-90-wave.png" #f))
+
+    (let ([dc (get-drawing-context size)])
+      ((wave dc) frame)
+      (send dc set-pen "red" 5 'solid)
+      ((rotate+90 (wave dc)) frame)
+      (save-png dc "out/rotate+90-wave.png" #f))
 
     ;; same result as flip-vert
     (let ([dc (get-drawing-context size)])
       ((wave dc) frame)
       (send dc set-pen "red" 5 'solid)
-      ((rotate90 (rotate90 (wave dc))) frame)
-      (save-png dc "out/rotate90-rotate90-wave.png" #f))
+      ((rotate-90 (rotate-90 (wave dc))) frame)
+      (save-png dc "out/rotate-90-rotate-90-wave.png" #f))
+
+    (let ([dc (get-drawing-context size)])
+      ((rotate+90 (rotate-90 (wave dc))) frame)
+      (save-png dc "out/rotate+90-rotate-90-wave.png" #f))
 
     (let ([dc (get-drawing-context size)])
       ((squash-inwards (wave dc)) frame)
@@ -2821,16 +2843,50 @@ arguments (or at least I don't know how to implement them).
 
     (let ([dc (get-drawing-context size)])
       ((beside (wave dc) (flip-vert (wave dc))) frame)
-      (save-png dc "out/squash-inwards-wave.png" #f))))
+      (save-png dc "out/beside-wave.png" #f))))
 
 (module Exercise/2.50 sicp
-  (#%require (only racket/base module+))
+  (#%provide flip-horiz)
+  (#%require (only racket/base module+)
+             (only (submod ".." Exercise/2.49) get-drawing-context wave save-png)
+             (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
+             (only (submod ".." Section/2.2.4/transforming-painters)
+                   transform-painter
+                   flip-vert
+                   rotate-90
+                   rotate+90
+                   beside))
+
+  (define (flip-horiz painter)
+    (transform-painter painter
+                       (make-vect 1.0 0.0)
+                       (make-vect 0.0 0.0)
+                       (make-vect 1.0 1.0)))
+
+  (define size 500)
+  (define frame (make-frame (make-vect 0 0)
+                            (make-vect size 0)
+                            (make-vect 0 size)))
 
   (module+ test
     (#%require rackunit)
     (display "--> Exercise/2.50\n")
 
-    ))
+    (let ([dc (get-drawing-context size)])
+      ((beside (wave dc) (flip-horiz (wave dc))) frame)
+      (save-png dc "out/flip-horiz-wave.png" #f))
+
+    ;; rotating 180 degrees is equivalent to flip-vert
+    (let ([dc (get-drawing-context size)])
+      ((beside (rotate+90 (rotate+90 (wave dc)))
+               (flip-vert (wave dc))) frame)
+      (save-png dc "out/rotate-180-wave.png" #f))
+
+    ;; rotating 270 degrees counterclockwise is equivalent to rotate90
+    (let ([dc (get-drawing-context size)])
+      ((beside (rotate+90 (rotate+90 (rotate+90 (wave dc))))
+               (rotate-90 (wave dc))) frame)
+      (save-png dc "out/rotate-270-wave.png" #f))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
@@ -2890,4 +2946,5 @@ arguments (or at least I don't know how to implement them).
            (submod ".." Exercise/2.47 test)
            (submod ".." Exercise/2.48 test)
            (submod ".." Exercise/2.49 test)
-           (submod ".." Section/2.2.4/transforming-painters test)))
+           (submod ".." Section/2.2.4/transforming-painters test)
+           (submod ".." Exercise/2.50 test)))
