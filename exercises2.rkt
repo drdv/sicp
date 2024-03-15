@@ -2691,9 +2691,9 @@ arguments (or at least I don't know how to implement them).
      (make-spline (make-vect 0.4 0.5) (make-vect 0.38 0.7) (make-vect 0.3 1))
      ;; armpit left
      (make-spline (make-vect 0.4 0.5) (make-vect 0.4 0.35) (make-vect 0.25 0.45))
-     ;; left arm low
+     ;; left arm bottom
      (make-spline (make-vect 0.25 0.45) (make-vect 0.15 0.5) (make-vect 0 0.35))
-     ;; left arm high
+     ;; left arm top
      (make-spline (make-vect 0.35 0.29) (make-vect 0.17 0.43) (make-vect 0 0.26))
      ;; left shoulder
      (make-spline (make-vect 0.35 0.29) (make-vect 0.39 0.28) (make-vect 0.41 0.29))
@@ -2704,9 +2704,9 @@ arguments (or at least I don't know how to implement them).
      (make-spline (make-vect 0.6 0.5) (make-vect 0.62 0.7) (make-vect 0.7 1))
      ;; armpit right
      (make-spline (make-vect 0.6 0.5) (make-vect 0.6 0.35) (make-vect 0.75 0.45))
-     ;; right arm low
+     ;; right arm bottom
      (make-spline (make-vect 0.75 0.45) (make-vect 0.84 0.53) (make-vect 1 0.7))
-     ;; right arm high
+     ;; right arm top
      (make-spline (make-vect 0.59 0.29) (make-vect 0.7 0.29) (make-vect 1 0.6))
      ;; right neck
      (make-spline (make-vect 0.59 0.29) (make-vect 0.53 0.27) (make-vect 0.55 0.22))
@@ -2869,7 +2869,6 @@ arguments (or at least I don't know how to implement them).
                             (make-vect 0 size)))
 
   (module+ test
-    (#%require rackunit)
     (display "--> Exercise/2.50\n")
 
     (let ([dc (get-drawing-context size)])
@@ -2882,11 +2881,55 @@ arguments (or at least I don't know how to implement them).
                (flip-vert (wave dc))) frame)
       (save-png dc "out/rotate-180-wave.png" #f))
 
-    ;; rotating 270 degrees counterclockwise is equivalent to rotate90
+    ;; rotating 270 degrees counterclockwise is equivalent to rotate-90
     (let ([dc (get-drawing-context size)])
       ((beside (rotate+90 (rotate+90 (rotate+90 (wave dc))))
                (rotate-90 (wave dc))) frame)
       (save-png dc "out/rotate-270-wave.png" #f))))
+
+(module Exercise/2.51 sicp
+  (#%provide below)
+  (#%require (only racket/base module+)
+             (only (submod ".." Exercise/2.49) get-drawing-context wave save-png)
+             (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
+             (only (submod ".." Section/2.2.4/transforming-painters)
+                   transform-painter
+                   rotate-90
+                   rotate+90
+                   beside))
+
+  (define (below painter1 painter2)
+    (let* ([split-point (make-vect 0.0 0.5)]
+           [paint-bottom (transform-painter painter1
+                                            (make-vect 0.0 0.0)
+                                            (make-vect 1.0 0.0)
+                                            split-point)]
+           [paint-top (transform-painter painter2
+                                         split-point
+                                         (make-vect 1.0 0.5)
+                                         (make-vect 0.0 1.0))])
+      (lambda (frame)
+        (paint-bottom frame)
+        (paint-top frame))))
+
+  (define (below-rot painter1 painter2)
+    (rotate+90 (beside (rotate-90 painter1) (rotate-90 painter2))))
+
+  (define size 500)
+  (define frame (make-frame (make-vect 0 0)
+                            (make-vect size 0)
+                            (make-vect 0 size)))
+
+  (module+ test
+    (display "--> Exercise/2.51\n")
+
+    (let ([dc (get-drawing-context size)])
+      ((below (wave dc) (wave dc)) frame)
+      (save-png dc "out/below-wave.png" #f))
+
+    (let ([dc (get-drawing-context size)])
+      ((below-rot (wave dc) (wave dc)) frame)
+      (save-png dc "out/below-rot-wave.png" #f))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
@@ -2947,4 +2990,5 @@ arguments (or at least I don't know how to implement them).
            (submod ".." Exercise/2.48 test)
            (submod ".." Exercise/2.49 test)
            (submod ".." Section/2.2.4/transforming-painters test)
-           (submod ".." Exercise/2.50 test)))
+           (submod ".." Exercise/2.50 test)
+           (submod ".." Exercise/2.51 test)))
