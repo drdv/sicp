@@ -1,5 +1,7 @@
 #lang racket/base
 
+(require racket/class)
+
 ;; ===============================================================
 (for/fold ([counter 0])
           ([element '(3 5 3 4 3 2 6 3)])
@@ -35,3 +37,20 @@
 
 (welcome #:last "Doe")
 ;; ===============================================================
+  (define book-class%
+    (class object%
+      (field (pages 5))
+      (define/public (letters)
+        (* pages 500))
+      (define/public (set-pages n)
+        (set! pages n))
+      (super-new)))
+
+  (define b
+    (new book-class%))
+  (send b letters)
+  (send b set-pages 6)
+  (send b letters)
+  (get-field pages b)
+  (set-field! pages b 7)
+  (send b letters)

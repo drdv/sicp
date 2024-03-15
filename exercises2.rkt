@@ -2401,7 +2401,8 @@ arguments (or at least I don't know how to implement them).
 (module Exercise/2.46 sicp
   (#%provide add-vect
              sub-vect
-             scale-vect)
+             scale-vect
+             frame-coord-map)
   (#%require (only racket/base module+)
              (only (submod ".." Section/2.2.4/frames)
                    make-vect
@@ -2483,6 +2484,9 @@ arguments (or at least I don't know how to implement them).
       (check-equal? (edge2-frame frame) (make-vect 5 6)))))
 
 (module Exercise/2.48 sicp
+  (#%provide make-segment
+             start-segment
+             end-segment)
   (#%require (only racket/base module+)
              (only (submod ".." Section/2.2.4/frames) make-vect))
 
@@ -2507,18 +2511,118 @@ arguments (or at least I don't know how to implement them).
 
 (module Exercise/2.49 sicp
   (#%require (only racket/base module+)
-             (only (submod ".." Section/2.2.4/frames) make-vect))
+             racket/class
+             racket/draw
+             net/sendurl
+             (only (submod ".." pict-utils) save-img)
+             (only (submod ".." Section/2.2.4/frames)
+                   make-vect
+                   xcor-vect
+                   ycor-vect
+                   make-frame
+                   origin-frame
+                   edge1-frame
+                   edge2-frame)
+             (only (submod ".." Exercise/2.46) frame-coord-map)
+             (only (submod ".." Exercise/2.48)
+                   make-segment
+                   start-segment
+                   end-segment))
 
-  (define (segments->painter segment-list)
+  (define (segments->painter dc segment-list)
+    (define (draw-line segment-start segment-end)
+      (send dc draw-line
+            (xcor-vect segment-start)
+            (ycor-vect segment-start)
+            (xcor-vect segment-end)
+            (ycor-vect segment-end)))
     (lambda (frame)
       (for-each
        (lambda (segment)
-         (draw-line
-          ((frame-coord-map frame)
-           (start-segment segment))
-          ((frame-coord-map frame)
-           (end-segment segment))))
+         (let ([m (frame-coord-map frame)])
+           (draw-line
+            (m (start-segment segment))
+            (m (end-segment segment)))))
        segment-list)))
+
+  (define task-a
+    (list (make-segment (make-vect 0 0)
+                        (make-vect 1 0))
+          (make-segment (make-vect 0 0)
+                        (make-vect 0 1))
+          (make-segment (make-vect 0 1)
+                        (make-vect 1 1))
+          (make-segment (make-vect 1 0)
+                        (make-vect 1 1))))
+
+  (define task-b
+    (list (make-segment (make-vect 0 0)
+                        (make-vect 1 1))
+          (make-segment (make-vect 1 0)
+                        (make-vect 0 1))))
+
+  (define task-c
+    (list (make-segment (make-vect 0.5 0)
+                        (make-vect 1 0.5))
+          (make-segment (make-vect 1 0.5)
+                        (make-vect 0.5 1))
+          (make-segment (make-vect 0.5 1)
+                        (make-vect 0 0.5))
+          (make-segment (make-vect 0 0.5)
+                        (make-vect 0.5 0))))
+
+  (define task-d
+    (list
+
+     ))
+
+  (define (task->png task frames size filename)
+    (let* ([dc (new bitmap-dc% [bitmap (make-bitmap size size)])])
+      (send dc set-pen "red" 10 'solid)
+      (for-each
+       (lambda (frame)
+         ((segments->painter dc task) frame))
+       frames)
+      (send (send dc get-bitmap) save-file filename 'png)
+      filename))
+
+  (define canvas-size 500)
+  (define offset (* canvas-size 0.05))
+  (define half-size (/ canvas-size 2))
+  (define half-size- (- half-size offset))
+  (define half-size+ (+ half-size offset))
+
+  ;; ===================================================================================
+  ;; all frames in Figure. 2.10
+  ;; ===================================================================================
+  (define frame-top-left (make-frame (make-vect 0 0)
+                                     (make-vect half-size- 0)
+                                     (make-vect 0 half-size-)))
+
+  (define frame-top-right (make-frame (make-vect half-size+ half-size-)
+                                      (make-vect (* 0.3 half-size-)
+                                                 (* -0.7 half-size-))
+                                      (make-vect (* 0.7 half-size-)
+                                                 (* -0.3 half-size-))))
+
+  (define frame-bottom-left (make-frame (make-vect 0 half-size+)
+                                        (make-vect (/ half-size 2) 0)
+                                        (make-vect 0 half-size-)))
+
+  (define frame-bottom-right (make-frame (make-vect half-size+ (* 1.5 half-size))
+                                         (make-vect half-size- 0)
+                                         (make-vect 0 (/ half-size 2))))
+
+  (define frames (list frame-top-left
+                       frame-top-right
+                       frame-bottom-left
+                       frame-bottom-right))
+  ;; ===================================================================================
+
+  (send-url/file (task->png task-a frames canvas-size "out/task-a.png"))
+  (send-url/file (task->png task-b frames canvas-size "out/task-b.png"))
+  (send-url/file (task->png task-c frames canvas-size "out/task-c.png"))
+  (send-url/file (task->png task-d frames canvas-size "out/task-d.png"))
 
   (module+ test
     (#%require rackunit)
