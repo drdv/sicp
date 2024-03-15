@@ -2430,11 +2430,11 @@ arguments (or at least I don't know how to implement them).
                (* s (ycor-vect vec))))
 
   (define (frame-coord-map frame)
-    (lambda (v)
+    (lambda (vec)
       (add-vect
        (origin-frame frame)
-       (add-vect (scale-vect (xcor-vect v) (edge1-frame frame))
-                 (scale-vect (ycor-vect v) (edge2-frame frame))))))
+       (add-vect (scale-vect (xcor-vect vec) (edge1-frame frame))
+                 (scale-vect (ycor-vect vec) (edge2-frame frame))))))
 
   (module+ test
     (#%require rackunit)
@@ -2510,6 +2510,11 @@ arguments (or at least I don't know how to implement them).
       (check-equal? (end-segment segment) origin->end))))
 
 (module Exercise/2.49 sicp
+  (#%provide segments->painter
+             splines->painter
+             get-drawing-context
+             save-png
+             wave)
   (#%require (only racket/base module+ format)
              racket/class
              racket/draw
@@ -2567,8 +2572,21 @@ arguments (or at least I don't know how to implement them).
           (make-segment (make-vect 0 0.5)
                         (make-vect 0.5 0))))
 
+  (define (get-drawing-context size)
+    (let ([dc (new bitmap-dc% [bitmap (make-bitmap size size)])])
+      (send dc set-pen "black" 5 'solid)
+      (send dc set-brush "white" 'solid)
+      (send dc draw-rectangle 0 0 size size)
+      dc))
+
+  (define (save-png dc filename open-png)
+    (send (send dc get-bitmap) save-file filename 'png)
+    (if open-png
+        (send-url/file filename)
+        (display (format "file ~a created\n" filename))))
+
   (define (task->png painter task frames size filename open-png)
-    (let ([dc (new bitmap-dc% [bitmap (make-bitmap size size)])]
+    (let ([dc (get-drawing-context size)]
           [frame-border (list (make-segment (make-vect 0 0)
                                             (make-vect 1 0))
                               (make-segment (make-vect 0 0)
@@ -2577,7 +2595,6 @@ arguments (or at least I don't know how to implement them).
                                             (make-vect 1 1))
                               (make-segment (make-vect 1 0)
                                             (make-vect 1 1)))])
-      (send dc set-pen "black" 5 'solid)
       (for-each
        (lambda (frame)
          ((painter dc task) frame))
@@ -2587,10 +2604,7 @@ arguments (or at least I don't know how to implement them).
        (lambda (frame)
          ((segments->painter dc frame-border) frame))
        frames)
-      (send (send dc get-bitmap) save-file filename 'png)
-      (if open-png
-          (send-url/file filename)
-          (display (format "file ~a created\n" filename)))))
+      (save-png dc filename open-png)))
 
   ;; ===================================================================================
   ;; all frames in Figure. 2.10
@@ -2621,18 +2635,18 @@ arguments (or at least I don't know how to implement them).
                                          (make-vect half-size- 0)
                                          (make-vect 0 (/ half-size 2))))
 
-  (define frames (list frame-top-left
-                       frame-top-right
-                       frame-bottom-left
-                       frame-bottom-right))
+  (define frames-fig-2.10 (list frame-top-left
+                                frame-top-right
+                                frame-bottom-left
+                                frame-bottom-right))
   ;; ===================================================================================
 
   (module+ test
     (display "--> Exercise/2.49\n")
 
-    (task->png segments->painter task-a frames canvas-size "out/task-a.png" #f)
-    (task->png segments->painter task-b frames canvas-size "out/task-b.png" #f)
-    (task->png segments->painter task-c frames canvas-size "out/task-c.png" #f))
+    (task->png segments->painter task-a frames-fig-2.10 canvas-size "out/task-a.png" #f)
+    (task->png segments->painter task-b frames-fig-2.10 canvas-size "out/task-b.png" #f)
+    (task->png segments->painter task-c frames-fig-2.10 canvas-size "out/task-c.png" #f))
 
   (define (make-spline start-point control-point end-point)
     (list start-point control-point end-point))
@@ -2702,8 +2716,121 @@ arguments (or at least I don't know how to implement them).
      ;; right head
      (make-spline (make-vect 0.55 0) (make-vect 0.65 0.1) (make-vect 0.55 0.22))))
 
+  (define (wave dc)
+    (splines->painter dc task-d))
+
   (module+ test
-    (task->png splines->painter task-d frames canvas-size "out/task-d.png" #f)))
+    (task->png splines->painter task-d frames-fig-2.10 canvas-size "out/task-d.png" #f)))
+
+(module Section/2.2.4/transforming-painters sicp
+  (#%require (only racket/base module+)
+             racket/class
+             net/sendurl
+             (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
+             (only (submod ".." Exercise/2.46) sub-vect frame-coord-map)
+             (only (submod ".." Exercise/2.49) get-drawing-context wave save-png))
+
+  (define (transform-painter painter origin corner1 corner2)
+    (lambda (frame)
+      (let* ([m (frame-coord-map frame)]
+             [new-origin (m origin)])
+        (painter (make-frame
+                  new-origin
+                  (sub-vect (m corner1) new-origin)
+                  (sub-vect (m corner2) new-origin))))))
+
+  (define (flip-vert painter)
+    (transform-painter painter
+                       (make-vect 0.0 1.0) ; new origin
+                       (make-vect 1.0 1.0) ; new end of edge1
+                       (make-vect 0.0 0.0))) ; new end of edge2
+
+  ;; "upper" because the positive y axis is down
+  (define (shrink-to-upper-right painter)
+    (transform-painter painter
+                       (make-vect 0.5 0.5)
+                       (make-vect 1.0 0.5)
+                       (make-vect 0.5 1.0)))
+
+  (define (shrink-to-lower-right painter)
+    (transform-painter painter
+                       (make-vect 0.5 0)
+                       (make-vect 1 0)
+                       (make-vect 0.5 0.5)))
+
+  (define (rotate90 painter)
+    (transform-painter painter
+                       (make-vect 1.0 0.0)
+                       (make-vect 1.0 1.0)
+                       (make-vect 0.0 0.0)))
+
+  (define (squash-inwards painter)
+    (transform-painter painter
+                       (make-vect 0.0 0.0)
+                       (make-vect 0.65 0.35)
+                       (make-vect 0.35 0.65)))
+
+  (define (beside painter1 painter2)
+    (let* ([split-point (make-vect 0.5 0.0)]
+           [paint-left (transform-painter painter1
+                                          (make-vect 0.0 0.0)
+                                          split-point
+                                          (make-vect 0.0 1.0))]
+           [paint-right (transform-painter painter2
+                                           split-point
+                                           (make-vect 1.0 0.0)
+                                           (make-vect 0.5 1.0))])
+      (lambda (frame)
+        (paint-left frame)
+        (paint-right frame))))
+
+  (define size 500)
+  (define frame (make-frame (make-vect 0 0)
+                            (make-vect size 0)
+                            (make-vect 0 size)))
+
+  (module+ test
+    (display "--> Section/2.2.4/transforming-painters\n")
+
+    (let ([dc (get-drawing-context size)])
+      ((flip-vert (wave dc)) frame)
+      (save-png dc "out/flip-vert-wave.png" #f))
+
+    (let ([dc (get-drawing-context size)])
+      ((shrink-to-lower-right (wave dc)) frame)
+      (send dc set-pen "red" 5 'solid)
+      ((shrink-to-upper-right (wave dc)) frame)
+      (save-png dc "out/shrink-wave.png" #f))
+
+    (let ([dc (get-drawing-context size)])
+      ((wave dc) frame)
+      (send dc set-pen "red" 5 'solid)
+      ((rotate90 (wave dc)) frame)
+      (save-png dc "out/rotate90-wave.png" #t))
+
+    ;; same result as flip-vert
+    (let ([dc (get-drawing-context size)])
+      ((wave dc) frame)
+      (send dc set-pen "red" 5 'solid)
+      ((rotate90 (rotate90 (wave dc))) frame)
+      (save-png dc "out/rotate90-rotate90-wave.png" #f))
+
+    (let ([dc (get-drawing-context size)])
+      ((squash-inwards (wave dc)) frame)
+      (save-png dc "out/squash-inwards-wave.png" #f))
+
+    (let ([dc (get-drawing-context size)])
+      ((beside (wave dc) (flip-vert (wave dc))) frame)
+      (save-png dc "out/squash-inwards-wave.png" #f))))
+
+(module Exercise/2.50 sicp
+  (#%require (only racket/base module+))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.50\n")
+
+    ))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
@@ -2762,4 +2889,5 @@ arguments (or at least I don't know how to implement them).
            (submod ".." Exercise/2.46 test)
            (submod ".." Exercise/2.47 test)
            (submod ".." Exercise/2.48 test)
-           (submod ".." Exercise/2.49 test)))
+           (submod ".." Exercise/2.49 test)
+           (submod ".." Section/2.2.4/transforming-painters test)))
