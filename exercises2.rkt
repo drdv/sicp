@@ -3074,6 +3074,29 @@ This module includes the push example from Lecture 3A. I found both the lecture 
       ((down-push (wave dc) 3) frame)
       (save-dc dc "out/down-push-wave.png" #f))))
 
+(module Exercise/2.53 sicp
+  (#%require (only racket/base module+))
+
+  (define (memq item x)
+    (cond ((null? x) false)
+          ((eq? item (car x)) x)
+          (else (memq item (cdr x)))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.53\n")
+
+    (check-false (memq 'apple '(pear banana prune)))
+    (check-equal? (memq 'apple '(x (apple sauce) y apple pear)) '(apple pear))
+
+    (list 'a 'b 'c)                         ; (a b c)
+    (list (list 'george))                   ; ((george))
+    (cdr '((x1 x2) (y1 y2)))                ; ((y1 y2))
+    (cadr '((x1 x2) (y1 y2)))               ; (y1 y2)
+    (pair? (car '(a short list)))           ; #f
+    (memq 'red '((red shoes) (blue socks))) ; #f
+    (memq 'red '(red shoes blue socks))))   ; (red shoes blue socks)
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -3136,4 +3159,5 @@ This module includes the push example from Lecture 3A. I found both the lecture 
            (submod ".." Exercise/2.50 test)
            (submod ".." Exercise/2.51 test)
            (submod ".." Exercise/2.52 test)
-           (submod ".." Lecture/3A test)))
+           (submod ".." Lecture/3A test)
+           (submod ".." Exercise/2.53 test)))
