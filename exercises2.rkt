@@ -3263,6 +3263,71 @@ This module includes the push example from Lecture 3A. I found both the lecture 
     ;; the simplified expression is 32*x + 24
     (check-equal? (deriv '(** (+ (* 4 x) 3) 2) 'x) '(* (* 2 (+ (* 4 x) 3)) 4))))
 
+(module Exercise/2.57 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Example/symbolic-differentiation)
+                   variable?
+                   same-variable?
+                   sum?
+                   addend
+                   product?
+                   multiplier
+                   make-sum
+                   make-product)
+             (only (submod ".." Exercise/2.56)
+                   exponentiation?
+                   base
+                   exponent
+                   make-exponentiation))
+
+  #|
+  We need to change only augend and multiplicand. make-sum and make-product could still
+  take two arguments. All we need is to handle expressions defined as quoted list, e.g.,
+  '(+ x y z).
+  |#
+  (define (augend s) (if (= (length s) 3) ; e.g., '(+ a b)
+                         (caddr s)
+                         (cons '+ (cddr s))))
+  (define (multiplicand p) (if (= (length p) 3) ; e.g., '(* a b)
+                               (caddr p)
+                               (cons '* (cddr p))))
+
+  #|
+  This is the same deriv procedure as in Exercise/2.56. I redefine it here to take into
+  account the new augend and multiplicand. Alternatively I could have used Dynamic
+  Binding (https://docs.racket-lang.org/guide/parameterize.html).
+  |#
+  (define (deriv expr var)
+    (cond [(number? expr) 0]
+          [(variable? expr) (if (same-variable? expr var) 1 0)]
+          [(sum? expr) (make-sum (deriv (addend expr) var)
+                                 (deriv (augend expr) var))]
+          [(product? expr)
+           (make-sum
+            (make-product (multiplier expr)
+                          (deriv (multiplicand expr) var))
+            (make-product (deriv (multiplier expr) var)
+                          (multiplicand expr)))]
+          [(exponentiation? expr)
+           (let ([b (base expr)]
+                 [n (exponent expr)])
+             (make-product
+              (make-product n (make-exponentiation b (make-sum n -1)))
+              (deriv b var)))]
+          [else
+           (error "unknown expression type: DERIV" expr)]))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.57\n")
+
+    (check-equal? (deriv '(* (* x y) (+ x 3)) 'x)
+                  (deriv '(* x y (+ x 3)) 'x))
+
+    ;; it is not guaranteed to obtain the same simplification
+    (deriv '(+ (+ (* x y) (* x 5)) (+ x y)) 'x)
+    (deriv '(+ (* x y) (* x 5) (+ x y)) 'x)))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -3330,4 +3395,5 @@ This module includes the push example from Lecture 3A. I found both the lecture 
            (submod ".." Exercise/2.54 test)
            (submod ".." Exercise/2.55 test)
            (submod ".." Example/symbolic-differentiation test)
-           (submod ".." Exercise/2.56 test)))
+           (submod ".." Exercise/2.56 test)
+           (submod ".." Exercise/2.57 test)))
