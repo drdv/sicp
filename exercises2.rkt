@@ -2199,9 +2199,9 @@ arguments (or at least I don't know how to implement them).
 
   #|
   Towards the end of the "picture language" related exercises I use my own paiters and
-  paiter transformers but in the initial exercises it is convenient to use the sicp-pict
-  package to verify results. Visualizing painters from sicp-pict requires using the
-  paint procedure (see with-frame at
+  paiter transformers/combiners but in the initial exercises it is convenient to use the
+  sicp-pict package to verify results. Visualizing painters from sicp-pict requires
+  using the paint procedure (see with-frame at
   https://github.com/sicp-lang/sicp/blob/master/sicp-pict/main.rkt) and we cannot
   directly pass a frame - which I find "unfortunate". The save-painter procedure saves
   to a png the image associated with a painter.
@@ -2523,7 +2523,9 @@ arguments (or at least I don't know how to implement them).
              splines->painter
              get-drawing-context
              save-dc
-             wave)
+             task-d
+             wave
+             make-spline)
   (#%require (only racket/base module+ format)
              racket/class
              racket/draw
@@ -2940,6 +2942,97 @@ arguments (or at least I don't know how to implement them).
       ((below-rot (wave dc) (wave dc)) frame)
       (save-dc dc "out/below-rot-wave.png" #f))))
 
+#|
+Here we cannot reuse right-split, up-split, corner-split, square-limit etc. defined in
+Section/2.2.4 because they are based on utilities in sicp-pict. So I simply redefine (and
+modify) them.
+|#
+(module Exercise/2.52 sicp
+  (#%require (only racket/base module+)
+             (only (submod "exercises1.rkt" Exercise/1.42) compose)
+             (only (submod ".." Exercise/2.49)
+                   splines->painter
+                   get-drawing-context
+                   task-d
+                   save-dc
+                   make-spline)
+             (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
+             (only (submod ".." Section/2.2.4/transforming-painters)
+                   rotate-90
+                   rotate+90
+                   flip-vert
+                   beside)
+             (only (submod ".." Exercise/2.50) flip-horiz)
+             (only (submod ".." Exercise/2.51) below))
+
+  (define (right-split painter n)
+    (if (= n 0)
+        painter
+        (let ((smaller (right-split painter (- n 1))))
+          (beside painter (below smaller smaller)))))
+
+  (define (up-split painter n)
+    (if (= n 0)
+        painter
+        (let ((smaller (up-split painter (- n 1))))
+          (below painter (beside smaller smaller)))))
+
+  (define (corner-split painter n)
+    (if (= n 0)
+        painter
+        (let* ([up (up-split (rotate+90 painter) (- n 1))]
+               [right (right-split (rotate-90 painter) (- n 1))]
+               [top-left up]
+               [bottom-right right]
+               [corner (corner-split painter (- n 1))])
+          (beside (below painter top-left)
+                  (below bottom-right corner)))))
+
+  (define (square-of-four tl tr bl br)
+    (lambda (painter)
+      (let ((top (beside (tl painter) (tr painter)))
+            (bottom (beside (bl painter) (br painter))))
+        (below bottom top))))
+
+  (define (square-limit painter n)
+    (let ((combine4 (square-of-four flip-vert rotate+90
+                                    flip-vert (compose flip-vert flip-horiz))))
+      (combine4 (corner-split painter n))))
+
+  (define size 500)
+  (define frame (make-frame (make-vect 0 0)
+                            (make-vect size 0)
+                            (make-vect 0 size)))
+
+  (define (wave-heart dc)
+    (splines->painter
+     dc
+     (let ([heart-left (make-spline (make-vect 0.54 0.42)
+                                    (make-vect 0.49 0.4)
+                                    (make-vect 0.54 0.5))]
+           [heart-right (make-spline (make-vect 0.54 0.42)
+                                     (make-vect 0.59 0.4)
+                                     (make-vect 0.54 0.5))])
+       (cons heart-left (cons heart-right task-d)))))
+
+  (module+ test
+    (display "--> Exercise/2.52\n")
+
+    ;; task a
+    (let ([dc (get-drawing-context size)])
+      ((wave-heart dc) frame)
+      (save-dc dc "out/wave-heart.png" #f))
+
+    ;; task b
+    (let ([dc (get-drawing-context size)])
+      ((corner-split (wave-heart dc) 2) frame)
+      (save-dc dc "out/corner-split-wave-heart.png" #f))
+
+    ;; task c
+    (let ([dc (get-drawing-context size)])
+      ((square-limit (wave-heart dc) 1) frame)
+      (save-dc dc "out/square-limit-wave-heart.png" #t))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -3000,4 +3093,5 @@ arguments (or at least I don't know how to implement them).
            (submod ".." Exercise/2.49 test)
            (submod ".." Section/2.2.4/transforming-painters test)
            (submod ".." Exercise/2.50 test)
-           (submod ".." Exercise/2.51 test)))
+           (submod ".." Exercise/2.51 test)
+           (submod ".." Exercise/2.52 test)))
