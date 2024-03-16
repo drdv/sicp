@@ -2859,6 +2859,7 @@ arguments (or at least I don't know how to implement them).
 (module Exercise/2.50 sicp
   (#%provide flip-horiz)
   (#%require (only racket/base module+)
+             (only (submod "exercises1.rkt" Exercise/1.43) repeated)
              (only (submod ".." Exercise/2.49) get-drawing-context wave save-dc)
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
              (only (submod ".." Section/2.2.4/transforming-painters)
@@ -2888,13 +2889,13 @@ arguments (or at least I don't know how to implement them).
 
     ;; rotating 180 degrees is equivalent to flip-vert
     (let ([dc (get-drawing-context size)])
-      ((beside (rotate+90 (rotate+90 (wave dc)))
+      ((beside ((repeated rotate+90 2) (wave dc)) ; (rotate+90 (rotate+90 (wave dc)))
                (flip-vert (wave dc))) frame)
       (save-dc dc "out/rotate-180-wave.png" #f))
 
     ;; rotating 270 degrees counterclockwise is equivalent to rotate-90
     (let ([dc (get-drawing-context size)])
-      ((beside (rotate+90 (rotate+90 (rotate+90 (wave dc))))
+      ((beside ((repeated rotate+90 3) (wave dc))
                (rotate-90 (wave dc))) frame)
       (save-dc dc "out/rotate-270-wave.png" #f))))
 
@@ -3033,6 +3034,46 @@ modify) them.
       ((square-limit (wave-heart dc) 1) frame)
       (save-dc dc "out/square-limit-wave-heart.png" #f))))
 
+#|
+This module includes the push example from Lecture 3A. I found both the lecture and the
+"picture language" exercises to be very enlightening.
+|#
+(module Lecture/3A sicp
+  (#%require (only racket/base module+)
+             (only (submod "exercises1.rkt" Exercise/1.43) repeated)
+             (only (submod ".." Exercise/2.49)
+                   splines->painter
+                   get-drawing-context
+                   save-dc
+                   wave)
+             (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
+             (only (submod ".." Section/2.2.4/transforming-painters) beside)
+             (only (submod ".." Exercise/2.51) below))
+
+  (define (push comb)
+    (lambda (pict n)
+      (let ([f (repeated (lambda (p) (comb pict p)) n)])
+        (f pict))))
+
+  (define right-push (push beside))
+  (define down-push (push below)) ; I call it "down" even though positive y is downwards
+
+  (define size 500)
+  (define frame (make-frame (make-vect 0 0)
+                            (make-vect size 0)
+                            (make-vect 0 size)))
+
+  (module+ test
+    (display "--> Lecture/3A\n")
+
+    (let ([dc (get-drawing-context size)])
+      ((right-push (wave dc) 3) frame)
+      (save-dc dc "out/right-push-wave.png" #f))
+
+    (let ([dc (get-drawing-context size)])
+      ((down-push (wave dc) 3) frame)
+      (save-dc dc "out/down-push-wave.png" #f))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -3094,4 +3135,5 @@ modify) them.
            (submod ".." Section/2.2.4/transforming-painters test)
            (submod ".." Exercise/2.50 test)
            (submod ".." Exercise/2.51 test)
-           (submod ".." Exercise/2.52 test)))
+           (submod ".." Exercise/2.52 test)
+           (submod ".." Lecture/3A test)))
