@@ -2192,12 +2192,21 @@ I define some functions in this separate module because sicp doesn't support def
 arguments (or at least I don't know how to implement them).
 |#
 (module pict-utils racket/base
-  (#%provide save-img)
+  (#%provide save-painter)
   (#%require sicp-pict
              net/sendurl
              racket/class)
 
-  (define (save-img painter
+  #|
+  Towards the end of the "picture language" related exercises I use my own paiters and
+  paiter transformers but in the initial exercises it is convenient to use the sicp-pict
+  package to verify results. Visualizing painters from sicp-pict requires using the
+  paint procedure (see with-frame at
+  https://github.com/sicp-lang/sicp/blob/master/sicp-pict/main.rkt) and we cannot
+  directly pass a frame - which I find "unfortunate". The save-painter procedure saves
+  to a png the image associated with a painter.
+  |#
+  (define (save-painter painter
                     #:file [filename "/var/tmp/_racket_tmp.png"]
                     #:size [size 500]
                     #:open [open-file #f])
@@ -2214,7 +2223,7 @@ arguments (or at least I don't know how to implement them).
              square-limit)
   (#%require (only racket/base module+)
              (only (submod "exercises1.rkt" Exercise/1.42) compose)
-             (only (submod ".." pict-utils) save-img)
+             (only (submod ".." pict-utils) save-painter)
              sicp-pict)
 
   (define (flipped-pairs painter)
@@ -2257,14 +2266,14 @@ arguments (or at least I don't know how to implement them).
     (#%require rackunit)
     (display "--> Section/2.2.4\n")
 
-    (save-img einstein #:file "out/einstein.png")
-    (save-img (flip-horiz einstein) #:file "out/flip-horiz-einstein.png")
-    (save-img (beside einstein einstein) #:file "out/beside-einstein-einstein.png")
-    (save-img (below einstein einstein) #:file "out/below-einstein-einstein.png")
-    (save-img (flipped-pairs einstein) #:file "out/flipped-pairs-einstein.png")
-    (save-img (right-split einstein 4) #:file "out/right-split-4-einstein.png")
-    (save-img (corner-split einstein 4) #:file "out/corner-split-4-einstein.png")
-    (save-img (square-limit einstein 4) #:file "out/square-limit-4-einstein.png"))
+    (save-painter einstein #:file "out/einstein.png")
+    (save-painter (flip-horiz einstein) #:file "out/flip-horiz-einstein.png")
+    (save-painter (beside einstein einstein) #:file "out/beside-einstein-einstein.png")
+    (save-painter (below einstein einstein) #:file "out/below-einstein-einstein.png")
+    (save-painter (flipped-pairs einstein) #:file "out/flipped-pairs-einstein.png")
+    (save-painter (right-split einstein 4) #:file "out/right-split-4-einstein.png")
+    (save-painter (corner-split einstein 4) #:file "out/corner-split-4-einstein.png")
+    (save-painter (square-limit einstein 4) #:file "out/square-limit-4-einstein.png"))
 
   ;; =========================================================
   ;; Higher-order operations
@@ -2311,18 +2320,18 @@ arguments (or at least I don't know how to implement them).
 (module Exercise/2.44 sicp
   (#%require (only racket/base module+)
              sicp-pict
-             (only (submod ".." pict-utils) save-img)
+             (only (submod ".." pict-utils) save-painter)
              (only (submod ".." Section/2.2.4) up-split))
 
   (module+ test
     (display "--> Exercise/2.44\n")
 
-    (save-img (up-split einstein 4) #:file "out/up-split-4-einstein.png")))
+    (save-painter (up-split einstein 4) #:file "out/up-split-4-einstein.png")))
 
 (module Exercise/2.45 sicp
   (#%require (only racket/base module+)
              sicp-pict
-             (only (submod ".." pict-utils) save-img)
+             (only (submod ".." pict-utils) save-painter)
              (only (submod ".." Section/2.2.4) up-split right-split))
 
   (define (split transform-1 transform-2)
@@ -2513,7 +2522,7 @@ arguments (or at least I don't know how to implement them).
   (#%provide segments->painter
              splines->painter
              get-drawing-context
-             save-png
+             save-dc
              wave)
   (#%require (only racket/base module+ format)
              racket/class
@@ -2579,7 +2588,7 @@ arguments (or at least I don't know how to implement them).
       (send dc draw-rectangle 0 0 size size)
       dc))
 
-  (define (save-png dc filename open-png)
+  (define (save-dc dc filename open-png)
     (send (send dc get-bitmap) save-file filename 'png)
     (if open-png
         (send-url/file filename)
@@ -2604,7 +2613,7 @@ arguments (or at least I don't know how to implement them).
        (lambda (frame)
          ((segments->painter dc frame-border) frame))
        frames)
-      (save-png dc filename open-png)))
+      (save-dc dc filename open-png)))
 
   ;; ===================================================================================
   ;; all frames in Figure. 2.10
@@ -2733,7 +2742,7 @@ arguments (or at least I don't know how to implement them).
              net/sendurl
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
              (only (submod ".." Exercise/2.46) sub-vect frame-coord-map)
-             (only (submod ".." Exercise/2.49) get-drawing-context wave save-png))
+             (only (submod ".." Exercise/2.49) get-drawing-context wave save-dc))
 
   (define (transform-painter painter origin corner1 corner2)
     (lambda (frame)
@@ -2806,49 +2815,49 @@ arguments (or at least I don't know how to implement them).
 
     (let ([dc (get-drawing-context size)])
       ((flip-vert (wave dc)) frame)
-      (save-png dc "out/flip-vert-wave.png" #f))
+      (save-dc dc "out/flip-vert-wave.png" #f))
 
     (let ([dc (get-drawing-context size)])
       ((shrink-to-lower-right (wave dc)) frame)
       (send dc set-pen "red" 5 'solid)
       ((shrink-to-upper-right (wave dc)) frame)
-      (save-png dc "out/shrink-wave.png" #f))
+      (save-dc dc "out/shrink-wave.png" #f))
 
     (let ([dc (get-drawing-context size)])
       ((wave dc) frame)
       (send dc set-pen "red" 5 'solid)
       ((rotate-90 (wave dc)) frame)
-      (save-png dc "out/rotate-90-wave.png" #f))
+      (save-dc dc "out/rotate-90-wave.png" #f))
 
     (let ([dc (get-drawing-context size)])
       ((wave dc) frame)
       (send dc set-pen "red" 5 'solid)
       ((rotate+90 (wave dc)) frame)
-      (save-png dc "out/rotate+90-wave.png" #f))
+      (save-dc dc "out/rotate+90-wave.png" #f))
 
     ;; same result as flip-vert
     (let ([dc (get-drawing-context size)])
       ((wave dc) frame)
       (send dc set-pen "red" 5 'solid)
       ((rotate-90 (rotate-90 (wave dc))) frame)
-      (save-png dc "out/rotate-90-rotate-90-wave.png" #f))
+      (save-dc dc "out/rotate-90-rotate-90-wave.png" #f))
 
     (let ([dc (get-drawing-context size)])
       ((rotate+90 (rotate-90 (wave dc))) frame)
-      (save-png dc "out/rotate+90-rotate-90-wave.png" #f))
+      (save-dc dc "out/rotate+90-rotate-90-wave.png" #f))
 
     (let ([dc (get-drawing-context size)])
       ((squash-inwards (wave dc)) frame)
-      (save-png dc "out/squash-inwards-wave.png" #f))
+      (save-dc dc "out/squash-inwards-wave.png" #f))
 
     (let ([dc (get-drawing-context size)])
       ((beside (wave dc) (flip-vert (wave dc))) frame)
-      (save-png dc "out/beside-wave.png" #f))))
+      (save-dc dc "out/beside-wave.png" #f))))
 
 (module Exercise/2.50 sicp
   (#%provide flip-horiz)
   (#%require (only racket/base module+)
-             (only (submod ".." Exercise/2.49) get-drawing-context wave save-png)
+             (only (submod ".." Exercise/2.49) get-drawing-context wave save-dc)
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
              (only (submod ".." Section/2.2.4/transforming-painters)
                    transform-painter
@@ -2873,24 +2882,24 @@ arguments (or at least I don't know how to implement them).
 
     (let ([dc (get-drawing-context size)])
       ((beside (wave dc) (flip-horiz (wave dc))) frame)
-      (save-png dc "out/flip-horiz-wave.png" #f))
+      (save-dc dc "out/flip-horiz-wave.png" #f))
 
     ;; rotating 180 degrees is equivalent to flip-vert
     (let ([dc (get-drawing-context size)])
       ((beside (rotate+90 (rotate+90 (wave dc)))
                (flip-vert (wave dc))) frame)
-      (save-png dc "out/rotate-180-wave.png" #f))
+      (save-dc dc "out/rotate-180-wave.png" #f))
 
     ;; rotating 270 degrees counterclockwise is equivalent to rotate-90
     (let ([dc (get-drawing-context size)])
       ((beside (rotate+90 (rotate+90 (rotate+90 (wave dc))))
                (rotate-90 (wave dc))) frame)
-      (save-png dc "out/rotate-270-wave.png" #f))))
+      (save-dc dc "out/rotate-270-wave.png" #f))))
 
 (module Exercise/2.51 sicp
   (#%provide below)
   (#%require (only racket/base module+)
-             (only (submod ".." Exercise/2.49) get-drawing-context wave save-png)
+             (only (submod ".." Exercise/2.49) get-drawing-context wave save-dc)
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
              (only (submod ".." Section/2.2.4/transforming-painters)
                    transform-painter
@@ -2925,11 +2934,11 @@ arguments (or at least I don't know how to implement them).
 
     (let ([dc (get-drawing-context size)])
       ((below (wave dc) (wave dc)) frame)
-      (save-png dc "out/below-wave.png" #f))
+      (save-dc dc "out/below-wave.png" #f))
 
     (let ([dc (get-drawing-context size)])
       ((below-rot (wave dc) (wave dc)) frame)
-      (save-png dc "out/below-rot-wave.png" #f))))
+      (save-dc dc "out/below-rot-wave.png" #f))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
