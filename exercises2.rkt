@@ -3282,8 +3282,8 @@ This module includes the push example from Lecture 3A. I found both the lecture 
 
   #|
   We need to change only augend and multiplicand. make-sum and make-product could still
-  take two arguments. All we need is to handle expressions defined as quoted list, e.g.,
-  '(+ x y z).
+  take two arguments - all we need is to handle expressions defined as a quoted list,
+  e.g., '(+ x y z).
   |#
   (define (augend s) (if (= (length s) 3) ; e.g., '(+ a b)
                          (caddr s)
