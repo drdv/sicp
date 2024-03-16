@@ -2953,9 +2953,9 @@ modify) them.
              (only (submod ".." Exercise/2.49)
                    splines->painter
                    get-drawing-context
-                   task-d
                    save-dc
                    make-spline)
+             (rename (submod ".." Exercise/2.49) wave-splines task-d)
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
              (only (submod ".." Section/2.2.4/transforming-painters)
                    rotate-90
@@ -3013,7 +3013,7 @@ modify) them.
            [heart-right (make-spline (make-vect 0.54 0.42)
                                      (make-vect 0.59 0.4)
                                      (make-vect 0.54 0.5))])
-       (cons heart-left (cons heart-right task-d)))))
+       (cons heart-left (cons heart-right wave-splines)))))
 
   (module+ test
     (display "--> Exercise/2.52\n")
@@ -3031,7 +3031,7 @@ modify) them.
     ;; task c
     (let ([dc (get-drawing-context size)])
       ((square-limit (wave-heart dc) 1) frame)
-      (save-dc dc "out/square-limit-wave-heart.png" #t))))
+      (save-dc dc "out/square-limit-wave-heart.png" #f))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
