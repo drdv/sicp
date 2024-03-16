@@ -3098,7 +3098,7 @@ This module includes the push example from Lecture 3A. I found both the lecture 
     (memq 'red '(red shoes blue socks))))   ; (red shoes blue socks)
 
 (module Exercise/2.54 sicp
-  (#%require (only racket/base module+ format))
+  (#%require (only racket/base module+))
 
   ;; handles only symbols and lists of symbols but not numerical values
   (define (my-equal? a b)
@@ -3126,6 +3126,19 @@ This module includes the push example from Lecture 3A. I found both the lecture 
     ;; the builtin equal? gives the expected result
     (check-true (equal? '(a 1 c) '(a 1 c)))
     (check-true (equal? 1 1))))
+
+(module Exercise/2.55 sicp
+  (#%require (only racket/base module+))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.55\n")
+
+    ;; see footnote 34 on page 194
+    (let ([s1 ''abracadabra]
+          [s2 (list 'quote 'abracadabra)])
+      (check-equal? s1 s2)
+      (check-equal? (car s1) (car s2)))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
@@ -3191,4 +3204,5 @@ This module includes the push example from Lecture 3A. I found both the lecture 
            (submod ".." Exercise/2.52 test)
            (submod ".." Lecture/3A test)
            (submod ".." Exercise/2.53 test)
-           (submod ".." Exercise/2.54 test)))
+           (submod ".." Exercise/2.54 test)
+           (submod ".." Exercise/2.55 test)))
