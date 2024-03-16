@@ -3328,6 +3328,70 @@ This module includes the push example from Lecture 3A. I found both the lecture 
     (deriv '(+ (+ (* x y) (* x 5)) (+ x y)) 'x)
     (deriv '(+ (* x y) (* x 5) (+ x y)) 'x)))
 
+(module Exercise/2.58 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Example/symbolic-differentiation)
+                   variable?
+                   same-variable?
+                   =number?))
+
+  (module+ test-task-a
+    (#%require rackunit)
+    (display "--> Exercise/2.58/task-a\n")
+
+    (define (sum? x) (and (pair? x) (eq? (cadr x) '+)))
+    (define (addend s) (car s))
+    (define (augend s) (caddr s))
+    (define (product? x) (and (pair? x) (eq? (cadr x) '*)))
+    (define (multiplier p) (car p))
+    (define (multiplicand p) (caddr p))
+
+    (define (make-sum a1 a2)
+      (cond [(=number? a1 0) a2]
+            [(=number? a2 0) a1]
+            [(and (number? a1) (number? a2)) (+ a1 a2)]
+            [else (list a1 '+ a2)]))
+
+    (define (make-product m1 m2)
+      (cond [(or (=number? m1 0) (=number? m2 0)) 0]
+            [(=number? m1 1) m2]
+            [(=number? m2 1) m1]
+            [(and (number? m1) (number? m2)) (* m1 m2)]
+            [else (list m1 '* m2)]))
+
+    ;; this is deriv from Example/symbolic-differentiation (I don't need exponentiation)
+    (define (deriv expr var)
+      (cond [(number? expr) 0]
+            [(variable? expr) (if (same-variable? expr var) 1 0)]
+            [(sum? expr) (make-sum (deriv (addend expr) var)
+                                   (deriv (augend expr) var))]
+            [(product? expr)
+             (make-sum
+              (make-product (multiplier expr)
+                            (deriv (multiplicand expr) var))
+              (make-product (deriv (multiplier expr) var)
+                            (multiplicand expr)))]
+            [else
+             (error "unknown expression type: DERIV" expr)]))
+
+    (let ([expr '(x + (3 * (x + (y + 2))))])
+      (check-true (sum? expr))
+      (check-equal? (addend expr) 'x)
+      (check-equal? (augend expr) '(3 * (x + (y + 2))))
+      (check-true (product? (augend expr)))
+      (check-equal? (multiplier (augend expr)) 3)
+      (check-equal? (multiplicand (augend expr)) '(x + (y + 2)))
+      (check-equal? (deriv expr 'x) 4))
+    (check-equal? (deriv '((x * x) + (3 * x)) 'x) '((x + x) + 3)))
+
+  (module+ test-task-b
+    (#%require rackunit)
+    (display "--> Exercise/2.58/task-b\n")
+
+    ;; '(x + 3 * (x + y + 2))
+
+    ))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -3396,4 +3460,6 @@ This module includes the push example from Lecture 3A. I found both the lecture 
            (submod ".." Exercise/2.55 test)
            (submod ".." Example/symbolic-differentiation test)
            (submod ".." Exercise/2.56 test)
-           (submod ".." Exercise/2.57 test)))
+           (submod ".." Exercise/2.57 test)
+           (submod ".." Exercise/2.58 test-task-a)
+           (submod ".." Exercise/2.58 test-task-b)))
