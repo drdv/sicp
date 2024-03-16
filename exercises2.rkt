@@ -3097,6 +3097,36 @@ This module includes the push example from Lecture 3A. I found both the lecture 
     (memq 'red '((red shoes) (blue socks))) ; #f
     (memq 'red '(red shoes blue socks))))   ; (red shoes blue socks)
 
+(module Exercise/2.54 sicp
+  (#%require (only racket/base module+ format))
+
+  ;; handles only symbols and lists of symbols but not numerical values
+  (define (my-equal? a b)
+    (cond [(and (symbol? a) (symbol? b)) (eq? a b)]
+          [(and (pair? a) (pair? b)) (and (my-equal? (car a) (car b))
+                                          (my-equal? (cdr a) (cdr b)))]
+          [else (and (null? a) (null? b))]))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.54\n")
+
+    (check-true (my-equal? 'a 'a))
+    (check-true (my-equal? '(a b c) '(a b c)))
+    (check-false (my-equal? 'a 'b))
+    (check-false (my-equal? '(a b c) '((a) b c)))
+    (check-false (my-equal? '(a b c) '(b b c)))
+    (check-false (my-equal? '(a b c d) '(a b c)))
+    (check-false (my-equal? '(a b c) '(a b c d)))
+
+    ;; false by design
+    (check-false (my-equal? '(a 1 c) '(a 1 c)))
+    (check-false (my-equal? 1 1))
+
+    ;; the builtin equal? gives the expected result
+    (check-true (equal? '(a 1 c) '(a 1 c)))
+    (check-true (equal? 1 1))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -3160,4 +3190,5 @@ This module includes the push example from Lecture 3A. I found both the lecture 
            (submod ".." Exercise/2.51 test)
            (submod ".." Exercise/2.52 test)
            (submod ".." Lecture/3A test)
-           (submod ".." Exercise/2.53 test)))
+           (submod ".." Exercise/2.53 test)
+           (submod ".." Exercise/2.54 test)))
