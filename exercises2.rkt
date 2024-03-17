@@ -3472,6 +3472,73 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
     (check-equal? (deriv '(x * x * x + 3 * x) 'x)
                   (deriv '((x * (x * x)) + (3 * x)) 'x))))
 
+(module Example/sets-as-unordered-lists sicp
+  (#%provide adjoin-set)
+  (#%require (only racket/base module+))
+
+  (define (element-of-set? x set)
+    (cond [(null? set) false]
+          [(equal? x (car set)) true]
+          [else (element-of-set? x (cdr set))]))
+
+  (define (adjoin-set x set)
+    (if (element-of-set? x set)
+        set
+        (cons x set)))
+
+  (define (intersection-set set1 set2)
+    (cond [(or (null? set1) (null? set2)) '()]
+          [(element-of-set? (car set1) set2)
+           (cons (car set1) (intersection-set (cdr set1) set2))]
+          [else (intersection-set (cdr set1) set2)]))
+
+  (define (intersection-set-v2 set1 set2)
+    (cond [(or (null? set1) (null? set2)) '()]
+          [else (let ([intersection (intersection-set-v2 (cdr set1) set2)]
+                      [head-set1 (car set1)])
+                  (if (element-of-set? head-set1 set2)
+                      (cons head-set1 intersection)
+                      intersection))]))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Example/sets-as-unordered-lists\n")
+
+    (let ([s1 '(1 2 3)]
+          [s2 '(2 3 4)]
+          [intersection '(2 3)])
+      (check-true (element-of-set? 3 s1))
+      (check-false (element-of-set? 4 s1))
+      (check-equal? (adjoin-set 3 s1) s1)
+      (check-equal? (adjoin-set 4 s1) (cons 4 s1))
+      (check-equal? (intersection-set s1 s2) intersection)
+      (check-equal? (intersection-set-v2 s1 s2) intersection))))
+
+(module Exercise/2.59 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.2.3) accumulate)
+             (only (submod ".." Example/sets-as-unordered-lists) adjoin-set))
+
+  (define (union-set set1 set2)
+    (if (null? set1)
+        set2
+        (adjoin-set (car set1) (union-set (cdr set1) set2))))
+
+  (define (union-set-v2 set1 set2)
+    (accumulate adjoin-set set2 set1))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.59\n")
+
+    (let ([s1 '(1 2 3)]
+          [s2 '(2 3 4)]
+          [union '(1 2 3 4)])
+      (check-equal? (union-set s1 s2) union)
+      (check-equal? (union-set-v2 s1 s2) union)
+      (check-equal? (union-set '() s2) s2)
+      (check-equal? (union-set s1 '()) s1))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -3542,4 +3609,5 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
            (submod ".." Exercise/2.56 test)
            (submod ".." Exercise/2.57 test)
            (submod ".." Exercise/2.58 test-fully-parenthesized)
-           (submod ".." Exercise/2.58 test-operator-precedence)))
+           (submod ".." Exercise/2.58 test-operator-precedence)
+           (submod ".." Example/sets-as-unordered-lists test)))
