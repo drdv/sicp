@@ -3324,10 +3324,17 @@ This module includes the push example from Lecture 3A. I found both the lecture 
     (check-equal? (deriv '(* (* x y) (+ x 3)) 'x)
                   (deriv '(* x y (+ x 3)) 'x))
 
+    (check-equal? (deriv '(+ (* x y) (+ x 3) (* 2 x)) 'x)
+                  '(+ y 3))
+
     ;; it is not guaranteed to obtain the same simplification
     (deriv '(+ (+ (* x y) (* x 5)) (+ x y)) 'x)
     (deriv '(+ (* x y) (* x 5) (+ x y)) 'x)))
 
+#|
+NOTE: we could have an expression like '((x * x)+(x * x)), note that there are no
+spaces around the + operator, but we cannot have an expression like '(x+(x * x))
+|#
 (module Exercise/2.58 sicp
   (#%require (only racket/base module+)
              (only (submod ".." Example/symbolic-differentiation)
@@ -3335,29 +3342,30 @@ This module includes the push example from Lecture 3A. I found both the lecture 
                    same-variable?
                    =number?))
 
-  (module+ test-task-a
+  (define (multiplier p) (car p))
+
+  (define (make-sum a1 a2)
+    (cond [(=number? a1 0) a2]
+          [(=number? a2 0) a1]
+          [(and (number? a1) (number? a2)) (+ a1 a2)]
+          [else (list a1 '+ a2)]))
+
+  (define (make-product m1 m2)
+    (cond [(or (=number? m1 0) (=number? m2 0)) 0]
+          [(=number? m1 1) m2]
+          [(=number? m2 1) m1]
+          [(and (number? m1) (number? m2)) (* m1 m2)]
+          [else (list m1 '* m2)]))
+
+  (module+ test-fully-parenthesized
     (#%require rackunit)
-    (display "--> Exercise/2.58/task-a\n")
+    (display "--> Exercise/2.58/fully-parenthesized\n")
 
     (define (sum? x) (and (pair? x) (eq? (cadr x) '+)))
     (define (addend s) (car s))
     (define (augend s) (caddr s))
     (define (product? x) (and (pair? x) (eq? (cadr x) '*)))
-    (define (multiplier p) (car p))
     (define (multiplicand p) (caddr p))
-
-    (define (make-sum a1 a2)
-      (cond [(=number? a1 0) a2]
-            [(=number? a2 0) a1]
-            [(and (number? a1) (number? a2)) (+ a1 a2)]
-            [else (list a1 '+ a2)]))
-
-    (define (make-product m1 m2)
-      (cond [(or (=number? m1 0) (=number? m2 0)) 0]
-            [(=number? m1 1) m2]
-            [(=number? m2 1) m1]
-            [(and (number? m1) (number? m2)) (* m1 m2)]
-            [else (list m1 '* m2)]))
 
     ;; this is deriv from Example/symbolic-differentiation (I don't need exponentiation)
     (define (deriv expr var)
@@ -3382,15 +3390,87 @@ This module includes the push example from Lecture 3A. I found both the lecture 
       (check-equal? (multiplier (augend expr)) 3)
       (check-equal? (multiplicand (augend expr)) '(x + (y + 2)))
       (check-equal? (deriv expr 'x) 4))
-    (check-equal? (deriv '((x * x) + (3 * x)) 'x) '((x + x) + 3)))
+    (check-equal? (deriv '((x * x) + (3 * x)) 'x) '((x + x) + 3))
+    (check-equal? (deriv '((x * (x * x)) + (3 * x)) 'x)
+                  ;; 3*x**2 + 3
+                  '(((x * (x + x)) + (x * x)) + 3)))
 
-  (module+ test-task-b
+  #|
+  My strategy here is as follows:
+  1. Use (find-op '+ expr) to get the first top level + operation and recursively handle
+     the expressions on the left and right. For example 3 * x + 2 * y + 5 * x is split
+     into (3 * x) + (2 * y + 5 * x), and later on 2 * y + 5 * x is further split into
+     (2 * y) + (5 * x).
+     Note that we cannot handle directly the first multiplication in the original
+     expression because, depending on how the selectors are implemented, we would either
+     find the derivative of 3 * (x + 2 * y + 5 * x) or of 3 * x and both are wrong.
+  2. Some of the leaves would have only product operations and they are handled using
+     (find-op '* expr).
+  |#
+  (module+ test-operator-precedence
     (#%require rackunit)
-    (display "--> Exercise/2.58/task-b\n")
+    (display "--> Exercise/2.58/operator-precedence\n")
 
-    ;; '(x + 3 * (x + y + 2))
+    #|
+    Find the first occurrence of the given operation op at the top level and return the
+    left and right expressions around it.
 
-    ))
+    Note on efficiency: since addend needs only the car of the result and augend needs
+    only the cdr of the result, we could split find-op into two procedures, one
+    computing the left expression and the other one computing the right expression. The
+    latter could be implemented based on memq from Exercise/2.53.
+    |#
+    (define (find-op op expr)
+      (define (extract expr)
+        (if (= (length expr) 1) (car expr) expr))
+      (define (iter expr left-expr)
+        (cond [(null? expr) '()]
+              [(eq? (car expr) op) (cons (extract left-expr) (extract (cdr expr)))]
+              [else (iter (cdr expr) (append left-expr (list (car expr))))]))
+      (iter expr '()))
+
+    (define (sum? x) (and (pair? x) (not (null? (find-op '+ x)))))
+    (define (addend s) (car (find-op '+ s)))
+    (define (augend s) (cdr (find-op '+ s)))
+
+    (define (product? x) (and (pair? x) (not (null? (find-op '* x)))))
+    #|
+    using (define (multiplicand p) (car (find-op '* p))) is the same as using
+    (define (multiplier p) (car p)) because '* is processed after '+ (see above note on
+    strategy)
+    |#
+    (define (multiplicand p) (cdr (find-op '* p)))
+
+    ;; this is deriv from Example/symbolic-differentiation (I don't need exponentiation)
+    (define (deriv expr var)
+      (cond [(number? expr) 0]
+            [(variable? expr) (if (same-variable? expr var) 1 0)]
+            [(sum? expr) (make-sum (deriv (addend expr) var)
+                                   (deriv (augend expr) var))]
+            [(product? expr)
+             (make-sum
+              (make-product (multiplier expr)
+                            (deriv (multiplicand expr) var))
+              (make-product (deriv (multiplier expr) var)
+                            (multiplicand expr)))]
+            [else
+             (error "unknown expression type: DERIV" expr)]))
+
+    (let ([expr '(2 * x + x * (3 * y + 4) + 3 * x)])
+      (check-true (sum? expr))
+      (check-equal? (addend expr) '(2 * x))
+      (check-equal? (augend expr) '(x * (3 * y + 4) + 3 * x)))
+
+    (let ([expr '(2 * x * x * (3 * y + 4) * 3 * x)])
+      (check-true (null? (find-op '+ expr)))
+      (check-true (product? expr))
+      (check-equal? (multiplier expr) 2)
+      (check-equal? (multiplicand expr) '(x * x * (3 * y + 4) * 3 * x)))
+
+    (check-equal? (deriv '(x + 3 * (x + y + 2)) 'x) 4)
+    (check-equal? (deriv '(x * x + 3 * x) 'x) '((x + x) + 3))
+    (check-equal? (deriv '(x * x * x + 3 * x) 'x)
+                  (deriv '((x * (x * x)) + (3 * x)) 'x))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
@@ -3461,5 +3541,5 @@ This module includes the push example from Lecture 3A. I found both the lecture 
            (submod ".." Example/symbolic-differentiation test)
            (submod ".." Exercise/2.56 test)
            (submod ".." Exercise/2.57 test)
-           (submod ".." Exercise/2.58 test-task-a)
-           (submod ".." Exercise/2.58 test-task-b)))
+           (submod ".." Exercise/2.58 test-fully-parenthesized)
+           (submod ".." Exercise/2.58 test-operator-precedence)))
