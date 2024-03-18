@@ -3473,7 +3473,8 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
                   (deriv '((x * (x * x)) + (3 * x)) 'x))))
 
 (module Example/sets-as-unordered-lists sicp
-  (#%provide adjoin-set)
+  (#%provide adjoin-set
+             intersection-set)
   (#%require (only racket/base module+))
 
   (define (element-of-set? x set)
@@ -3542,7 +3543,9 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
       (check-equal? (union-set-v2 s1 '()) s1))))
 
 (module Exercise/2.60 sicp
-  (#%require (only racket/base module+))
+  (#%require (only racket/base module+)
+             (only (submod "exercises1.rkt" Exercise/1.43) repeated)
+             (only (submod ".." Example/sets-as-unordered-lists) intersection-set))
 
   ;; element-of-set? and intersection-set are the same as in the non-duplicates version
 
@@ -3554,6 +3557,12 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
   (define (union-set set1 set2)
     (append set1 set2))
 
+  #|
+  The version with duplicates would be preferrable when we don't have to perform
+  intersections (and even in this case it would be a good idea to de-duplicate the sets
+  from time to time). See "worst case" example below.
+  |#
+
   (module+ test
     (#%require rackunit)
     (display "--> Exercise/2.60\n")
@@ -3563,7 +3572,16 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
           [union '(1 2 3 2 3 4)])
       (check-equal? (union-set s1 s2) union)
       (check-equal? (adjoin-set 2 s1) (cons 2 s1))
-      (check-equal? (adjoin-set 4 s1) (cons 4 s1)))))
+      (check-equal? (adjoin-set 4 s1) (cons 4 s1)))
+
+    ;; A worst case example of why intersections would be bad
+    (let* ([S '(1 2 3)]
+           [n (length S)]
+           [union-set-curry (lambda (set1)
+                              (lambda (set2)
+                                (append set1 set2)))])
+      ;; O(n^3)
+      (intersection-set ((repeated (union-set-curry S) n) S) S))))
 
 (module+ test
   (require (submod ".." Exercise/2.1 test)
