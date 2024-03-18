@@ -1430,6 +1430,34 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
       (check-false (element-of-set? 3 S)))
     (check-equal? (intersection-set '(1 2 3) '(2 3 4)) '(2 3))))
 
+(module Exercise/2.61 sicp
+  (#%require (only racket/base module+))
+
+  (define (adjoin-set x set)
+    (if (null? set)
+        (list x)
+        (let ([head (car set)]
+              [tail (cdr set)])
+          (cond [(= x head) set]
+                [(< x head) (cons x set)]
+                [else (cons head (adjoin-set x tail))]))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.61\n")
+
+    (check-equal? (adjoin-set 1 '()) '(1))
+    (let ([S '(2 4 6 8)])
+      (check-equal? (adjoin-set 1 S) '(1 2 4 6 8))
+      (check-equal? (adjoin-set 2 S) '(2 4 6 8))
+      (check-equal? (adjoin-set 3 S) '(2 3 4 6 8))
+      (check-equal? (adjoin-set 4 S) '(2 4 6 8))
+      (check-equal? (adjoin-set 5 S) '(2 4 5 6 8))
+      (check-equal? (adjoin-set 6 S) '(2 4 6 8))
+      (check-equal? (adjoin-set 7 S) '(2 4 6 7 8))
+      (check-equal? (adjoin-set 8 S) '(2 4 6 8))
+      (check-equal? (adjoin-set 9 S) '(2 4 6 8 9)))))
+
 (module+ test
   (require (submod ".." Section/2.2.4 test)
            (submod ".." Exercise/2.44 test)
@@ -1454,4 +1482,5 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
            (submod ".." Example/sets-as-unordered-lists test)
            (submod ".." Exercise/2.59 test)
            (submod ".." Exercise/2.60 test)
-           (submod ".." Example/sets-as-ordered-lists test)))
+           (submod ".." Example/sets-as-ordered-lists test)
+           (submod ".." Exercise/2.61 test)))
