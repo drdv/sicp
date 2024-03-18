@@ -1321,15 +1321,15 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
     (#%require rackunit)
     (display "--> Example/sets-as-unordered-lists\n")
 
-    (let ([s1 '(1 2 3)]
-          [s2 '(2 3 4)]
+    (let ([S1 '(1 2 3)]
+          [S2 '(2 3 4)]
           [intersection '(2 3)])
-      (check-true (element-of-set? 3 s1))
-      (check-false (element-of-set? 4 s1))
-      (check-equal? (adjoin-set 3 s1) s1)
-      (check-equal? (adjoin-set 4 s1) (cons 4 s1))
-      (check-equal? (intersection-set s1 s2) intersection)
-      (check-equal? (intersection-set-v2 s1 s2) intersection))))
+      (check-true (element-of-set? 3 S1))
+      (check-false (element-of-set? 4 S1))
+      (check-equal? (adjoin-set 3 S1) S1)
+      (check-equal? (adjoin-set 4 S1) (cons 4 S1))
+      (check-equal? (intersection-set S1 S2) intersection)
+      (check-equal? (intersection-set-v2 S1 S2) intersection))))
 
 (module Exercise/2.59 sicp
   (#%require (only racket/base module+)
@@ -1348,15 +1348,15 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
     (#%require rackunit)
     (display "--> Exercise/2.59\n")
 
-    (let ([s1 '(1 2 3)]
-          [s2 '(2 3 4)]
+    (let ([S1 '(1 2 3)]
+          [S2 '(2 3 4)]
           [union '(1 2 3 4)])
-      (check-equal? (union-set s1 s2) union)
-      (check-equal? (union-set '() s2) s2)
-      (check-equal? (union-set s1 '()) s1)
-      (check-equal? (union-set-v2 s1 s2) union)
-      (check-equal? (union-set-v2 '() s2) s2)
-      (check-equal? (union-set-v2 s1 '()) s1))))
+      (check-equal? (union-set S1 S2) union)
+      (check-equal? (union-set '() S2) S2)
+      (check-equal? (union-set S1 '()) S1)
+      (check-equal? (union-set-v2 S1 S2) union)
+      (check-equal? (union-set-v2 '() S2) S2)
+      (check-equal? (union-set-v2 S1 '()) S1))))
 
 (module Exercise/2.60 sicp
   (#%require (only racket/base module+)
@@ -1383,12 +1383,12 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
     (#%require rackunit)
     (display "--> Exercise/2.60\n")
 
-    (let ([s1 '(1 2 3)]
-          [s2 '(2 3 4)]
+    (let ([S1 '(1 2 3)]
+          [S2 '(2 3 4)]
           [union '(1 2 3 2 3 4)])
-      (check-equal? (union-set s1 s2) union)
-      (check-equal? (adjoin-set 2 s1) (cons 2 s1))
-      (check-equal? (adjoin-set 4 s1) (cons 4 s1)))
+      (check-equal? (union-set S1 S2) union)
+      (check-equal? (adjoin-set 2 S1) (cons 2 S1))
+      (check-equal? (adjoin-set 4 S1) (cons 4 S1)))
 
     ;; A worst case example of why intersections would be bad
     (let* ([S '(1 2 3)]
@@ -1398,6 +1398,37 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
                                 (append set1 set2)))])
       ;; the intersection-set here is O(n^3)
       (intersection-set ((repeated (union-set-curry S) n) S) S))))
+
+(module Example/sets-as-ordered-lists sicp
+  (#%require (only racket/base module+))
+
+  (define (element-of-set? x set)
+    (cond [(null? set) false]
+          [(= x (car set)) true]
+          [(< x (car set)) false]
+          [else (element-of-set? x (cdr set))]))
+
+  (define (intersection-set set1 set2)
+    (if (or (null? set1) (null? set2))
+        '()
+        (let ([x1 (car set1)]
+              [x2 (car set2)])
+          (cond [(= x1 x2)
+                 (cons x1 (intersection-set (cdr set1)
+                                            (cdr set2)))]
+                [(< x1 x2)
+                 (intersection-set (cdr set1) set2)]
+                [(< x2 x1)
+                 (intersection-set set1 (cdr set2))]))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Example/sets-as-ordered-lists\n")
+
+    (let ([S '(2 4 6 8)])
+      (check-true (element-of-set? 6 S))
+      (check-false (element-of-set? 3 S)))
+    (check-equal? (intersection-set '(1 2 3) '(2 3 4)) '(2 3))))
 
 (module+ test
   (require (submod ".." Section/2.2.4 test)
@@ -1422,4 +1453,5 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
            (submod ".." Exercise/2.58 test-operator-precedence)
            (submod ".." Example/sets-as-unordered-lists test)
            (submod ".." Exercise/2.59 test)
-           (submod ".." Exercise/2.60 test)))
+           (submod ".." Exercise/2.60 test)
+           (submod ".." Example/sets-as-ordered-lists test)))
