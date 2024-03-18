@@ -81,7 +81,7 @@
              start-segment
              end-segment)
   (#%require (only racket/base module+ format)
-             (only (submod "exercises1.rkt" common-utils) average tolerance))
+             (only (submod "sicp1.rkt" common-utils) average tolerance))
 
   (define (make-segment point-a point-b) (cons point-a point-b))
   (define (start-segment segment) (car segment))
@@ -114,7 +114,7 @@
 (module Exercise/2.3 sicp
   (#%require (only racket/base module+ format)
              (only racket/math pi)
-             (only (submod "exercises1.rkt" common-utils) square tolerance)
+             (only (submod "sicp1.rkt" common-utils) square tolerance)
              (only (submod ".." Exercise/2.2)
                    make-point x-point y-point
                    make-segment start-segment end-segment))
@@ -941,9 +941,9 @@
 
 (module Exercise/2.19 sicp
   (#%require (only racket/base module+)
-             (only (submod "exercises1.rkt" Section/1.2.2) count-change))
+             (only (submod "sicp1.rkt" Section/1.2.2) count-change))
 
-  ;; this is nearly how I had defined it in Section/1.2.2 in exercises1.rkt
+  ;; this is nearly how I had defined it in Section/1.2.2 in sicp1.rkt
   (define no-more? null?)
   (define except-first-denomination cdr)
   (define first-denomination car)
@@ -1024,7 +1024,7 @@
 
 (module Exercise/2.21 sicp
   (#%require (only racket/base module+ format)
-             (only (submod "exercises1.rkt" common-utils) square))
+             (only (submod "sicp1.rkt" common-utils) square))
 
   (define (square-list items)
     (if (null? items)
@@ -1046,7 +1046,7 @@
 
 (module Exercise/2.22 sicp
   (#%require (only racket/base module+)
-             (only (submod "exercises1.rkt" common-utils) square))
+             (only (submod "sicp1.rkt" common-utils) square))
 
   #|
   The order is reversed because we take the elements in turn and prepend them to dest:
@@ -1405,7 +1405,7 @@
 
 (module Exercise/2.30 sicp
   (#%require (only racket/base module+)
-             (only (submod "exercises1.rkt" common-utils) square))
+             (only (submod "sicp1.rkt" common-utils) square))
 
   (define (square-tree-seq tree)
     (cond ((null? tree) nil)
@@ -1431,7 +1431,7 @@
 
 (module Exercise/2.31 sicp
   (#%require (only racket/base module+)
-             (only (submod "exercises1.rkt" common-utils) square))
+             (only (submod "sicp1.rkt" common-utils) square))
 
   (define (tree-map f tree)
     (map (lambda (sub-tree)
@@ -1479,8 +1479,8 @@
              enumerate-tree
              enumerate-interval)
   (#%require (only racket/base module+)
-             (only (submod "exercises1.rkt" common-utils) square)
-             (only (submod "exercises1.rkt" Exercise/1.19) fib)
+             (only (submod "sicp1.rkt" common-utils) square)
+             (only (submod "sicp1.rkt" Exercise/1.19) fib)
              (only (submod ".." Exercise/2.28) fringe))
 
   (define (sum-odd-squares tree)
@@ -1598,7 +1598,7 @@
 
 (module Exercise/2.33 sicp
   (#%require (only racket/base module+)
-             (only (submod "exercises1.rkt" common-utils) square)
+             (only (submod "sicp1.rkt" common-utils) square)
              (only (submod ".." Section/2.2.3) accumulate))
 
   (define (map p sequence)
@@ -1808,7 +1808,7 @@
              make-pair-sum
              prime-sum-pairs)
   (#%require (only racket/base module+)
-             (only (submod "exercises1.rkt" Exercise/1.22) prime?)
+             (only (submod "sicp1.rkt" Exercise/1.22) prime?)
              (only (submod ".." Section/2.2.3) accumulate filter enumerate-interval))
 
   (define (flatmap proc seq)

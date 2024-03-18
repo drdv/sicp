@@ -38,7 +38,7 @@ arguments (or at least I don't know how to implement them).
              corner-split
              square-limit)
   (#%require (only racket/base module+)
-             (only (submod "exercises1.rkt" Exercise/1.42) compose)
+             (only (submod "sicp1.rkt" Exercise/1.42) compose)
              (only (submod ".." pict-utils) save-painter)
              sicp-pict)
 
@@ -675,7 +675,7 @@ arguments (or at least I don't know how to implement them).
 (module Exercise/2.50 sicp
   (#%provide flip-horiz)
   (#%require (only racket/base module+)
-             (only (submod "exercises1.rkt" Exercise/1.43) repeated)
+             (only (submod "sicp1.rkt" Exercise/1.43) repeated)
              (only (submod ".." Exercise/2.49) get-drawing-context wave save-dc)
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
              (only (submod ".." Section/2.2.4/transforming-painters)
@@ -766,7 +766,7 @@ modify) them.
 |#
 (module Exercise/2.52 sicp
   (#%require (only racket/base module+)
-             (only (submod "exercises1.rkt" Exercise/1.42) compose)
+             (only (submod "sicp1.rkt" Exercise/1.42) compose)
              (only (submod ".." Exercise/2.49)
                    splines->painter
                    get-drawing-context
@@ -856,7 +856,7 @@ This module includes the push example from Lecture 3A. I found both the lecture 
 |#
 (module Lecture/3A sicp
   (#%require (only racket/base module+)
-             (only (submod "exercises1.rkt" Exercise/1.43) repeated)
+             (only (submod "sicp1.rkt" Exercise/1.43) repeated)
              (only (submod ".." Exercise/2.49)
                    splines->painter
                    get-drawing-context
@@ -1333,7 +1333,7 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
 
 (module Exercise/2.59 sicp
   (#%require (only racket/base module+)
-             (only (submod "exercises2_part1.rkt" Section/2.2.3) accumulate)
+             (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate)
              (only (submod ".." Example/sets-as-unordered-lists) adjoin-set))
 
   (define (union-set set1 set2)
@@ -1360,7 +1360,7 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
 
 (module Exercise/2.60 sicp
   (#%require (only racket/base module+)
-             (only (submod "exercises1.rkt" Exercise/1.43) repeated)
+             (only (submod "sicp1.rkt" Exercise/1.43) repeated)
              (only (submod ".." Example/sets-as-unordered-lists) intersection-set))
 
   ;; element-of-set? and intersection-set are the same as in the non-duplicates version
