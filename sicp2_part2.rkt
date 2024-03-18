@@ -1411,15 +1411,13 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
   (define (intersection-set set1 set2)
     (if (or (null? set1) (null? set2))
         '()
-        (let ([x1 (car set1)]
-              [x2 (car set2)])
-          (cond [(= x1 x2)
-                 (cons x1 (intersection-set (cdr set1)
-                                            (cdr set2)))]
-                [(< x1 x2)
-                 (intersection-set (cdr set1) set2)]
-                [(< x2 x1)
-                 (intersection-set set1 (cdr set2))]))))
+        (let ([h1 (car set1)]
+              [h2 (car set2)]
+              [t1 (cdr set1)]
+              [t2 (cdr set2)])
+          (cond [(= h1 h2) (cons h1 (intersection-set t1 t2))]
+                [(< h1 h2) (intersection-set t1 set2)]
+                [(> h1 h2) (intersection-set set1 t2)]))))
 
   (module+ test
     (#%require rackunit)
@@ -1458,6 +1456,31 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
       (check-equal? (adjoin-set 8 S) '(2 4 6 8))
       (check-equal? (adjoin-set 9 S) '(2 4 6 8 9)))))
 
+(module Exercise/2.62 sicp
+  (#%require (only racket/base module+))
+
+  (define (union-set set1 set2)
+    (cond [(null? set1) set2]
+          [(null? set2) set1]
+          [else
+           (let ([h1 (car set1)]
+                 [h2 (car set2)]
+                 [t1 (cdr set1)]
+                 [t2 (cdr set2)])
+             (cond [(= h1 h2) (cons h1 (union-set t1 t2))]
+                   [(< h1 h2) (cons h1 (union-set t1 set2))]
+                   [(> h1 h2) (cons h2 (union-set set1 t2))]))]))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.62\n")
+
+    (let ([S1 '(0 1 4 6 7 8)]
+          [S2 '(1 2 3 4 9)])
+      (check-equal? (union-set S1 '()) S1)
+      (check-equal? (union-set '() S2) S2)
+      (check-equal? (union-set S1 S2) '(0 1 2 3 4 6 7 8 9)))))
+
 (module+ test
   (require (submod ".." Section/2.2.4 test)
            (submod ".." Exercise/2.44 test)
@@ -1483,4 +1506,5 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
            (submod ".." Exercise/2.59 test)
            (submod ".." Exercise/2.60 test)
            (submod ".." Example/sets-as-ordered-lists test)
-           (submod ".." Exercise/2.61 test)))
+           (submod ".." Exercise/2.61 test)
+           (submod ".." Exercise/2.62 test)))
