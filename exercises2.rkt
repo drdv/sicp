@@ -3541,6 +3541,30 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
       (check-equal? (union-set-v2 '() s2) s2)
       (check-equal? (union-set-v2 s1 '()) s1))))
 
+(module Exercise/2.60 sicp
+  (#%require (only racket/base module+))
+
+  ;; element-of-set? and intersection-set are the same as in the non-duplicates version
+
+  ;; O(1) compared to O(n) for the non-duplicates version
+  (define (adjoin-set x set)
+    (cons x set))
+
+  ;; O(n) compared to O(n^2) for the non-duplicates version (for two sets of size n)
+  (define (union-set set1 set2)
+    (append set1 set2))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.60\n")
+
+    (let ([s1 '(1 2 3)]
+          [s2 '(2 3 4)]
+          [union '(1 2 3 2 3 4)])
+      (check-equal? (union-set s1 s2) union)
+      (check-equal? (adjoin-set 2 s1) (cons 2 s1))
+      (check-equal? (adjoin-set 4 s1) (cons 4 s1)))))
+
 (module+ test
   (require (submod ".." Exercise/2.1 test)
            (submod ".." Exercise/2.2 test)
@@ -3613,4 +3637,5 @@ spaces around the + operator, but we cannot have an expression like '(x+(x * x))
            (submod ".." Exercise/2.58 test-fully-parenthesized)
            (submod ".." Exercise/2.58 test-operator-precedence)
            (submod ".." Example/sets-as-unordered-lists test)
-           (submod ".." Exercise/2.59 test)))
+           (submod ".." Exercise/2.59 test)
+           (submod ".." Exercise/2.60 test)))
