@@ -36,6 +36,11 @@
 (module conversion-utils racket/base
   (#%provide mcons->cons)
 
+  #|
+  The idea is to require a list defined in the sicp language and convert it to a list in
+  the racket language because sometimes I need to use procedures that require immutable
+  pairs.
+  |#
   (define (mcons->cons mc)
     (cond [(null? mc) '()]
           [(number? mc) mc]
@@ -82,24 +87,31 @@
 
     (check-equal? (an-expression) (/ (- 37) 150))))
 
-(module Exercise/1.3 racket/base ; sort requires immutable pairs
-  (#%require (only (submod ".." common-utils) square))
+(module Exercise/1.3 sicp
+  (#%require (only racket/base module+ module*)
+             (only (submod ".." common-utils) square))
 
-  (define (sum-squares.v1 x y z)
+  (define (sum-squares-v1 x y z)
     (- (+ (square x) (square y) (square z))
        (square (min x y z))))
-
-  (define (sum-squares.v2 x y z)
-    (foldl + 0
-           (map (lambda (x) (* x x))
-                (cdr (sort (list x y z) <)))))
 
   (module+ test
     (#%require rackunit)
     (display "--> Exercise/1.3\n")
 
-    (check-equal? (sum-squares.v1 9 5 7) 130)
-    (check-equal? (sum-squares.v2 9 5 7) 130)))
+    (check-equal? (sum-squares-v1 9 5 7) 130))
+
+  (module* test-in-racket racket/base ; sort requires immutable pairs
+    (#%require rackunit
+               (only (submod ".." ".." conversion-utils) mcons->cons))
+    (display "--> Exercise/1.3 (test-in-racket)\n")
+
+    (define (sum-squares-v2 x y z)
+      (foldl + 0
+             (map (lambda (x) (* x x))
+                  (cdr (sort (list x y z) <)))))
+
+    (check-equal? (sum-squares-v2 9 5 7) 130)))
 
 (module Exercise/1.4 sicp
   #| Solution:
@@ -2043,6 +2055,7 @@
   (require (submod ".." Exercise/1.1 test)
            (submod ".." Exercise/1.2 test)
            (submod ".." Exercise/1.3 test)
+           (submod ".." Exercise/1.3 test-in-racket)
            ;; 1.4: no tests
            ;; 1.5: no tests
            (submod ".." Section/1.1.7 test)
