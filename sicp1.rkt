@@ -33,6 +33,15 @@
                         (append output
                                 (list (apply func args))))])))
 
+(module conversion-utils racket/base
+  (#%provide mcons->cons)
+
+  (define (mcons->cons mc)
+    (cond [(null? mc) '()]
+          [(number? mc) mc]
+          [else (cons (mcons->cons (mcar mc))
+                      (mcons->cons (mcdr mc)))])))
+
 (module Exercise/1.1 sicp
   (#%require (only racket/base module+))
 

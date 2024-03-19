@@ -69,3 +69,19 @@
   (get-field pages b)
   (set-field! pages b 7)
   (send b letters)
+;; ===============================================================
+(module M1 racket/base
+  (provide data1)
+  (define data1 1)
+
+  (module M2 racket/base
+    (provide data2)
+    (define data2 2))
+
+  ;; this needs to be module* to require from the enclosing module
+  (module* M3 racket/base
+    (#%require (only (submod ".." M2) data2))
+    (#%require (only (submod "..") data1))
+
+    (display data1)
+    (display data2)))

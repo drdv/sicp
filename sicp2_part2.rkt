@@ -1482,6 +1482,69 @@
       (check-equal? (union-set '() S2) S2)
       (check-equal? (union-set S1 S2) '(0 1 2 3 4 6 7 8 9)))))
 
+(module Example/sets-as-binary-trees sicp
+  (#%provide adjoin-set
+             binary-tree-1-to-7)
+  (#%require (only racket/base module+ module*)
+             (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate))
+
+  (define (entry tree) (car tree))
+  (define (left-branch tree) (cadr tree))
+  (define (right-branch tree) (caddr tree))
+  (define (make-tree entry left right)
+    (list entry left right))
+
+  (define (element-of-set? x set)
+    (cond ((null? set) false)
+          ((= x (entry set)) true)
+          ((< x (entry set))
+           (element-of-set? x (left-branch set)))
+          ((> x (entry set))
+           (element-of-set? x (right-branch set)))))
+
+  (define (adjoin-set x set)
+    (cond ((null? set) (make-tree x '() '()))
+          ((= x (entry set)) set)
+          ((< x (entry set))
+           (make-tree (entry set)
+                      (adjoin-set x (left-branch set))
+                      (right-branch set)))
+          ((> x (entry set))
+           (make-tree (entry set)
+                      (left-branch set)
+                      (adjoin-set x (right-branch set))))))
+
+  (define binary-tree-1-to-7 (accumulate adjoin-set '() '(7 6 5 4 3 2 1)))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Example/sets-as-binary-trees\n")
+
+    (check-equal? binary-tree-1-to-7
+                  (adjoin-set
+                   7
+                   (adjoin-set
+                    6
+                    (adjoin-set
+                     5
+                     (adjoin-set
+                      4
+                      (adjoin-set
+                       3
+                       (adjoin-set
+                        2
+                        (adjoin-set
+                         1
+                         '())))))))))
+
+  (module* test-box-and-pointer racket/base
+    (#%require (only (submod "sicp1.rkt" conversion-utils) mcons->cons)
+               (only (submod "..") binary-tree-1-to-7)
+               sdraw)
+    (display "--> Example/sets-as-binary-trees (test-box-and-pointer)\n")
+
+    (sdraw (mcons->cons binary-tree-1-to-7) #:null-style '/)))
+
 (module+ test
   (require (submod ".." Section/2.2.4 test)
            (submod ".." Exercise/2.44 test)
@@ -1508,4 +1571,6 @@
            (submod ".." Exercise/2.60 test)
            (submod ".." Example/sets-as-ordered-lists test)
            (submod ".." Exercise/2.61 test)
-           (submod ".." Exercise/2.62 test)))
+           (submod ".." Exercise/2.62 test)
+           (submod ".." Example/sets-as-binary-trees test)
+           (submod ".." Example/sets-as-binary-trees test-box-and-pointer)))

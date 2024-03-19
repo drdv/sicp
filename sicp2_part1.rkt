@@ -1105,9 +1105,9 @@
       (for-each-custom f lst))))
 
 (module Exercise/2.24 sicp
-  (#%provide count-leaves)
-  (#%require (only racket/base module+ format)
-             sdraw)
+  (#%provide count-leaves
+             test-list-2)
+  (#%require (only racket/base module+ module* format))
 
   (define (count-leaves x)
     (cond ((null? x) 0)
@@ -1115,17 +1115,18 @@
           (else (+ (count-leaves (car x))
                    (count-leaves (cdr x))))))
 
+  (define test-list-1 (cons (list 1 2) (list 3 4)))
+  (define test-list-2 (list 1 (list 2 (list 3 4))))
+
   (module+ test
     (#%require rackunit)
     (display "--> Exercise/2.24\n")
 
-    (define x (cons (list 1 2) (list 3 4)))
-    (count-leaves x)
-    (count-leaves (list x x))
+    (count-leaves test-list-1)
+    (count-leaves (list test-list-1 test-list-1))
 
-    (define y (list 1 (list 2 (list 3 4))))
-    (display (format "y: ~a\n" y))
-    (count-leaves y)
+    (display (format "test-list-y: ~a\n" test-list-2))
+    (count-leaves test-list-2)
 
     #|
     t0 -> (1 . (t1 . nil))
@@ -1139,22 +1140,27 @@
                 /  \
                3    4
     |#
-    (check-equal? y
+    (check-equal? test-list-2
                   (cons 1
                         (cons (cons 2
                                     (cons (cons 3
                                                 (cons 4 '()))
                                           '()))
-                              '())))
+                              '()))))
 
-    #|
-    To force sdraw to draw a box-and-pointer diagram we need to temporarily change the
-    language of this exercise to racket/base because sdraw assumes immutable pairs (as
-    used by default in racket/base) while scip is based on immutable pairs. Note that
-    cons in sicp seems to be equivalent to mcons in racket/base. I don't want, however,
-    to change the language permanently because this module provides count-leaves.
-    |#
-    (sdraw y #:null-style '/)))
+  #|
+  To force sdraw to draw a box-and-pointer diagram we need to temporarily change the
+  language of this exercise to racket/base because sdraw assumes immutable pairs (as
+  used by default in racket/base) while scip is based on mutable pairs. Note that
+  cons in sicp seems to be equivalent to mcons in racket/base.
+  |#
+  (module* test-box-and-pointer racket/base
+    (#%require (only (submod "sicp1.rkt" conversion-utils) mcons->cons)
+               (only (submod "..") test-list-2)
+               sdraw)
+    (display "--> Exercise/2.24 (test-box-and-pointer)\n")
+
+    (sdraw (mcons->cons test-list-2) #:null-style '/)))
 
 (module Exercise/2.25 sicp
   (#%require (only racket/base module+))
@@ -2226,6 +2232,7 @@
            (submod ".." Exercise/2.22 test)
            (submod ".." Exercise/2.23 test)
            (submod ".." Exercise/2.24 test)
+           (submod ".." Exercise/2.24 test-box-and-pointer)
            (submod ".." Exercise/2.25 test)
            (submod ".." Exercise/2.26 test)
            (submod ".." Exercise/2.27 test)
