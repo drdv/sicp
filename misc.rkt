@@ -27,8 +27,23 @@
     (display (format "a: ~a, b: ~a" a b))))
 ;; ===============================================================
 ;; raco pkg install sdraw
-;; (#%require sdraw)
-;; (sdraw (list 1) #:null-style '/)
+(#%require sdraw)
+(sdraw (list 1) #:null-style '/)
+;; sdraw cannot seem to draw mutable cons (and I cannot use with with SICP)
+(sdraw (mcons 1 2) #:null-style '/)
+
+(define c (mcons 1 2))
+(define (mcons->cons mc)
+  (cond [(null? mc) '()]
+        [(number? mc) mc]
+        [else (cons (mcons->cons (mcar mc))
+                    (mcons->cons (mcdr mc)))]))
+
+(mcons 1 (mcons 2 (mcons 3 '())))
+(mcons->cons (mcons 1 (mcons 2 (mcons 3 '()))))
+
+(sdraw (mcons->cons c) #:null-style '/)
+(sdraw (mcons->cons (mcons 1 (mcons 2 (mcons 3 '())))) #:null-style '/)
 ;; ===============================================================
 ;; https://stackoverflow.com/a/36915357
 (define (welcome #:first [first-name "Anonymous"]
