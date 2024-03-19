@@ -387,15 +387,15 @@ ways:
 \section{Random quotes}
 
 \begin{itemize}
-\item It is very easy to confuse the essence of what you are doing with the tools that
-  you use.
-\item One of the things we have to learn how to do is ignore details. The key to
-  understand complicated things is to know what not to look at.
-\item The way in which you would construct a recursive process is by wishful thinking.
-  You have to believe~\footnote{He is talking about the Hanoi towers problem.}.
-\item Wishful thinking - essential to good engineering, and certainly essential to good
-  computer-science.
-\item We divorce the task of building things from the task of implementing the parts.
+\item ``It is very easy to confuse the essence of what you are doing with the tools that
+  you use.''
+\item ``One of the things we have to learn how to do is ignore details. The key to
+  understand complicated things is to know what not to look at.''
+\item ``The way in which you would construct a recursive process is by wishful thinking.
+  You have to believe''~\footnote{He is talking about the Hanoi towers problem.}.
+\item ``Wishful thinking - essential to good engineering, and certainly essential to good
+  computer-science.''
+\item ``We divorce the task of building things from the task of implementing the parts.''
 \item H. Abelson comments on the axiom ``doing your design before any of your code'':
   ``this is the axiom of a person that hasn't implemented very large computer systems
   ... the real power is when you can pretend that you have made the decision and later
@@ -405,17 +405,28 @@ ways:
   different way, we should have a proper parameterization and decide on the parameters
   only when necessary). Of course, it very much depends on what one means by ``design''
   here.}.
-\item When you look at means of combination, you should ask yourself whether things are
-  closed under that means of combination.
-\item ... the difference between merely implementing something in a language and
-  embedding something in a language~\footnote{He talks about the ``picture language''
+\item ``When you look at means of combination, you should ask yourself whether things
+  are closed under that means of combination.''
+\item ``... the difference between merely implementing something in a language and
+  embedding something in a language''~\footnote{He talks about the ``picture language''
   which is designed in such a way that it can leverage LISP naturally.}
-\item LISP is a lousy language for doing any particular problem. What it is good for is
-  figuring out the right language that you want and embedding that in LISP~\footnote{Aim
-  at designing systems as interconnected levels of languages as opposed to a strict
-  hierarchy (see end of Lecture 3A).}.
-\item The design process is not so much implementing programs as implementing languages
-  (and that is really the power of LISP).
+\item ``LISP is a lousy language for doing any particular problem. What it is good for
+  is figuring out the right language that you want and embedding that in
+  LISP''~\footnote{Aim at designing systems as interconnected levels of languages as
+  opposed to a strict hierarchy (see end of Lecture 3A).}.
+\item ``The design process is not so much implementing programs as implementing
+  languages (and that is really the power of LISP).''
+\item ``... a small change in the problem should lead to only a small change in the
+  solution. There ought to be a continuity ... instead of solving a particular problem
+  at every level of decomposition of the problem ... you solve the class of problems,
+  which are a neighborhood of the particular problem that you're trying to solve.''
+\item They make a distinction between derivative of a function (meaning a procedure) and
+  a derivative of an expression. The former is a black-box which gives you just the
+  answers. ``The derivative of an expression is the way it is written and therefore it
+  is a syntactic phenomenon.''
+\item ``I am doing a dispatch on the type of the expression here - absolutely essential
+  in building languages.''~\footnote{This is when discussing the \cc{cond} cases for the
+  \cc{deriv} procedure (for symbolic differentiation).}
 \end{itemize}
 
 \nocite{*}
