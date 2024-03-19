@@ -88,7 +88,7 @@
     (check-equal? (an-expression) (/ (- 37) 150))))
 
 (module Exercise/1.3 sicp
-  (#%require (only racket/base module+ module*)
+  (#%require (only racket/base module+ module* λ)
              (only (submod ".." common-utils) square))
 
   (define (sum-squares-v1 x y z)
@@ -108,7 +108,7 @@
 
     (define (sum-squares-v2 x y z)
       (foldl + 0
-             (map (lambda (x) (* x x))
+             (map (λ (x) (* x x))
                   (cdr (sort (list x y z) <)))))
 
     (check-equal? (sum-squares-v2 9 5 7) 130)))
@@ -1382,7 +1382,7 @@
     (move-v2-counts 4 "S" "D" "E" counts)))
 
 (module Exercise/1.29 sicp
-  (#%require (only racket/base module+ format)
+  (#%require (only racket/base module+ λ format)
              (only (submod ".." common-utils) cube))
 
   (define (sum f next a b)
@@ -1408,9 +1408,9 @@
     (define (g k)
       (cond [(or (= k 0)
                  (= k n)) f]
-            [(even? k) (lambda (x) (* 2.0 (f x)))]
-            [else (lambda (x) (* 4.0 (f x)))]))
-    (* (sum-k g (lambda (x) (+ x h)) 0 a b) (/ h 3.0)))
+            [(even? k) (λ (x) (* 2.0 (f x)))]
+            [else (λ (x) (* 4.0 (f x)))]))
+    (* (sum-k g (λ (x) (+ x h)) 0 a b) (/ h 3.0)))
 
   (define (simpson.v2 f a b n)
     (define h (/ (- b a) n))
@@ -1420,7 +1420,7 @@
                  (= k n)) (f (+ a (* k h)))]
             [(even? k) (* 2.0 (f (+ a (* k h))))]
             [else (* 4.0 (f (+ a (* k h))))]))
-    (* (sum g (lambda (k) (+ k 1)) 0 n) (/ h 3.0)))
+    (* (sum g (λ (k) (+ k 1)) 0 n) (/ h 3.0)))
 
   ;; grouping terms
   ;; y_0 + 4(y_1 + y_3 + ... + y_{n-1}) + 2(y_2 + y_4 + ... + y_{n-2}) + y_n
@@ -1439,10 +1439,10 @@
     (#%require rackunit)
     (display "--> Exercise/1.29\n")
 
-    (check-equal? (sum cube (lambda (x) (+ x 1)) 1 10) 3025)
-    (check-equal? (sum (lambda (x) x) (lambda (x) (+ x 1)) 1 10) 55)
-    (check-within (* 8 (sum (lambda (x) (/ 1.0 (* x (+ x 2))))
-                            (lambda (x) (+ x 4))
+    (check-equal? (sum cube (λ (x) (+ x 1)) 1 10) 3025)
+    (check-equal? (sum (λ (x) x) (λ (x) (+ x 1)) 1 10) 55)
+    (check-within (* 8 (sum (λ (x) (/ 1.0 (* x (+ x 2))))
+                            (λ (x) (+ x 4))
                             1
                             1000)) 3.1396 1e-4)
 
@@ -1456,7 +1456,7 @@
     (display (format "[simpson.v3(1000)] ~a\n" (simpson.v3 cube 0 1 1000)))))
 
 (module Exercise/1.30 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." common-utils) cube))
 
   (define (sum f next a b)
@@ -1470,15 +1470,15 @@
     (#%require rackunit)
     (display "--> Exercise/1.30\n")
 
-    (check-equal? (sum cube (lambda (x) (+ x 1)) 1 10) 3025)
-    (check-equal? (sum (lambda (x) x) (lambda (x) (+ x 1)) 1 10) 55)
-    (check-within (* 8 (sum (lambda (x) (/ 1.0 (* x (+ x 2))))
-                            (lambda (x) (+ x 4))
+    (check-equal? (sum cube (λ (x) (+ x 1)) 1 10) 3025)
+    (check-equal? (sum (λ (x) x) (λ (x) (+ x 1)) 1 10) 55)
+    (check-within (* 8 (sum (λ (x) (/ 1.0 (* x (+ x 2))))
+                            (λ (x) (+ x 4))
                             1
                             1000)) 3.1396 1e-4)))
 
 (module Exercise/1.31 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." common-utils) square)
              (only (submod ".." Section/1.2.1) factorial-v2))
 
@@ -1511,7 +1511,7 @@
     (define (pi-approx n)
       (define (approx m) ; m has to be even (verified below)
         (* (* 2.0 4.0 (final-term (+ m 2)))
-           (product-iter ratio-square (lambda (x) (+ x 2)) 4.0 m)))
+           (product-iter ratio-square (λ (x) (+ x 2)) 4.0 m)))
       (approx (if (even? n)
                   n
                   (+ n 1))))
@@ -1527,7 +1527,7 @@
     (check-within (pi-approx 1e7) 3.14159 1e-4)))
 
 (module Exercise/1.32 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." common-utils) cube)
              (only (submod ".." Section/1.2.1) factorial-v2))
 
@@ -1553,10 +1553,10 @@
     (#%require rackunit)
     (display "--> Exercise/1.32\n")
 
-    (check-equal? (accumulate-recursion + 0 cube (lambda (x) (+ x 1)) 1 10) 3025)
-    (check-equal? (accumulate-iter + 0 cube (lambda (x) (+ x 1)) 1 10) 3025)
-    (check-equal? (accumulate-recursion + 0 (lambda (x) x) (lambda (x) (+ x 1)) 1 10) 55)
-    (check-equal? (accumulate-iter + 0 (lambda (x) x) (lambda (x) (+ x 1)) 1 10) 55)
+    (check-equal? (accumulate-recursion + 0 cube (λ (x) (+ x 1)) 1 10) 3025)
+    (check-equal? (accumulate-iter + 0 cube (λ (x) (+ x 1)) 1 10) 3025)
+    (check-equal? (accumulate-recursion + 0 (λ (x) x) (λ (x) (+ x 1)) 1 10) 55)
+    (check-equal? (accumulate-iter + 0 (λ (x) x) (λ (x) (+ x 1)) 1 10) 55)
 
     (define (I x) x)
     (define (incr x) (+ x 1))
@@ -1588,7 +1588,7 @@
 
     ;; Note: (prime? 1) -> #t
     (check-equal?
-     (filter-accumulate prime? + 0 square (lambda (x) (+ x 1)) 1 20)
+     (filter-accumulate prime? + 0 square (λ (x) (+ x 1)) 1 20)
      (foldl + 0 (map square '(1 2 3 5 7 11 13 17 19))))
 
     (define (solve-assignment-b n)
@@ -1596,16 +1596,16 @@
         ;; gcd is from racket/base
         (= (gcd i n) 1))
       (filter-accumulate relatively-prime? * 1
-                         (lambda (x) x)
-                         (lambda (x) (+ x 1)) 1 (- n 1)))
+                         (λ (x) x)
+                         (λ (x) (+ x 1)) 1 (- n 1)))
 
     (let ([n 16])
       (check-equal? (solve-assignment-b n)
-                    (foldl * 1 (filter (lambda (i) (= (gcd i n) 1))
+                    (foldl * 1 (filter (λ (i) (= (gcd i n) 1))
                                        (range 1 n)))))))
 
 (module Exercise/1.34 sicp
-  (#%require (only racket/base module+ exn:fail?))
+  (#%require (only racket/base module+ λ exn:fail?))
 
   ;; (f f) -> (f 2) -> (2 2) ERROR: 2 is not a procedure
   (define (f g) (g 2))
@@ -1617,16 +1617,16 @@
     ;; expect to raise
     (check-exn
      exn:fail?
-     (lambda () (f f)))
+     (λ () (f f)))
 
     ;; we could match the error message
     (check-exn
      #rx"application: not a procedure.*given: 2"
-     (lambda () (f f)))))
+     (λ () (f f)))))
 
 (module Section/1.3.3 sicp
   (#%provide fixed-point fixed-point-iter)
-  (#%require (only racket/base module+ format)
+  (#%require (only racket/base module+ λ format)
              (only (submod ".." common-utils) average tolerance))
 
   (define (close-enough? x y) (< (abs (- x y)) 0.001))
@@ -1659,7 +1659,7 @@
     (check-within (half-interval-method sin 2.0 4.0)
                   3.14111328125
                   1e-4)
-    (check-within (half-interval-method (lambda (x) (- (* x x x) (* 2 x) 3)) 1.0 2.0)
+    (check-within (half-interval-method (λ (x) (- (* x x x) (* 2 x) 3)) 1.0 2.0)
                   1.89306640625
                   1e-4))
 
@@ -1682,21 +1682,21 @@
     (check-within (fixed-point cos 1.0 100)
                   0.7390822985224023
                   1e-4)
-    (check-within (fixed-point (lambda (y) (+ (sin y) (cos y))) 1.0 100)
+    (check-within (fixed-point (λ (y) (+ (sin y) (cos y))) 1.0 100)
                   1.2587315962971173
                   1e-4)
 
 
     (let ([x 4])
-      (fixed-point (lambda (y) (/ x y)) 1.0 5) ;; verify infinite oscilation
+      (fixed-point (λ (y) (/ x y)) 1.0 5) ;; verify infinite oscilation
       ;; y -> x / y
       ;; y + y -> y + x / y
       ;; 0.5*(y + y) -> 0.5*(y + x / y)
       ;; y -> average(y, x / y)
-      (check-within (fixed-point (lambda (y) (average y (/ x y))) 1.0 100) 2 1e-4))))
+      (check-within (fixed-point (λ (y) (average y (/ x y))) 1.0 100) 2 1e-4))))
 
 (module Exercise/1.35 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." common-utils) golden-ratio)
              (only (submod ".." Section/1.3.3) fixed-point))
 
@@ -1709,10 +1709,10 @@
     we get x = 1 + 1/x
     |#
 
-    (check-within (fixed-point (lambda (x) (+ 1 (/ 1.0 x))) 1.0 100) golden-ratio 1e-4)))
+    (check-within (fixed-point (λ (x) (+ 1 (/ 1.0 x))) 1.0 100) golden-ratio 1e-4)))
 
 (module Exercise/1.36 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." common-utils) average)
              ;; I already defined fixed-point to display its iterates
              (only (submod ".." Section/1.3.3) fixed-point))
@@ -1724,15 +1724,15 @@
     ;; original fixed-point problem: 33 iterations
     ;; fixed-point problem with damping: 8 iterations
     (let* ([y 1000]
-           [x1 (fixed-point (lambda (x) (log y x)) 2.0 100)]
-           [x2 (fixed-point (lambda (x) (average x (log y x))) 2.0 100)])
+           [x1 (fixed-point (λ (x) (log y x)) 2.0 100)]
+           [x2 (fixed-point (λ (x) (average x (log y x))) 2.0 100)])
       (check-within x1 (log y x1) 1e-4)
       (check-within x2 (log y x2) 1e-4)
       (check-within x1 x2 1e-4))))
 
 (module Exercise/1.37 sicp
   (#%provide cont-frac-rec)
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." common-utils) golden-ratio))
 
   (define (cont-frac-rec n d k)
@@ -1756,20 +1756,20 @@
 
     (let ([inverse-golden-ratio (/ 1 golden-ratio)]
           [tolerance 1e-4])
-      (check-within (cont-frac-rec (lambda (i) 1.0)
-                                   (lambda (i) 1.0)
+      (check-within (cont-frac-rec (λ (i) 1.0)
+                                   (λ (i) 1.0)
                                    10)
                     inverse-golden-ratio
                     tolerance)
 
-      (check-within (cont-frac-iter (lambda (i) 1.0)
-                                    (lambda (i) 1.0)
+      (check-within (cont-frac-iter (λ (i) 1.0)
+                                    (λ (i) 1.0)
                                     10)
                     inverse-golden-ratio
                     tolerance))))
 
 (module Exercise/1.38 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." Exercise/1.37) cont-frac-rec)
              (only (submod ".." common-utils) tolerance))
 
@@ -1786,8 +1786,8 @@
     k-th column: i%3 == k
     |#
     (check-within (cont-frac-rec
-                   (lambda (i) 1.0)
-                   (lambda (i)
+                   (λ (i) 1.0)
+                   (λ (i)
                      (cond [(or (= (remainder i 3) 0)
                                 (= (remainder i 3) 2)) 1]
                            [(= (remainder i 3) 1)
@@ -1799,14 +1799,14 @@
                   tolerance)))
 
 (module Exercise/1.39 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." common-utils) square tolerance)
              (only (submod ".." Exercise/1.37) cont-frac-rec))
 
   (define (tan-cf x k)
     (cont-frac-rec
-     (lambda (i) (if (= i 0) x (- (square x))))
-     (lambda (i) (+ (* 2 i) 1))
+     (λ (i) (if (= i 0) x (- (square x))))
+     (λ (i) (+ (* 2 i) 1))
      k))
 
   (module+ test
@@ -1818,19 +1818,19 @@
 
 (module Section/1.3.4 sicp
   (#%provide average-damp newtons-method)
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." common-utils) average square cube tolerance)
              (only (submod ".." Section/1.3.3) fixed-point))
 
   (define (average-damp f)
-    (lambda (x) (average x (f x))))
+    (λ (x) (average x (f x))))
 
   (define (sqrt-v1 x)
-    (fixed-point (average-damp (lambda (y) (/ x y)))
+    (fixed-point (average-damp (λ (y) (/ x y)))
                  1.0 100))
 
   (define (cube-root x)
-    (fixed-point (average-damp (lambda (y) (/ x (square y))))
+    (fixed-point (average-damp (λ (y) (/ x (square y))))
                  1.0 100))
 
   (module+ test
@@ -1844,17 +1844,17 @@
 
   (define (deriv g)
     (define dx tolerance)
-    (lambda (x) (/ (- (g (+ x dx)) (g x)) dx)))
+    (λ (x) (/ (- (g (+ x dx)) (g x)) dx)))
 
   (define (newton-transform g)
-    (lambda (x) (- x (/ (g x) ((deriv g) x)))))
+    (λ (x) (- x (/ (g x) ((deriv g) x)))))
 
   (define (newtons-method g guess max-iter)
     (fixed-point (newton-transform g) guess max-iter))
 
   (define (sqrt-v2 x)
     (newtons-method
-     (lambda (y) (- (square y) x)) 1.0 100))
+     (λ (y) (- (square y) x)) 1.0 100))
 
   (module+ test
     (check-within (sqrt-v2 4) 2.0 tolerance))
@@ -1864,23 +1864,23 @@
 
   (define (sqrt-v3 x)
     (fixed-point-of-transform
-     (lambda (y) (/ x y)) average-damp 1.0))
+     (λ (y) (/ x y)) average-damp 1.0))
 
   (define (sqrt-v4 x)
     (fixed-point-of-transform
-     (lambda (y) (- (square y) x)) newton-transform 1.0))
+     (λ (y) (- (square y) x)) newton-transform 1.0))
 
   (module+ test
     (check-within (sqrt-v3 4) 2.0 tolerance)
     (check-within (sqrt-v4 4) 2.0 tolerance)))
 
 (module Exercise/1.40 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." common-utils) square cube tolerance)
              (only (submod ".." Section/1.3.4) newtons-method))
 
   (define (cubic a b c)
-    (lambda (x)
+    (λ (x)
       (+ (cube x)
          (* a (square x))
          (* b x)
@@ -1899,10 +1899,10 @@
                     tolerance))))
 
 (module Exercise/1.41 sicp
-  (#%require (only racket/base module+))
+  (#%require (only racket/base module+ λ))
 
   (define (double g)
-    (lambda (x) (g (g x))))
+    (λ (x) (g (g x))))
 
   (module+ test
     (#%require rackunit)
@@ -1912,11 +1912,11 @@
 
 (module Exercise/1.42 sicp
   (#%provide compose)
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." common-utils) square))
 
   (define (compose f g)
-    (lambda (x) (f (g x))))
+    (λ (x) (f (g x))))
 
   (module+ test
     (#%require rackunit)
@@ -1943,12 +1943,12 @@
     (check-equal? ((repeated square 2) 5) 625)))
 
 (module Exercise/1.44 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." common-utils) square tolerance)
              (only (submod ".." Exercise/1.43) repeated))
 
   (define (smooth f dx)
-    (lambda (x)
+    (λ (x)
       (+ (f (- x dx))
          (f x)
          (f (+ x dx)))))
@@ -1964,7 +1964,7 @@
     (check-within ((smooth-n 2 square 0.1) 2) 433.4612 tolerance)))
 
 (module Exercise/1.45 sicp
-  (#%require (only racket/base module+ format for in-range)
+  (#%require (only racket/base module+ λ format for in-range)
              (only (submod ".." Exercise/1.25) fast-expt)
              (only (submod ".." Section/1.3.3) fixed-point-iter)
              (only (submod ".." Section/1.3.4) average-damp)
@@ -1975,7 +1975,7 @@
 
   (define (nth-root-fixed-point-damp x n numb-damp max-iter)
     (let ([res (fixed-point-iter ((repeated average-damp numb-damp)
-                                  (lambda (y) (/ x (pow y (- n 1)))))
+                                  (λ (y) (/ x (pow y (- n 1)))))
                                  1.0
                                  max-iter
                                  #f)])
@@ -2005,7 +2005,7 @@
             max-iter))))))
 
 (module Exercise/1.46 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." common-utils) square average tolerance))
 
   (define (iterative-improve good-enough? improve)
@@ -2017,24 +2017,24 @@
     iter)
 
   (define (sqrt-iterative-improve-v1 x)
-    (iterative-improve (lambda (guess next-guess)
+    (iterative-improve (λ (guess next-guess)
                          ;; next-guess is not used intentionally
                          (< (abs (- (square guess) x)) tolerance))
-                       (lambda (guess)
+                       (λ (guess)
                          (average guess (/ x guess)))))
 
   (define (sqrt-iterative-improve-v2 x)
-    (iterative-improve (lambda (guess next-guess)
+    (iterative-improve (λ (guess next-guess)
                          (< (abs (- guess next-guess))
                             tolerance))
-                       (lambda (guess)
+                       (λ (guess)
                          (average guess (/ x guess)))))
 
   (define (fixed-point-iterative-improve f)
-    (iterative-improve (lambda (guess next-guess)
+    (iterative-improve (λ (guess next-guess)
                          (< (abs (- guess next-guess))
                             tolerance))
-                       (lambda (guess)
+                       (λ (guess)
                          (f guess))))
 
   (module+ test
@@ -2047,7 +2047,7 @@
       (check-within ((sqrt-iterative-improve-v1 x) x0) solution tolerance)
       (check-within ((sqrt-iterative-improve-v2 x) x0) solution tolerance)
       ;; implement sqrt in terms of fixed-point-iterative-improve
-      (check-within ((fixed-point-iterative-improve (lambda (y) (average y (/ x y))))
+      (check-within ((fixed-point-iterative-improve (λ (y) (average y (/ x y))))
                      x0)
                     solution tolerance))))
 

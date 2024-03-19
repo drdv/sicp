@@ -37,7 +37,7 @@
              up-split
              corner-split
              square-limit)
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" Exercise/1.42) compose)
              (only (submod ".." pict-utils) save-painter)
              sicp-pict)
@@ -95,7 +95,7 @@
   ;; Higher-order operations
   ;; =========================================================
   (define (square-of-four tl tr bl br)
-    (lambda (painter)
+    (λ (painter)
       (let ((top (beside (tl painter) (tr painter)))
             (bottom (beside (bl painter) (br painter))))
         (below bottom top))))
@@ -145,13 +145,13 @@
     (save-painter (up-split einstein 4) #:file "out/up-split-4-einstein.png")))
 
 (module Exercise/2.45 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              sicp-pict
              (only (submod ".." pict-utils) save-painter)
              (only (submod ".." Section/2.2.4) up-split right-split))
 
   (define (split transform-1 transform-2)
-    (lambda (painter n)
+    (λ (painter n)
       (if (= n 0)
           painter
           (let* ([split-transformation (split transform-1 transform-2)]
@@ -228,7 +228,7 @@
              sub-vect
              scale-vect
              frame-coord-map)
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." Section/2.2.4/frames)
                    make-vect
                    xcor-vect
@@ -255,7 +255,7 @@
                (* s (ycor-vect vec))))
 
   (define (frame-coord-map frame)
-    (lambda (vec)
+    (λ (vec)
       (add-vect
        (origin-frame frame)
        (add-vect (scale-vect (xcor-vect vec) (edge1-frame frame))
@@ -342,7 +342,7 @@
              task-d
              wave
              make-spline)
-  (#%require (only racket/base module+ format)
+  (#%require (only racket/base module+ λ format)
              racket/class
              racket/draw
              net/sendurl
@@ -364,9 +364,9 @@
             (ycor-vect start-point)
             (xcor-vect end-point)
             (ycor-vect end-point)))
-    (lambda (frame)
+    (λ (frame)
       (for-each
-       (lambda (segment)
+       (λ (segment)
          (let ([m (frame-coord-map frame)])
            (draw-line
             (m (start-segment segment))
@@ -423,12 +423,12 @@
                               (make-segment (make-vect 1 0)
                                             (make-vect 1 1)))])
       (for-each
-       (lambda (frame)
+       (λ (frame)
          ((painter dc task) frame))
        frames)
       (send dc set-pen "red" 5 'short-dash)
       (for-each
-       (lambda (frame)
+       (λ (frame)
          ((segments->painter dc frame-border) frame))
        frames)
       (save-dc dc filename open-png)))
@@ -497,9 +497,9 @@
             (ycor-vect control-point)
             (xcor-vect end-point)
             (ycor-vect end-point)))
-    (lambda (frame)
+    (λ (frame)
       (for-each
-       (lambda (spline)
+       (λ (spline)
          (let ([m (frame-coord-map frame)])
            (draw-spline
             (m (spline-start spline))
@@ -555,7 +555,7 @@
              rotate-90
              rotate+90
              beside)
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              racket/class
              net/sendurl
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
@@ -563,7 +563,7 @@
              (only (submod ".." Exercise/2.49) get-drawing-context wave save-dc))
 
   (define (transform-painter painter origin corner1 corner2)
-    (lambda (frame)
+    (λ (frame)
       (let* ([m (frame-coord-map frame)]
              [new-origin (m origin)])
         (painter (make-frame
@@ -619,7 +619,7 @@
                                            split-point
                                            (make-vect 1.0 0.0)
                                            (make-vect 0.5 1.0))])
-      (lambda (frame)
+      (λ (frame)
         (paint-left frame)
         (paint-right frame))))
 
@@ -717,7 +717,7 @@
 
 (module Exercise/2.51 sicp
   (#%provide below)
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." Exercise/2.49) get-drawing-context wave save-dc)
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
              (only (submod ".." Section/2.2.4/transforming-painters)
@@ -736,7 +736,7 @@
                                          split-point
                                          (make-vect 1.0 0.5)
                                          (make-vect 0.0 1.0))])
-      (lambda (frame)
+      (λ (frame)
         (paint-bottom frame)
         (paint-top frame))))
 
@@ -765,7 +765,7 @@
   Section/2.2.4 because they are based on utilities in sicp-pict. So I simply redefine
   (and modify) them.
   |#
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" Exercise/1.42) compose)
              (only (submod ".." Exercise/2.49)
                    splines->painter
@@ -806,7 +806,7 @@
                   (below bottom-right corner)))))
 
   (define (square-of-four tl tr bl br)
-    (lambda (painter)
+    (λ (painter)
       (let ((top (beside (tl painter) (tr painter)))
             (bottom (beside (bl painter) (br painter))))
         (below bottom top))))
@@ -855,7 +855,7 @@
   This module includes the push example from Lecture 3A. I found both the lecture and
   the "picture language" exercises to be very enlightening.
   |#
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" Exercise/1.43) repeated)
              (only (submod ".." Exercise/2.49)
                    splines->painter
@@ -867,8 +867,8 @@
              (only (submod ".." Exercise/2.51) below))
 
   (define (push comb)
-    (lambda (pict n)
-      (let ([f (repeated (lambda (p) (comb pict p)) n)])
+    (λ (pict n)
+      (let ([f (repeated (λ (p) (comb pict p)) n)])
         (f pict))))
 
   (define right-push (push beside))
@@ -1360,7 +1360,7 @@
       (check-equal? (union-set-v2 S1 '()) S1))))
 
 (module Exercise/2.60 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" Exercise/1.43) repeated)
              (only (submod ".." Example/sets-as-unordered-lists) intersection-set))
 
@@ -1394,8 +1394,8 @@
     ;; A worst case example of why intersections would be bad
     (let* ([S '(1 2 3)]
            [n (length S)]
-           [union-set-curry (lambda (set1)
-                              (lambda (set2)
+           [union-set-curry (λ (set1)
+                              (λ (set2)
                                 (append set1 set2)))])
       ;; the intersection-set here is O(n^3)
       (intersection-set ((repeated (union-set-curry S) n) S) S))))
@@ -1520,6 +1520,8 @@
     (#%require rackunit)
     (display "--> Example/sets-as-binary-trees\n")
 
+    (check-true (element-of-set? 3 binary-tree-1-to-7))
+    (check-false (element-of-set? 8 binary-tree-1-to-7))
     (check-equal? binary-tree-1-to-7
                   (adjoin-set
                    7

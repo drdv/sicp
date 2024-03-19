@@ -4,7 +4,7 @@
 #lang racket/base
 
 (module Exercise/2.1 sicp
-  (#%require (only racket/base module+ format let-values exn:fail?))
+  (#%require (only racket/base module+ λ format let-values exn:fail?))
 
   ;; there are simpler solutions but I wanted to learn how to use let-values
   (define (make-rat n d)
@@ -71,7 +71,7 @@
 
     (check-exn
      exn:fail?
-     (lambda () (make-rat 1 0)))))
+     (λ () (make-rat 1 0)))))
 
 (module Exercise/2.2 sicp
   (#%provide make-point
@@ -240,25 +240,25 @@
                     perimeter tolerance))))
 
 (module Exercise/2.4 sicp
-  (#%require (only racket/base module+))
+  (#%require (only racket/base module+ λ))
 
   (define (cons x y)
-    (lambda (m) (m x y)))
+    (λ (m) (m x y)))
 
   (define (car z)
-    (z (lambda (p q) p)))
+    (z (λ (p q) p)))
 
   (define (cdr z)
-    (z (lambda (p q) q)))
+    (z (λ (p q) q)))
 
   (module+ test
     (#%require rackunit)
     (display "--> Exercise/2.4\n")
 
     #|
-    (cons x y) -> (lambda (m) (m x y)) where x and y are stored in the closure
-    (car (lambda (m) (m x y))) -> ((lambda (m) (m x y)) (lambda (p q) p))
-                               -> ((lambda (p q) p) x y) -> x
+    (cons x y) -> (λ (m) (m x y)) where x and y are stored in the closure
+    (car (λ (m) (m x y))) -> ((λ (m) (m x y)) (λ (p q) p))
+                          -> ((λ (p q) p) x y) -> x
     |#
     (let ([c (cons 1 2)])
       (check-equal? (car c) 1)
@@ -297,35 +297,35 @@
          (check-equal? (cdr c) b))))
 
 (module Exercise/2.6 sicp
-  (#%require (only racket/base module+))
+  (#%require (only racket/base module+ λ))
 
-  (define zero (lambda (f) (lambda (x) x)))
+  (define zero (λ (f) (λ (x) x)))
   (define (add-1 n)
-    (lambda (f) (lambda (x) (f ((n f) x)))))
+    (λ (f) (λ (x) (f ((n f) x)))))
 
   (module+ test
     (#%require rackunit)
     (display "--> Exercise/2.6\n")
 
     #|
-    (lambda (f) (lambda (x) (f ((zero f) x)))) ->
-    (lambda (f) (lambda (x) (f ((lambda (x) x) x)))) ->
-    (lambda (f) (lambda (x) (f x)))
+    (λ (f) (λ (x) (f ((zero f) x)))) ->
+    (λ (f) (λ (x) (f ((λ (x) x) x)))) ->
+    (λ (f) (λ (x) (f x)))
     |#
-    (define one (lambda (f) (lambda (x) (f x))))
+    (define one (λ (f) (λ (x) (f x))))
 
     #|
-    (lambda (f) (lambda (x) (f ((one f) x)))) ->
-    (lambda (f) (lambda (x) (f (((lambda (f) (lambda (x) (f x))) f) x)))) ->
-    (lambda (f) (lambda (x) (f (f x))))
+    (λ (f) (λ (x) (f ((one f) x)))) ->
+    (λ (f) (λ (x) (f (((λ (f) (λ (x) (f x))) f) x)))) ->
+    (λ (f) (λ (x) (f (f x))))
     |#
-    (define two (lambda (f) (lambda (x) (f (f x)))))
+    (define two (λ (f) (λ (x) (f (f x)))))
 
-    (define three (lambda (f) (lambda (x) (f (f (f x))))))
-    (define four (lambda (f) (lambda (x) (f (f (f (f x)))))))
+    (define three (λ (f) (λ (x) (f (f (f x))))))
+    (define four (λ (f) (λ (x) (f (f (f (f x)))))))
 
     (define (church-add m n)
-      (lambda (f) (lambda (x) ((m f) ((n f) x)))))
+      (λ (f) (λ (x) ((m f) ((n f) x)))))
 
     (let ([f inc]
           [n0 0])
@@ -345,7 +345,7 @@
              add-interval
              mul-interval
              div-interval)
-  (#%require (only racket/base module+ format exn:fail?))
+  (#%require (only racket/base module+ λ format exn:fail?))
 
   (define (make-interval a b)
     (if (> a b)
@@ -385,7 +385,7 @@
       (check-equal? (upper-bound res-mul)  4))
 
     ;; NOTE: the reciprocal interval in div-interval doesn't make sense
-    (check-exn exn:fail? (lambda ()
+    (check-exn exn:fail? (λ ()
                            (let ([y (make-interval -1 2)])
                              (make-interval (/ 1.0 (upper-bound y))
                                             (/ 1.0 (lower-bound y))))))))
@@ -484,7 +484,7 @@
 
 (module Exercise/2.10 sicp
   (#%provide div-interval)
-  (#%require (only racket/base module+ format exn:fail?)
+  (#%require (only racket/base module+ λ format exn:fail?)
              (only (submod ".." Exercise/2.7)
                    make-interval
                    lower-bound
@@ -506,9 +506,9 @@
 
     (let* ([x (make-interval -1 2)]
            [res-div (div-interval x (make-interval -2 -1))])
-      (check-exn exn:fail? (lambda () (div-interval x (make-interval -1 1))))
-      (check-exn exn:fail? (lambda () (div-interval x (make-interval  0 1))))
-      (check-exn exn:fail? (lambda () (div-interval x (make-interval -1 0))))
+      (check-exn exn:fail? (λ () (div-interval x (make-interval -1 1))))
+      (check-exn exn:fail? (λ () (div-interval x (make-interval  0 1))))
+      (check-exn exn:fail? (λ () (div-interval x (make-interval -1 0))))
       (check-equal? (lower-bound res-div) -2.0)
       (check-equal? (upper-bound res-div)  1.0))))
 
@@ -524,9 +524,9 @@
   |#
   (define test-intervals-pairs
     (map
-     (lambda (x) (mcons (car x) (cadr x))) ; the sicp language is based on mutable pairs
+     (λ (x) (mcons (car x) (cadr x))) ; the sicp language is based on mutable pairs
      (combinations ; construct all pairs of intervals
-      (map (lambda (x) (make-interval (car x) (cadr x)))
+      (map (λ (x) (make-interval (car x) (cadr x)))
            ;; NOTE: order is preserved
            (combinations '(-5 -4 -3 -2 -1 0 1 2 3 4 5) 2)) 2)))
 
@@ -822,7 +822,7 @@
 
 (module Section/2.2.1 sicp
   (#%provide for-each-custom)
-  (#%require (only racket/base module+ format))
+  (#%require (only racket/base module+ λ format))
 
   (define (list-ref items n)
     (if (= n 0)
@@ -878,7 +878,7 @@
               (map proc (cdr items)))))
 
   (define (scale-list-map factor items)
-    (map (lambda (x) (* x factor))
+    (map (λ (x) (* x factor))
          items))
 
   (module+ test
@@ -897,7 +897,7 @@
   (module+ test
     (let ([lst '(1 2 3)]
           [scale 4]
-          [show (lambda (x) (display (format "~a " x)))])
+          [show (λ (x) (display (format "~a " x)))])
       (for-each-custom show (scale-list-recur scale lst))
       (for-each-custom show (scale-list-iter scale lst '()))
       (for-each-custom show (scale-list-iter-append scale lst '())))))
@@ -978,12 +978,12 @@
       (check-equal? (cc amount uk-coins) (count-change amount uk-coins)))))
 
 (module Exercise/2.20 sicp
-  (#%require (only racket/base module+ format))
+  (#%require (only racket/base module+ λ format))
 
   (define (f1 . x) (display (format "~a\n" x)))
-  (define f2 (lambda x (display (format "~a\n" x)))) ; rather peculiar!
+  (define f2 (λ x (display (format "~a\n" x)))) ; rather peculiar!
   (define (f3 x . y) (display (format "~a\n~a\n" x y)))
-  (define f4 (lambda (x . y) (display (format "~a\n~a\n" x y))))
+  (define f4 (λ (x . y) (display (format "~a\n~a\n" x y))))
 
   (define (check-even-odd-parity a b)
     (= (abs (remainder a 2))
@@ -1092,7 +1092,7 @@
     (check-equal? (square-list-2 (list 1 2 3)) (cons (cons (cons '() 1) 4) 9))))
 
 (module Exercise/2.23 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." Section/2.2.1) for-each-custom))
 
   (module+ test
@@ -1100,7 +1100,7 @@
     (display "--> Exercise/2.23\n")
 
     (let ([lst (list 57 321 88)]
-          [f (lambda (x) (newline) (display x))])
+          [f (λ (x) (newline) (display x))])
       (for-each        f lst)
       (for-each-custom f lst))))
 
@@ -1277,7 +1277,7 @@
     (check-equal? (append (list 1 '()) (list 2 3)) (list 1 '() 2 3))))
 
 (module Exercise/2.29 sicp
-  (#%require (only racket/base module+))
+  (#%require (only racket/base module+ λ))
 
   (define (make-mobile left right)
     (list left right))
@@ -1365,7 +1365,7 @@
     ;; same weight as bm-1 but with adjusted lengths to get a balanced binary mobile
     (define bm-2
       (let*
-          ([balanced-weight (lambda (l1 w1 w2) (/ (* l1 w1) w2))]
+          ([balanced-weight (λ (l1 w1 w2) (/ (* l1 w1) w2))]
            [t1 (make-mobile (make-branch 2 15)
                             (make-branch (balanced-weight 2 15 25) 25))]
            [t2 (make-mobile (make-branch 2 t1)
@@ -1383,7 +1383,7 @@
     (check-true (balanced? bm-2))))
 
 (module Section/2.2.2/mapping-over-trees sicp
-  (#%require (only racket/base module+))
+  (#%require (only racket/base module+ λ))
 
   #|
   The pattern is:
@@ -1405,7 +1405,7 @@
   I used it in deep-reverse-v3 in Exercise/2.27
   |#
   (define (scale-tree-map tree factor)
-    (map (lambda (sub-tree)
+    (map (λ (sub-tree)
            (if (pair? sub-tree)
                (scale-tree-map sub-tree factor)
                (* sub-tree factor)))
@@ -1421,7 +1421,7 @@
       (check-equal? (scale-tree-map tree 10) scaled-tree))))
 
 (module Exercise/2.30 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" common-utils) square))
 
   (define (square-tree-seq tree)
@@ -1431,7 +1431,7 @@
                       (square-tree-seq (cdr tree))))))
 
   (define (square-tree-map tree)
-    (map (lambda (sub-tree)
+    (map (λ (sub-tree)
            (if (pair? sub-tree)
                (square-tree-map sub-tree)
                (square sub-tree)))
@@ -1447,11 +1447,11 @@
       (check-equal? (square-tree-map tree) res))))
 
 (module Exercise/2.31 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" common-utils) square))
 
   (define (tree-map f tree)
-    (map (lambda (sub-tree)
+    (map (λ (sub-tree)
            (if (pair? sub-tree)
                (tree-map f sub-tree)
                (f sub-tree)))
@@ -1468,7 +1468,7 @@
       (check-equal? (square-tree tree) res))))
 
 (module Exercise/2.32 sicp
-  (#%require (only racket/base module+))
+  (#%require (only racket/base module+ λ))
 
   #|
   We construct rest using wishful thinking and then cons the car of the input set with
@@ -1479,7 +1479,7 @@
     (if (null? s)
         (list nil)
         (let ([rest (subsets (cdr s))])
-          (append rest (map (lambda (x)
+          (append rest (map (λ (x)
                               (cons (car s) x)) rest)))))
 
   (module+ test
@@ -1614,18 +1614,18 @@
     (check-equal? (salary-of-highest-paid-programmer records) 5)))
 
 (module Exercise/2.33 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" common-utils) square)
              (only (submod ".." Section/2.2.3) accumulate))
 
   (define (map p sequence)
-    (accumulate (lambda (x y) (cons (p x) y)) nil sequence))
+    (accumulate (λ (x y) (cons (p x) y)) nil sequence))
 
   (define (append seq1 seq2)
     (accumulate cons seq2 seq1))
 
   (define (length sequence)
-    (accumulate (lambda (x length-tail) (+ 1 length-tail)) 0 sequence))
+    (accumulate (λ (x length-tail) (+ 1 length-tail)) 0 sequence))
 
   (module+ test
     (#%require rackunit)
@@ -1637,11 +1637,11 @@
       (check-equal? (length 1-to-5) 5))))
 
 (module Exercise/2.34 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." Section/2.2.3) accumulate))
 
   (define (horner-eval x coefficient-sequence)
-    (accumulate (lambda (this-coeff higher-terms)
+    (accumulate (λ (this-coeff higher-terms)
                   (+ this-coeff
                      (* higher-terms
                         x)))
@@ -1655,20 +1655,20 @@
     (check-equal? (horner-eval 2 (list 1 3 0 5 0 1)) 79)))
 
 (module Exercise/2.35 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." Section/2.2.3) accumulate enumerate-tree)
              (only (submod ".." Exercise/2.24) count-leaves))
 
   ;; see scale-tree-map in Section/2.2.2/mapping-over-trees
   (define (count-leaves-signal-v1 t)
-    (accumulate + 0 (map (lambda (sub-tree)
+    (accumulate + 0 (map (λ (sub-tree)
                            (if (pair? sub-tree)
                                (count-leaves-signal-v1 sub-tree)
                                1))
                          t)))
 
   (define (count-leaves-signal-v2 t)
-    (accumulate + 0 (map (lambda (x) 1) (enumerate-tree t))))
+    (accumulate + 0 (map (λ (x) 1) (enumerate-tree t))))
 
   (module+ test
     (#%require rackunit)
@@ -1700,7 +1700,7 @@
       (check-equal? (accumulate-n + 0 seqs) res))))
 
 (module Exercise/2.37 sicp
-  (#%require (only racket/base module+ exn:fail?)
+  (#%require (only racket/base module+ λ exn:fail?)
              (only racket/format ~a)
              (only racket/math exact-round)
              (only (submod ".." Section/2.2.3) accumulate)
@@ -1711,9 +1711,9 @@
     (define (max-element mat) (accumulate max -inf.0 (fringe mat)))
     ;; assume integer coefficients
     (define (count-digits n) (exact-round (+ 1 (floor (log n 10)))))
-    (for-each (lambda (row)
+    (for-each (λ (row)
                 (display "|")
-                (for-each (lambda (x)
+                (for-each (λ (x)
                             (display
                              (~a x
                                  #:min-width (inc (count-digits (max-element mat)))
@@ -1728,14 +1728,14 @@
     (accumulate + 0 (map * v w)))
 
   (define (matrix-*-vector m v)
-    (map (lambda (w) (dot-product v w)) m))
+    (map (λ (w) (dot-product v w)) m))
 
   (define (transpose mat)
     (accumulate-n cons nil mat))
 
   (define (matrix-*-matrix m n)
     (let ([n.T (transpose n)])
-      (map (lambda (x) (matrix-*-vector n.T x)) m)))
+      (map (λ (x) (matrix-*-vector n.T x)) m)))
 
   (module+ test
     (#%require rackunit)
@@ -1766,7 +1766,7 @@
     (check-equal? (matrix-*-matrix I3 A) A)
     (check-exn
      exn:fail?
-     (lambda () (matrix-*-matrix A A)))))
+     (λ () (matrix-*-matrix A A)))))
 
 (module Exercise/2.38 sicp
   (#%provide fold-right
@@ -1801,14 +1801,14 @@
                     (fold-left + 1 x)))))
 
 (module Exercise/2.39 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." Exercise/2.38) fold-right fold-left))
 
   (define (reverse-fold-right sequence)
-    (fold-right (lambda (x y) (append y (list x))) nil sequence))
+    (fold-right (λ (x y) (append y (list x))) nil sequence))
 
   (define (reverse-fold-left sequence)
-    (fold-left (lambda (x y) (cons y x)) nil sequence))
+    (fold-left (λ (x y) (cons y x)) nil sequence))
 
   (module+ test
     (#%require rackunit)
@@ -1824,7 +1824,7 @@
              prime-sum?
              make-pair-sum
              prime-sum-pairs)
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" Exercise/1.22) prime?)
              (only (submod ".." Section/2.2.3) accumulate filter enumerate-interval))
 
@@ -1845,8 +1845,8 @@
   (define (prime-sum-pairs n)
     (map make-pair-sum
          (filter prime-sum? (flatmap
-                             (lambda (i)
-                               (map (lambda (j) (list i j))
+                             (λ (i)
+                               (map (λ (j) (list i j))
                                     (enumerate-interval 1 (- i 1))))
                              (enumerate-interval 1 n)))))
 
@@ -1858,8 +1858,8 @@
 
     ;; two for loops using nested maps
     (for-each show
-              (map (lambda (i)
-                     (map (lambda (j) (cons i j))
+              (map (λ (i)
+                     (map (λ (j) (cons i j))
                           '(4 5)))
                    '(1 2 3)))
 
@@ -1868,14 +1868,14 @@
       (for-each show res)))
 
   (define (remove item sequence)
-    (filter (lambda (x) (not (= x item)))
+    (filter (λ (x) (not (= x item)))
             sequence))
 
   (define (permutations s)
     (if (null? s)
         (list nil)
-        (flatmap (lambda (x)
-                   (map (lambda (other-permutations)
+        (flatmap (λ (x)
+                   (map (λ (other-permutations)
                           (cons x other-permutations))
                         (permutations (remove x s))))
                  s)))
@@ -1887,7 +1887,7 @@
       (for-each show res))))
 
 (module Exercise/2.40 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." Section/2.2.3) filter enumerate-interval)
              (only (submod ".." Section/2.2.3/nested-mapings)
                    flatmap
@@ -1897,8 +1897,8 @@
 
   (define (unique-pairs n)
     (flatmap
-     (lambda (i)
-       (map (lambda (j) (list i j))
+     (λ (i)
+       (map (λ (j) (list i j))
             (enumerate-interval 1 (- i 1))))
      (enumerate-interval 1 n)))
 
@@ -1913,21 +1913,21 @@
       (check-equal? (prime-sum-pairs-updated n) (prime-sum-pairs n)))))
 
 (module Exercise/2.41 sicp
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." Section/2.2.3) filter accumulate enumerate-interval)
              (only (submod ".." Section/2.2.3/nested-mapings) flatmap))
 
   (define (ordered-triplets n)
-    (flatmap (lambda (i)
-               (flatmap (lambda (j)
-                          (map (lambda (k)
+    (flatmap (λ (i)
+               (flatmap (λ (j)
+                          (map (λ (k)
                                  (list k j i))
                                (enumerate-interval 1 (- j 1))))
                         (enumerate-interval 1 (- i 1))))
              (enumerate-interval 1 n)))
 
   (define (filter-sum-to s sequence-of-triplets)
-    (filter (lambda (triplet) (= (accumulate + 0 triplet) s))
+    (filter (λ (triplet) (= (accumulate + 0 triplet) s))
             sequence-of-triplets))
 
   (define (ordered-triplets-sum-to-s n s)
@@ -1938,9 +1938,9 @@
     (display "--> Exercise/2.41\n")
 
     ;; show all triplets with their sum (to verify results)
-    (for-each (lambda (item) (display item) (newline))
+    (for-each (λ (item) (display item) (newline))
               (map
-               (lambda (x) (cons (accumulate + 0 x) x))
+               (λ (x) (cons (accumulate + 0 x) x))
                (ordered-triplets 6)))
 
     (let* ([n 6]
@@ -1953,7 +1953,7 @@
              safe?
              adjoin-position
              queens)
-  (#%require (only racket/base module+)
+  (#%require (only racket/base module+ λ)
              (only (submod ".." Section/2.2.3) filter accumulate enumerate-interval)
              (only (submod ".." Section/2.2.3/nested-mapings) flatmap))
 
@@ -1984,8 +1984,8 @@
   (define (safe? k board)
     (let ([head-cell (car board)]
           [tail-cells (cdr board)])
-      (accumulate (lambda (x y) (and x y)) #t
-                  (map (lambda (cell)
+      (accumulate (λ (x y) (and x y)) #t
+                  (map (λ (cell)
                          (not (visible-cells cell head-cell)))
                        tail-cells))))
 
@@ -1994,11 +1994,11 @@
       (if (= k 0)
           (list empty-board)
           (filter
-           (lambda (positions)
+           (λ (positions)
              (safe? k positions))
            (flatmap
-            (lambda (rest-of-queens)
-              (map (lambda (new-row)
+            (λ (rest-of-queens)
+              (map (λ (new-row)
                      (adjoin-position
                       new-row k rest-of-queens))
                    (enumerate-interval 1 board-size)))
@@ -2007,7 +2007,7 @@
 
   (define (all seq)
     (accumulate
-     (lambda (x y) (and x y))
+     (λ (x y) (and x y))
      #t
      seq))
 
@@ -2033,7 +2033,7 @@
     (check-equal? (queens 6) queens-6-solutions)
     (check-true
      (all
-      (map (lambda (n m)
+      (map (λ (n m)
              (= (length (queens n)) m))
            queens-dimensions
            queens-numb-solutions))))
@@ -2056,10 +2056,10 @@
 
     ; return #t if the new-cell threatens any of the existing queens on the board
     (define (threatens? new-cell board)
-      ;; FIXME: I have to pass (lambda (x y) (or x y)) because there is a problem when
+      ;; FIXME: I have to pass (λ (x y) (or x y)) because there is a problem when
       ;; directly passing `or`. Maybe this is because `or` is a special form?
-      (accumulate (lambda (x y) (or x y)) #f
-                  (map (lambda (cell)
+      (accumulate (λ (x y) (or x y)) #f
+                  (map (λ (cell)
                          (visible-cells cell new-cell))
                        (board-cells board))))
 
@@ -2067,9 +2067,9 @@
       (not (null? (car (board-cells board)))))
 
     (define (add-new-col boards col)
-      (flatmap (lambda (board)
+      (flatmap (λ (board)
                  (filter feasible-board?
-                         (map (lambda (row)
+                         (map (λ (row)
                                 (let ([new-cell (make-cell row col)])
                                   (add-cell board
                                             (if (threatens? new-cell board)
@@ -2084,18 +2084,18 @@
               [else (add-new-col (queens-helper (- col 1)) col)]))
       (queens-helper n))
 
-    (check-equal? (map (lambda (board) (board-cells board))
+    (check-equal? (map (λ (board) (board-cells board))
                        (queens 6))
                   queens-6-solutions)
     (check-true
      (all
-      (map (lambda (n m)
+      (map (λ (n m)
              (= (length (queens n)) m))
            queens-dimensions
            queens-numb-solutions)))))
 
 (module Exercise/2.43 sicp
-  (#%require (only racket/base module+ format)
+  (#%require (only racket/base module+ λ format)
              (only (submod ".." Section/2.2.3) filter enumerate-interval)
              (only (submod ".." Section/2.2.3/nested-mapings) flatmap)
              (only (submod ".." Exercise/2.18) reverse)
@@ -2126,11 +2126,11 @@
       (if (= k 0)
           (list empty-board)
           (filter
-           (lambda (positions)
+           (λ (positions)
              (safe? k positions))
            (flatmap
-            (lambda (new-row)
-              (map (lambda (rest-of-queens)
+            (λ (new-row)
+              (map (λ (rest-of-queens)
                      (adjoin-position new-row k rest-of-queens))
                    (queen-cols (- k 1))))
             (enumerate-interval 1 board-size)))))
@@ -2142,18 +2142,18 @@
     (if (= k 0)
         (list empty-board)
         (filter
-         (lambda (positions)
+         (λ (positions)
            (safe? k positions))
          (flatmap
-          (lambda (rest-of-queens)
-            (map (lambda (new-row)
+          (λ (rest-of-queens)
+            (map (λ (new-row)
                    (adjoin-position
                     new-row k rest-of-queens))
                  (enumerate-interval 1 board-size)))
           (queen-cols-original-8 (- k 1))))))
 
   ;; number of maintained solutions (see note above)
-  (define H (map (lambda (n)
+  (define H (map (λ (n)
                    (length (queen-cols-original-8 n)))
                  (enumerate-interval 1 8)))
 
@@ -2177,7 +2177,7 @@
     (display "--> Exercise/2.43\n")
 
     ;; show solutions we maintain at a given column for an 8x8 board
-    (for-each (lambda (k h)
+    (for-each (λ (k h)
                 (display (format "[column ~a] ~a\n" k h)))
               (enumerate-interval 1 board-size)
               H)
