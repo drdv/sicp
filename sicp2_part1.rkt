@@ -517,11 +517,15 @@
   (#%require (only racket/list combinations)
              (only (submod ".." Exercise/2.7) make-interval))
 
+  #|
+  Here I generate data used in Exercise/2.11. Note that the combinations procedure
+  doesn't work with language sicp so I have to use racket/base with mcons because the
+  data would be used in sicp (this is a hack which I normally try to avoid).
+  |#
   (define test-intervals-pairs
     (map
-     ;; https://www.reddit.com/r/Racket/comments/99e1qe/can_you_read_sicp_with_racket/?rdt=57058
-     (lambda (x) (mcons (car x) (cadr x)))
-     (combinations ;; construct all pairs of intervals
+     (lambda (x) (mcons (car x) (cadr x))) ; the sicp language is based on mutable pairs
+     (combinations ; construct all pairs of intervals
       (map (lambda (x) (make-interval (car x) (cadr x)))
            ;; NOTE: order is preserved
            (combinations '(-5 -4 -3 -2 -1 0 1 2 3 4 5) 2)) 2)))
@@ -1143,6 +1147,13 @@
                                           '()))
                               '())))
 
+    #|
+    To force sdraw to draw a box-and-pointer diagram we need to temporarily change the
+    language of this exercise to racket/base because sdraw assumes immutable pairs (as
+    used by default in racket/base) while scip is based on immutable pairs. Note that
+    cons in sicp seems to be equivalent to mcons in racket/base. I don't want, however,
+    to change the language permanently because this module provides count-leaves.
+    |#
     (sdraw y #:null-style '/)))
 
 (module Exercise/2.25 sicp

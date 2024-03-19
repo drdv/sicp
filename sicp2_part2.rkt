@@ -3,11 +3,11 @@
 ;; =====================================================================================
 #lang racket/base
 
-#|
-I define some functions in this separate module because sicp doesn't support defaut
-arguments (or at least I don't know how to implement them).
-|#
 (module pict-utils racket/base
+  #|
+  I define some functions in this separate module because sicp doesn't support defaut
+  arguments (or at least I don't know how to implement them).
+  |#
   (#%provide save-painter)
   (#%require sicp-pict
              net/sendurl
@@ -759,12 +759,12 @@ arguments (or at least I don't know how to implement them).
       ((below-rot (wave dc) (wave dc)) frame)
       (save-dc dc "out/below-rot-wave.png" #f))))
 
-#|
-Here we cannot reuse right-split, up-split, corner-split, square-limit etc. defined in
-Section/2.2.4 because they are based on utilities in sicp-pict. So I simply redefine (and
-modify) them.
-|#
 (module Exercise/2.52 sicp
+  #|
+  Here we cannot reuse right-split, up-split, corner-split, square-limit etc. defined in
+  Section/2.2.4 because they are based on utilities in sicp-pict. So I simply redefine
+  (and modify) them.
+  |#
   (#%require (only racket/base module+)
              (only (submod "sicp1.rkt" Exercise/1.42) compose)
              (only (submod ".." Exercise/2.49)
@@ -850,11 +850,11 @@ modify) them.
       ((square-limit (wave-heart dc) 1) frame)
       (save-dc dc "out/square-limit-wave-heart.png" #f))))
 
-#|
-This module includes the push example from Lecture 3A. I found both the lecture and the
-"picture language" exercises to be very enlightening.
-|#
 (module Lecture/3A sicp
+  #|
+  This module includes the push example from Lecture 3A. I found both the lecture and
+  the "picture language" exercises to be very enlightening.
+  |#
   (#%require (only racket/base module+)
              (only (submod "sicp1.rkt" Exercise/1.43) repeated)
              (only (submod ".." Exercise/2.49)
@@ -911,7 +911,8 @@ This module includes the push example from Lecture 3A. I found both the lecture 
     (cadr '((x1 x2) (y1 y2)))               ; (y1 y2)
     (pair? (car '(a short list)))           ; #f
     (memq 'red '((red shoes) (blue socks))) ; #f
-    (memq 'red '(red shoes blue socks))))   ; (red shoes blue socks)
+    (memq 'red '(red shoes blue socks))     ; (red shoes blue socks)
+    ))
 
 (module Exercise/2.54 sicp
   (#%require (only racket/base module+))
@@ -1147,11 +1148,11 @@ This module includes the push example from Lecture 3A. I found both the lecture 
     (deriv '(+ (+ (* x y) (* x 5)) (+ x y)) 'x)
     (deriv '(+ (* x y) (* x 5) (+ x y)) 'x)))
 
-#|
-NOTE: we could have an expression like '((x * x)+(x * x)), note that there are no
-spaces around the + operator, but we cannot have an expression like '(x+(x * x))
-|#
 (module Exercise/2.58 sicp
+  #|
+  NOTE: we could have an expression like '((x * x)+(x * x)), note that there are no
+  spaces around the + operator, but we cannot have an expression like '(x+(x * x))
+  |#
   (#%require (only racket/base module+)
              (only (submod ".." Example/symbolic-differentiation)
                    variable?

@@ -73,18 +73,12 @@
 
     (check-equal? (an-expression) (/ (- 37) 150))))
 
-(module Exercise/1.3 racket/base ; see note in test
+(module Exercise/1.3 racket/base ; sort requires immutable pairs
   (#%require (only (submod ".." common-utils) square))
 
   (define (sum-squares.v1 x y z)
     (- (+ (square x) (square y) (square z))
        (square (min x y z))))
-
-  (module+ test
-    (#%require rackunit)
-    (display "--> Exercise/1.3\n")
-
-    (check-equal? (sum-squares.v1 9 5 7) 130))
 
   (define (sum-squares.v2 x y z)
     (foldl + 0
@@ -92,9 +86,10 @@
                 (cdr (sort (list x y z) <)))))
 
   (module+ test
-    ;; NOTE: there seems to be a conflict between the list defined in SICP and the
-    ;; sort procedure (I get the same error even if I use cons to define the list)
-    ;; that is why I use racket/base instead of sicp
+    (#%require rackunit)
+    (display "--> Exercise/1.3\n")
+
+    (check-equal? (sum-squares.v1 9 5 7) 130)
     (check-equal? (sum-squares.v2 9 5 7) 130)))
 
 (module Exercise/1.4 sicp
@@ -1579,7 +1574,9 @@
       (define (relatively-prime? i)
         ;; gcd is from racket/base
         (= (gcd i n) 1))
-      (filter-accumulate relatively-prime? * 1 (lambda (x) x) (lambda (x) (+ x 1)) 1 (- n 1)))
+      (filter-accumulate relatively-prime? * 1
+                         (lambda (x) x)
+                         (lambda (x) (+ x 1)) 1 (- n 1)))
 
     (let ([n 16])
       (check-equal? (solve-assignment-b n)
