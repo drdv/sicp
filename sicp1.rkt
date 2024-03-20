@@ -35,9 +35,9 @@
 
 (module conversion-utils racket/base
   (#%provide mcons->cons
-             save-pict
-             save-painter
-             save-dc
+             pict->file
+             painter->png
+             dc->png
              get-drawing-context)
   (#%require racket/class
              pict
@@ -59,20 +59,20 @@
                       (mcons->cons (mcdr mc)))]))
 
   ;; save a pict to file (docs.racket-lang.org/pict)
-  (define (save-pict a-pict
-                     #:file [filename "/tmp/_racket_tmp.svg"]
-                     #:open [open-file #f])
-    (define (save-pict-png)
+  (define (pict->file a-pict
+                      #:file [filename "/tmp/_racket_tmp.svg"]
+                      #:open [open-file #f])
+    (define (pict->png)
       (send (pict->bitmap a-pict) save-file filename 'png))
-    (define (save-pict-svg)
+    (define (pict->svg)
       (define out (open-output-file filename #:exists 'replace))
       (write-bytes (convert a-pict 'svg-bytes) out)
       ;; FIXME: can't we use a context manager as in python?
       (close-output-port out))
 
     (if (bytes=? (path-get-extension filename) #".svg")
-        (save-pict-svg)
-        (save-pict-png))
+        (pict->svg)
+        (pict->png))
     (if open-file
         (send-url/file filename)
         (display (format "file ~a created\n" filename))))
@@ -86,7 +86,7 @@
   directly pass a frame - which I find "unfortunate". The save-painter procedure saves
   to a png the image associated with a painter.
   |#
-  (define (save-painter painter
+  (define (painter->png painter
                         #:size [size 500]
                         #:file [filename "/tmp/_racket_tmp.png"]
                         #:open [open-file #f])
@@ -97,7 +97,7 @@
         (display (format "file ~a created\n" filename))))
 
   ;; save a drawing context as png
-  (define (save-dc dc
+  (define (dc->png dc
                    #:file [filename "/tmp/_racket_tmp.png"]
                    #:open [open-file #f])
     (send (send dc get-bitmap) save-file filename 'png)

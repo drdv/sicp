@@ -10,7 +10,7 @@
              square-limit)
   (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" Exercise/1.42) compose)
-             (only (submod "sicp1.rkt" conversion-utils) save-painter)
+             (only (submod "sicp1.rkt" conversion-utils) painter->png)
              sicp-pict)
 
   (define (flipped-pairs painter)
@@ -53,14 +53,14 @@
     (#%require rackunit)
     (display "--> Section/2.2.4\n")
 
-    (save-painter einstein #:file "out/einstein.png")
-    (save-painter (flip-horiz einstein) #:file "out/flip-horiz-einstein.png")
-    (save-painter (beside einstein einstein) #:file "out/beside-einstein-einstein.png")
-    (save-painter (below einstein einstein) #:file "out/below-einstein-einstein.png")
-    (save-painter (flipped-pairs einstein) #:file "out/flipped-pairs-einstein.png")
-    (save-painter (right-split einstein 4) #:file "out/right-split-4-einstein.png")
-    (save-painter (corner-split einstein 4) #:file "out/corner-split-4-einstein.png")
-    (save-painter (square-limit einstein 4) #:file "out/square-limit-4-einstein.png"))
+    (painter->png einstein #:file "out/einstein.png")
+    (painter->png (flip-horiz einstein) #:file "out/flip-horiz-einstein.png")
+    (painter->png (beside einstein einstein) #:file "out/beside-einstein-einstein.png")
+    (painter->png (below einstein einstein) #:file "out/below-einstein-einstein.png")
+    (painter->png (flipped-pairs einstein) #:file "out/flipped-pairs-einstein.png")
+    (painter->png (right-split einstein 4) #:file "out/right-split-4-einstein.png")
+    (painter->png (corner-split einstein 4) #:file "out/corner-split-4-einstein.png")
+    (painter->png (square-limit einstein 4) #:file "out/square-limit-4-einstein.png"))
 
   ;; =========================================================
   ;; Higher-order operations
@@ -107,13 +107,13 @@
 (module Exercise/2.44 sicp
   (#%require (only racket/base module+)
              sicp-pict
-             (only (submod "sicp1.rkt" conversion-utils) save-painter)
+             (only (submod "sicp1.rkt" conversion-utils) painter->png)
              (only (submod ".." Section/2.2.4) up-split))
 
   (module+ test
     (display "--> Exercise/2.44\n")
 
-    (save-painter (up-split einstein 4) #:file "out/up-split-4-einstein.png")))
+    (painter->png (up-split einstein 4) #:file "out/up-split-4-einstein.png")))
 
 (module Exercise/2.45 sicp
   (#%require (only racket/base module+ λ)
@@ -312,7 +312,7 @@
              make-spline)
   (#%require (only racket/base module+ λ format)
              racket/class
-             (only (submod "sicp1.rkt" conversion-utils) get-drawing-context save-dc)
+             (only (submod "sicp1.rkt" conversion-utils) get-drawing-context dc->png)
              (only (submod ".." Section/2.2.4/frames)
                    make-vect
                    xcor-vect
@@ -385,7 +385,7 @@
        (λ (frame)
          ((segments->painter dc frame-border) frame))
        frames)
-      (save-dc dc #:file filename #:open open-file)))
+      (dc->png dc #:file filename #:open open-file)))
 
   ;; ===================================================================================
   ;; all frames in Figure. 2.10
@@ -517,7 +517,7 @@
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
              (only (submod ".." Exercise/2.46) sub-vect frame-coord-map)
              (only (submod ".." Exercise/2.49) wave)
-             (only (submod "sicp1.rkt" conversion-utils) get-drawing-context save-dc))
+             (only (submod "sicp1.rkt" conversion-utils) get-drawing-context dc->png))
 
   (define (transform-painter painter origin corner1 corner2)
     (λ (frame)
@@ -590,50 +590,50 @@
 
     (let ([dc (get-drawing-context size)])
       ((flip-vert (wave dc)) frame)
-      (save-dc dc #:file "out/flip-vert-wave.png"))
+      (dc->png dc #:file "out/flip-vert-wave.png"))
 
     (let ([dc (get-drawing-context size)])
       ((shrink-to-lower-right (wave dc)) frame)
       (send dc set-pen "red" 5 'solid)
       ((shrink-to-upper-right (wave dc)) frame)
-      (save-dc dc #:file "out/shrink-wave.png"))
+      (dc->png dc #:file "out/shrink-wave.png"))
 
     (let ([dc (get-drawing-context size)])
       ((wave dc) frame)
       (send dc set-pen "red" 5 'solid)
       ((rotate-90 (wave dc)) frame)
-      (save-dc dc #:file "out/rotate-90-wave.png"))
+      (dc->png dc #:file "out/rotate-90-wave.png"))
 
     (let ([dc (get-drawing-context size)])
       ((wave dc) frame)
       (send dc set-pen "red" 5 'solid)
       ((rotate+90 (wave dc)) frame)
-      (save-dc dc #:file "out/rotate+90-wave.png"))
+      (dc->png dc #:file "out/rotate+90-wave.png"))
 
     ;; same result as flip-vert
     (let ([dc (get-drawing-context size)])
       ((wave dc) frame)
       (send dc set-pen "red" 5 'solid)
       ((rotate-90 (rotate-90 (wave dc))) frame)
-      (save-dc dc #:file "out/rotate-90-rotate-90-wave.png"))
+      (dc->png dc #:file "out/rotate-90-rotate-90-wave.png"))
 
     (let ([dc (get-drawing-context size)])
       ((rotate+90 (rotate-90 (wave dc))) frame)
-      (save-dc dc #:file "out/rotate+90-rotate-90-wave.png"))
+      (dc->png dc #:file "out/rotate+90-rotate-90-wave.png"))
 
     (let ([dc (get-drawing-context size)])
       ((squash-inwards (wave dc)) frame)
-      (save-dc dc #:file "out/squash-inwards-wave.png"))
+      (dc->png dc #:file "out/squash-inwards-wave.png"))
 
     (let ([dc (get-drawing-context size)])
       ((beside (wave dc) (flip-vert (wave dc))) frame)
-      (save-dc dc #:file "out/beside-wave.png"))))
+      (dc->png dc #:file "out/beside-wave.png"))))
 
 (module Exercise/2.50 sicp
   (#%provide flip-horiz)
   (#%require (only racket/base module+)
              (only (submod "sicp1.rkt" Exercise/1.43) repeated)
-             (only (submod "sicp1.rkt" conversion-utils) get-drawing-context save-dc)
+             (only (submod "sicp1.rkt" conversion-utils) get-drawing-context dc->png)
              (only (submod ".." Exercise/2.49) wave)
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
              (only (submod ".." Section/2.2.4/transforming-painters)
@@ -659,24 +659,24 @@
 
     (let ([dc (get-drawing-context size)])
       ((beside (wave dc) (flip-horiz (wave dc))) frame)
-      (save-dc dc #:file "out/flip-horiz-wave.png"))
+      (dc->png dc #:file "out/flip-horiz-wave.png"))
 
     ;; rotating 180 degrees is equivalent to flip-vert
     (let ([dc (get-drawing-context size)])
       ((beside ((repeated rotate+90 2) (wave dc)) ; (rotate+90 (rotate+90 (wave dc)))
                (flip-vert (wave dc))) frame)
-      (save-dc dc #:file "out/rotate-180-wave.png"))
+      (dc->png dc #:file "out/rotate-180-wave.png"))
 
     ;; rotating 270 degrees counterclockwise is equivalent to rotate-90
     (let ([dc (get-drawing-context size)])
       ((beside ((repeated rotate+90 3) (wave dc))
                (rotate-90 (wave dc))) frame)
-      (save-dc dc #:file "out/rotate-270-wave.png"))))
+      (dc->png dc #:file "out/rotate-270-wave.png"))))
 
 (module Exercise/2.51 sicp
   (#%provide below)
   (#%require (only racket/base module+ λ)
-             (only (submod "sicp1.rkt" conversion-utils) get-drawing-context save-dc)
+             (only (submod "sicp1.rkt" conversion-utils) get-drawing-context dc->png)
              (only (submod ".." Exercise/2.49) wave)
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
              (only (submod ".." Section/2.2.4/transforming-painters)
@@ -712,11 +712,11 @@
 
     (let ([dc (get-drawing-context size)])
       ((below (wave dc) (wave dc)) frame)
-      (save-dc dc #:file "out/below-wave.png"))
+      (dc->png dc #:file "out/below-wave.png"))
 
     (let ([dc (get-drawing-context size)])
       ((below-rot (wave dc) (wave dc)) frame)
-      (save-dc dc #:file "out/below-rot-wave.png"))))
+      (dc->png dc #:file "out/below-rot-wave.png"))))
 
 (module Exercise/2.52 sicp
   #|
@@ -726,7 +726,7 @@
   |#
   (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" Exercise/1.42) compose)
-             (only (submod "sicp1.rkt" conversion-utils) get-drawing-context save-dc)
+             (only (submod "sicp1.rkt" conversion-utils) get-drawing-context dc->png)
              (only (submod ".." Exercise/2.49) splines->painter make-spline)
              (rename (submod ".." Exercise/2.49) wave-splines task-d)
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
@@ -794,17 +794,17 @@
     ;; task a
     (let ([dc (get-drawing-context size)])
       ((wave-heart dc) frame)
-      (save-dc dc #:file "out/wave-heart.png"))
+      (dc->png dc #:file "out/wave-heart.png"))
 
     ;; task b
     (let ([dc (get-drawing-context size)])
       ((corner-split (wave-heart dc) 2) frame)
-      (save-dc dc #:file "out/corner-split-wave-heart.png"))
+      (dc->png dc #:file "out/corner-split-wave-heart.png"))
 
     ;; task c
     (let ([dc (get-drawing-context size)])
       ((square-limit (wave-heart dc) 1) frame)
-      (save-dc dc #:file "out/square-limit-wave-heart.png"))))
+      (dc->png dc #:file "out/square-limit-wave-heart.png"))))
 
 (module Lecture/3A sicp
   #|
@@ -813,7 +813,7 @@
   |#
   (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" Exercise/1.43) repeated)
-             (only (submod "sicp1.rkt" conversion-utils) get-drawing-context save-dc)
+             (only (submod "sicp1.rkt" conversion-utils) get-drawing-context dc->png)
              (only (submod ".." Exercise/2.49) splines->painter wave)
              (only (submod ".." Section/2.2.4/frames) make-vect make-frame)
              (only (submod ".." Section/2.2.4/transforming-painters) beside)
@@ -837,11 +837,11 @@
 
     (let ([dc (get-drawing-context size)])
       ((right-push (wave dc) 3) frame)
-      (save-dc dc #:file "out/right-push-wave.png"))
+      (dc->png dc #:file "out/right-push-wave.png"))
 
     (let ([dc (get-drawing-context size)])
       ((down-push (wave dc) 3) frame)
-      (save-dc dc #:file "out/down-push-wave.png"))))
+      (dc->png dc #:file "out/down-push-wave.png"))))
 
 (module Exercise/2.53 sicp
   (#%require (only racket/base module+))
@@ -1493,12 +1493,12 @@
                          '())))))))))
 
   (module* test-box-and-pointer racket/base
-    (#%require (only (submod "sicp1.rkt" conversion-utils) mcons->cons save-pict)
+    (#%require (only (submod "sicp1.rkt" conversion-utils) mcons->cons pict->file)
                (only (submod "..") binary-tree-1-to-7)
                sdraw)
     (display "--> Example/sets-as-binary-trees (test-box-and-pointer)\n")
 
-    (save-pict (sdraw (mcons->cons binary-tree-1-to-7)
+    (pict->file (sdraw (mcons->cons binary-tree-1-to-7)
                       #:null-style '/)
                #:file "out/binary-tree-1-to-7.svg"
                #:open #f)))
