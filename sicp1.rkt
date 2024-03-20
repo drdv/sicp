@@ -36,11 +36,14 @@
 (module conversion-utils racket/base
   (#%provide mcons->cons
              save-pict
-             save-painter)
-  (#%require pict
+             save-painter
+             save-dc
+             get-drawing-context)
+  (#%require racket/class
+             pict
+             racket/draw
              racket/path
              file/convertible
-             racket/class
              net/sendurl
              (only sicp-pict paint))
 
@@ -84,8 +87,8 @@
   to a png the image associated with a painter.
   |#
   (define (save-painter painter
-                        #:file [filename "/var/tmp/_racket_tmp.png"]
                         #:size [size 500]
+                        #:file [filename "/tmp/_racket_tmp.png"]
                         #:open [open-file #f])
     (send (send (paint painter #:width size #:height size) get-bitmap)
           save-file filename 'png)
@@ -93,7 +96,21 @@
         (send-url/file filename)
         (display (format "file ~a created\n" filename))))
 
-  )
+  ;; save a drawing context as png
+  (define (save-dc dc
+                   #:file [filename "/tmp/_racket_tmp.png"]
+                   #:open [open-file #f])
+    (send (send dc get-bitmap) save-file filename 'png)
+    (if open-file
+        (send-url/file filename)
+        (display (format "file ~a created\n" filename))))
+
+  (define (get-drawing-context size)
+    (let ([dc (new bitmap-dc% [bitmap (make-bitmap size size)])])
+      (send dc set-pen "black" 5 'solid)
+      (send dc set-brush "white" 'solid)
+      (send dc draw-rectangle 0 0 size size)
+      dc)))
 
 (module Exercise/1.1 sicp
   (#%require (only racket/base module+))
