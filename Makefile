@@ -29,3 +29,4 @@ docs: ## Generate docs
 .PHONY: clean
 clean:
 	rm -rf out/*.png
+	rm -rf out/*.svg

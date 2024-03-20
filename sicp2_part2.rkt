@@ -3,35 +3,6 @@
 ;; =====================================================================================
 #lang racket/base
 
-(module pict-utils racket/base
-  #|
-  I define some functions in this separate module because sicp doesn't support defaut
-  arguments (or at least I don't know how to implement them).
-  |#
-  (#%provide save-painter)
-  (#%require sicp-pict
-             net/sendurl
-             racket/class)
-
-  #|
-  Towards the end of the "picture language" related exercises I use my own paiters and
-  paiter transformers/combiners but in the initial exercises it is convenient to use the
-  sicp-pict package to verify results. Visualizing painters from sicp-pict requires
-  using the paint procedure (see with-frame at
-  https://github.com/sicp-lang/sicp/blob/master/sicp-pict/main.rkt) and we cannot
-  directly pass a frame - which I find "unfortunate". The save-painter procedure saves
-  to a png the image associated with a painter.
-  |#
-  (define (save-painter painter
-                    #:file [filename "/var/tmp/_racket_tmp.png"]
-                    #:size [size 500]
-                    #:open [open-file #f])
-    (send (send (paint painter #:width size #:height size) get-bitmap)
-          save-file filename 'png)
-    (if open-file
-        (send-url/file filename)
-        (display (format "file ~a created\n" filename)))))
-
 (module Section/2.2.4 sicp
   (#%provide right-split
              up-split
@@ -39,7 +10,7 @@
              square-limit)
   (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" Exercise/1.42) compose)
-             (only (submod ".." pict-utils) save-painter)
+             (only (submod "sicp1.rkt" conversion-utils) save-painter)
              sicp-pict)
 
   (define (flipped-pairs painter)
@@ -136,7 +107,7 @@
 (module Exercise/2.44 sicp
   (#%require (only racket/base module+)
              sicp-pict
-             (only (submod ".." pict-utils) save-painter)
+             (only (submod "sicp1.rkt" conversion-utils) save-painter)
              (only (submod ".." Section/2.2.4) up-split))
 
   (module+ test
@@ -147,7 +118,6 @@
 (module Exercise/2.45 sicp
   (#%require (only racket/base module+ λ)
              sicp-pict
-             (only (submod ".." pict-utils) save-painter)
              (only (submod ".." Section/2.2.4) up-split right-split))
 
   (define (split transform-1 transform-2)
@@ -1540,12 +1510,41 @@
                          '())))))))))
 
   (module* test-box-and-pointer racket/base
-    (#%require (only (submod "sicp1.rkt" conversion-utils) mcons->cons)
+    (#%require (only (submod "sicp1.rkt" conversion-utils) mcons->cons save-pict)
                (only (submod "..") binary-tree-1-to-7)
                sdraw)
     (display "--> Example/sets-as-binary-trees (test-box-and-pointer)\n")
 
-    (sdraw (mcons->cons binary-tree-1-to-7) #:null-style '/)))
+    (save-pict (sdraw (mcons->cons binary-tree-1-to-7)
+                      #:null-style '/)
+               #:file "out/binary-tree-1-to-7.svg"
+               #:open #f)))
+
+(module mitko racket/base
+  (#%require racket/class
+             sdraw
+             racket/draw
+             pict
+             pict/tree-layout)
+
+  (dc (λ (dc dx dy)
+        (define old-brush (send dc get-brush))
+        (define old-pen (send dc get-pen))
+        (send dc set-brush
+              (new brush% [style 'fdiagonal-hatch]
+                   [color "darkslategray"]))
+        (send dc set-pen
+              (new pen% [width 3] [color "slategray"]))
+        (define path (new dc-path%))
+        (send path move-to 0 0)
+        (send path line-to 50 0)
+        (send path line-to 25 50)
+        (send path close)
+        (send dc draw-path path dx dy)
+        (send dc set-brush old-brush)
+        (send dc set-pen old-pen))
+      50 50)
+  )
 
 (module+ test
   (require (submod ".." Section/2.2.4 test)

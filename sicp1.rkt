@@ -34,7 +34,15 @@
                                 (list (apply func args))))])))
 
 (module conversion-utils racket/base
-  (#%provide mcons->cons)
+  (#%provide mcons->cons
+             save-pict
+             save-painter)
+  (#%require pict
+             racket/path
+             file/convertible
+             racket/class
+             net/sendurl
+             (only sicp-pict paint))
 
   #|
   The idea is to require a list defined in the sicp language and convert it to a list in
@@ -45,7 +53,47 @@
     (cond [(null? mc) '()]
           [(number? mc) mc]
           [else (cons (mcons->cons (mcar mc))
-                      (mcons->cons (mcdr mc)))])))
+                      (mcons->cons (mcdr mc)))]))
+
+  ;; save a pict to file (docs.racket-lang.org/pict)
+  (define (save-pict a-pict
+                     #:file [filename "/tmp/_racket_tmp.svg"]
+                     #:open [open-file #f])
+    (define (save-pict-png)
+      (send (pict->bitmap a-pict) save-file filename 'png))
+    (define (save-pict-svg)
+      (define out (open-output-file filename #:exists 'replace))
+      (write-bytes (convert a-pict 'svg-bytes) out)
+      ;; FIXME: can't we use a context manager as in python?
+      (close-output-port out))
+
+    (if (bytes=? (path-get-extension filename) #".svg")
+        (save-pict-svg)
+        (save-pict-png))
+    (if open-file
+        (send-url/file filename)
+        (display (format "file ~a created\n" filename))))
+
+  #|
+  Towards the end of the "picture language" related exercises I use my own paiters and
+  paiter transformers/combiners but in the initial exercises it is convenient to use the
+  sicp-pict package to verify results. Visualizing painters from sicp-pict requires
+  using the paint procedure (see with-frame at
+  https://github.com/sicp-lang/sicp/blob/master/sicp-pict/main.rkt) and we cannot
+  directly pass a frame - which I find "unfortunate". The save-painter procedure saves
+  to a png the image associated with a painter.
+  |#
+  (define (save-painter painter
+                        #:file [filename "/var/tmp/_racket_tmp.png"]
+                        #:size [size 500]
+                        #:open [open-file #f])
+    (send (send (paint painter #:width size #:height size) get-bitmap)
+          save-file filename 'png)
+    (if open-file
+        (send-url/file filename)
+        (display (format "file ~a created\n" filename))))
+
+  )
 
 (module Exercise/1.1 sicp
   (#%require (only racket/base module+))
