@@ -1437,9 +1437,13 @@
 
 (module Example/sets-as-binary-trees sicp
   (#%provide adjoin-set
+             tree->diagram
              binary-tree-1-to-7)
   (#%require (only racket/base module+ module*)
-             (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate))
+             pict
+             pict/tree-layout
+             (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate)
+             (only (submod "sicp1.rkt" conversion-utils) pict->file))
 
   (define (entry tree) (car tree))
   (define (left-branch tree) (cadr tree))
@@ -1467,6 +1471,24 @@
                       (left-branch set)
                       (adjoin-set x (right-branch set))))))
 
+  (define (tree->diagram tree)
+    (define (construct-tree-diagram tree)
+      (define (node-label label)
+        (cc-superimpose
+         (disk 30 #:color "white")
+         (text
+          (cond [(number? label) (number->string label)]
+                [(symbol? label) (symbol->string label)]
+                [else label]))))
+
+      (cond [(pair? tree)
+             (tree-layout
+              #:pict (node-label (entry tree))
+              (construct-tree-diagram (left-branch tree))
+              (construct-tree-diagram (right-branch tree)))]
+            [else #f]))
+    (naive-layered (construct-tree-diagram tree)))
+
   (define binary-tree-1-to-7 (accumulate adjoin-set '() '(7 6 5 4 3 2 1)))
 
   (module+ test
@@ -1490,7 +1512,11 @@
                         2
                         (adjoin-set
                          1
-                         '())))))))))
+                         '()))))))))
+
+    (pict->file (tree->diagram binary-tree-1-to-7)
+                #:file "out/binary-tree-1-to-7.svg"
+                #:open #f))
 
   (module* test-box-and-pointer racket/base
     (#%require (only (submod "sicp1.rkt" conversion-utils) mcons->cons pict->file)
@@ -1499,9 +1525,9 @@
     (display "--> Example/sets-as-binary-trees (test-box-and-pointer)\n")
 
     (pict->file (sdraw (mcons->cons binary-tree-1-to-7)
-                      #:null-style '/)
-               #:file "out/binary-tree-1-to-7.svg"
-               #:open #f)))
+                       #:null-style '/)
+                #:file "out/binary-tree-1-to-7-box-and-pointer.svg"
+                #:open #f)))
 
 (module+ test
   (require (submod ".." Section/2.2.4 test)
