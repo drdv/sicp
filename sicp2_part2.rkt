@@ -1354,6 +1354,7 @@
       (intersection-set ((repeated (union-set-curry S) n) S) S))))
 
 (module Example/sets-as-ordered-lists sicp
+  (#%provide intersection-set)
   (#%require (only racket/base module+))
 
   (define (element-of-set? x set)
@@ -1411,6 +1412,7 @@
       (check-equal? (adjoin-set 9 S) '(2 4 6 8 9)))))
 
 (module Exercise/2.62 sicp
+  (#%provide union-set)
   (#%require (only racket/base module+))
 
   (define (union-set set1 set2)
@@ -1510,12 +1512,10 @@
     (check-equal? binary-tree-7-to-1
                   (as 1 (as 2 (as 3 (as 4 (as 5 (as 6 (as 7 '()))))))))
 
-    (pict->file (tree->diagram binary-tree-1-to-7)
-                #:file "out/binary-tree-1-to-7.svg"
-                #:open #f)
-
-    (pict->file (tree->diagram binary-tree-7-to-1)
-                #:file "out/binary-tree-7-to-1.svg"
+    (pict->file (ht-append 50
+                           (tree->diagram binary-tree-1-to-7)
+                           (tree->diagram binary-tree-7-to-1))
+                #:file "out/binary-tree-1-to-7-and-7-to-1.svg"
                 #:open #f))
 
   (module* test-box-and-pointer racket/base
@@ -1535,7 +1535,9 @@
                 #:open #f)))
 
 (module Exercise/2.63 sicp
+  (#%provide (rename tree->list-2 tree->list))
   (#%require (only racket/base module+ format for)
+             pict
              (only (submod ".." Example/sets-as-binary-trees)
                    entry
                    left-branch
@@ -1568,16 +1570,11 @@
   (define binary-tree-figure-2.16-b (as 11 (as 9 (as 5 (as 7 (as 1 (as 3 '())))))))
   (define binary-tree-figure-2.16-c (as 11 (as 7 (as 1 (as 9 (as 3 (as 5 '())))))))
 
-  (pict->file (tree->diagram binary-tree-figure-2.16-a)
-              #:file "out/binary-tree-figure-2.16-a.svg"
-              #:open #f)
-
-  (pict->file (tree->diagram binary-tree-figure-2.16-b)
-              #:file "out/binary-tree-figure-2.16-b.svg"
-              #:open #f)
-
-  (pict->file (tree->diagram binary-tree-figure-2.16-c)
-              #:file "out/binary-tree-figure-2.16-c.svg"
+  (pict->file (ht-append 50
+                         (tree->diagram binary-tree-figure-2.16-a)
+                         (tree->diagram binary-tree-figure-2.16-b)
+                         (tree->diagram binary-tree-figure-2.16-c))
+              #:file "out/binary-tree-figure-2.16.svg"
               #:open #f)
 
   #|
@@ -1666,6 +1663,7 @@
       (tree->list-2-show-cons binary-tree-7-to-1))))
 
 (module Exercise/2.64 sicp
+  (#%provide list->tree)
   (#%require (only racket/base module+)
              (only (submod "sicp1.rkt" conversion-utils) pict->file)
              (only (submod ".." Example/sets-as-binary-trees)
@@ -1731,6 +1729,64 @@
                 #:file "out/binary-tree-1-to-50.svg"
                 #:open #f)))
 
+(module Exercise/2.65 sicp
+  (#%require (only racket/base module+)
+             pict
+             (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate)
+             (only (submod "sicp1.rkt" conversion-utils) pict->file)
+             (rename (submod ".." Example/sets-as-ordered-lists)
+                     intersection-ordered-lists
+                     intersection-set)
+             (rename (submod ".." Exercise/2.62)
+                     union-ordered-lists
+                     union-set)
+             (only (submod ".." Example/sets-as-binary-trees)
+                   adjoin-set
+                   tree->diagram
+                   binary-tree-1-to-7)
+             (only (submod ".." Exercise/2.63) tree->list)
+             (only (submod ".." Exercise/2.64) list->tree))
+
+  ;; O(n)
+  (define (union-set set1 set2)
+    (list->tree
+     (union-ordered-lists
+      (tree->list set1)
+      (tree->list set2))))
+
+  ;; O(n)
+  (define (intersection-set set1 set2)
+    (list->tree
+     (intersection-ordered-lists
+      (tree->list set1)
+      (tree->list set2))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.65\n")
+
+    (define l1 '(1 3 5 7 9 10 11 13))
+    (define l2 '(2 4 6 8 10 11 14))
+    (define bt1 (accumulate adjoin-set '() l1))
+    (define bt2 (accumulate adjoin-set '() l2))
+
+    (let ([res-sorted-union '(1 2 3 4 5 6 7 8 9 10 11 13 14)]
+          [res-sorted-intersection '(10 11)])
+      (check-equal? (tree->list (union-set bt1 bt2)) res-sorted-union)
+      (check-equal? (tree->list (intersection-set bt1 bt2)) res-sorted-intersection))
+
+    (pict->file (ht-append 50
+                           (tree->diagram binary-tree-1-to-7)
+                           (tree->diagram (list->tree (tree->list binary-tree-1-to-7))))
+                #:file "out/binary-tree-1-to-7-before-after.svg"
+                #:open #f)
+
+    (pict->file (ht-append 50
+                           (tree->diagram (union-set bt1 bt2))
+                           (tree->diagram (intersection-set bt1 bt2)))
+                #:file "out/union-intersection-binary-tree.svg"
+                #:open #f)))
+
 (module+ test
   (require (submod ".." Section/2.2.4 test)
            (submod ".." Exercise/2.44 test)
@@ -1762,4 +1818,5 @@
            (submod ".." Example/sets-as-binary-trees test-box-and-pointer)
            (submod ".." Exercise/2.63 test)
            (submod ".." Exercise/2.63 test-count-cons)
-           (submod ".." Exercise/2.64 test)))
+           (submod ".." Exercise/2.64 test)
+           (submod ".." Exercise/2.65 test)))
