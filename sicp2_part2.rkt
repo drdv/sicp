@@ -1436,9 +1436,14 @@
       (check-equal? (union-set S1 S2) '(0 1 2 3 4 6 7 8 9)))))
 
 (module Example/sets-as-binary-trees sicp
-  (#%provide adjoin-set
+  (#%provide make-tree
+             entry
+             left-branch
+             right-branch
+             adjoin-set
              tree->diagram
-             binary-tree-1-to-7)
+             binary-tree-1-to-7
+             binary-tree-7-to-1)
   (#%require (only racket/base module+ module*)
              pict
              pict/tree-layout
@@ -1490,6 +1495,7 @@
     (naive-layered (construct-tree-diagram tree)))
 
   (define binary-tree-1-to-7 (accumulate adjoin-set '() '(7 6 5 4 3 2 1)))
+  (define binary-tree-7-to-1 (accumulate adjoin-set '() '(1 2 3 4 5 6 7)))
 
   (module+ test
     (#%require rackunit)
@@ -1497,37 +1503,168 @@
 
     (check-true (element-of-set? 3 binary-tree-1-to-7))
     (check-false (element-of-set? 8 binary-tree-1-to-7))
+
+    (define as adjoin-set) ; define for convenience
     (check-equal? binary-tree-1-to-7
-                  (adjoin-set
-                   7
-                   (adjoin-set
-                    6
-                    (adjoin-set
-                     5
-                     (adjoin-set
-                      4
-                      (adjoin-set
-                       3
-                       (adjoin-set
-                        2
-                        (adjoin-set
-                         1
-                         '()))))))))
+                  (as 7 (as 6 (as 5 (as 4 (as 3 (as 2 (as 1 '()))))))))
+    (check-equal? binary-tree-7-to-1
+                  (as 1 (as 2 (as 3 (as 4 (as 5 (as 6 (as 7 '()))))))))
 
     (pict->file (tree->diagram binary-tree-1-to-7)
                 #:file "out/binary-tree-1-to-7.svg"
+                #:open #f)
+
+    (pict->file (tree->diagram binary-tree-7-to-1)
+                #:file "out/binary-tree-7-to-1.svg"
                 #:open #f))
 
   (module* test-box-and-pointer racket/base
     (#%require (only (submod "sicp1.rkt" conversion-utils) mcons->cons pict->file)
-               (only (submod "..") binary-tree-1-to-7)
+               (only (submod "..") binary-tree-1-to-7 binary-tree-7-to-1)
                sdraw)
     (display "--> Example/sets-as-binary-trees (test-box-and-pointer)\n")
 
     (pict->file (sdraw (mcons->cons binary-tree-1-to-7)
                        #:null-style '/)
                 #:file "out/binary-tree-1-to-7-box-and-pointer.svg"
+                #:open #f)
+
+    (pict->file (sdraw (mcons->cons binary-tree-7-to-1)
+                       #:null-style '/)
+                #:file "out/binary-tree-7-to-1-box-and-pointer.svg"
                 #:open #f)))
+
+(module Exercise/2.63 sicp
+  (#%require (only racket/base module+ format for)
+             (only (submod ".." Example/sets-as-binary-trees)
+                   make-tree
+                   entry
+                   left-branch
+                   right-branch
+                   adjoin-set
+                   tree->diagram
+                   binary-tree-1-to-7
+                   binary-tree-7-to-1)
+             (only (submod "sicp1.rkt" conversion-utils) pict->file))
+
+  (define (tree->list-1 tree)
+    (if (null? tree)
+        '()
+        (append (tree->list-1 (left-branch tree))
+                (cons (entry tree)
+                      (tree->list-1 (right-branch tree))))))
+
+  (define (tree->list-2 tree)
+    (define (copy-to-list tree result-list)
+      (if (null? tree)
+          result-list
+          (copy-to-list (left-branch tree)
+                        (cons (entry tree)
+                              (copy-to-list (right-branch tree)
+                                            result-list)))))
+    (copy-to-list tree '()))
+
+  (define as adjoin-set)
+  (define binary-tree-figure-2.16-a (as 11 (as 5 (as 1 (as 9 (as 3 (as 7 '())))))))
+  (define binary-tree-figure-2.16-b (as 11 (as 9 (as 5 (as 7 (as 1 (as 3 '())))))))
+  (define binary-tree-figure-2.16-c (as 11 (as 7 (as 1 (as 9 (as 3 (as 5 '())))))))
+
+  (pict->file (tree->diagram binary-tree-figure-2.16-a)
+              #:file "out/binary-tree-figure-2.16-a.svg"
+              #:open #f)
+
+  (pict->file (tree->diagram binary-tree-figure-2.16-b)
+              #:file "out/binary-tree-figure-2.16-b.svg"
+              #:open #f)
+
+  (pict->file (tree->diagram binary-tree-figure-2.16-c)
+              #:file "out/binary-tree-figure-2.16-c.svg"
+              #:open #f)
+
+  #|
+  Task a:
+  Both procedures give the same result for every tree. For all the trees in
+  Figure 2.16, they return the same ordered list (1 3 5 7 9 11).
+
+  Task b:
+  Both procedures will take the same number of iterations but due to the call to
+  append, each iteration of tree->list-1 would be more expensive in general.
+  Given two lists l1 and l2, (append l1 l2) would apply cons for each element of l1 -
+  see append-custom in (submod "sicp2_part1.rkt" Section/2.2.1), hence it is O(n) in
+  the worst case. If T(n) denotes the total time for the algorithm on an input of size
+  n, then
+
+  tree->list-1: T(n) = 2*T(n/2) + O(n), hence O(n log n)
+  tree->list-2: T(n) = 2*T(n/2) + O(1), hence O(n)
+
+  see en.wikipedia.org/wiki/Master_theorem_(analysis_of_algorithms)#Application_to_common_algorithms
+
+  In the test-count-cons below I compare tree->list-1 and tree->list-2 on the two
+  limiting cases: binary-tree-1-to-7 and binary-tree-7-to-1. tree->list-1 uses cons
+  7 times for binary-tree-1-to-7 and 28 times for binary-tree-7-to-1, while only 7 cons
+  operations are performed for both trees when using tree->list-2.
+  |#
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.63\n")
+
+    (for ([tree (list binary-tree-1-to-7
+                      binary-tree-7-to-1
+                      binary-tree-figure-2.16-a
+                      binary-tree-figure-2.16-b
+                      binary-tree-figure-2.16-c)])
+      (let ([res-1 (tree->list-1 tree)]
+            [res-2 (tree->list-2 tree)])
+        (display (format "~a\n" tree))
+        (display (format "~a\n" res-1))
+        (display (format "~a\n" res-2))
+        (check-equal? res-1 res-2))))
+
+  (module+ test-count-cons
+    (display "--> Exercise/2.63 (count-cons)\n")
+
+    (define (cons-custom x lst)
+      (display (format "[cons] x: ~a, lst: ~a\n" x lst))
+      (cons x lst))
+
+    (define (append-custom l1 l2)
+      (cond [(null? l1) l2]
+            [else (cons-custom (car l1)
+                               (append-custom (cdr l1) l2))]))
+
+    (define (tree->list-1-show-cons tree)
+      (if (null? tree)
+          '()
+          (append-custom (tree->list-1-show-cons (left-branch tree))
+                         (cons-custom (entry tree)
+                                      (tree->list-1-show-cons (right-branch tree))))))
+
+    (define (tree->list-2-show-cons tree)
+      (define (copy-to-list tree result-list)
+        (if (null? tree)
+            result-list
+            (copy-to-list (left-branch tree)
+                          (cons-custom (entry tree)
+                                       (copy-to-list (right-branch tree)
+                                                     result-list)))))
+      (copy-to-list tree '()))
+
+    (begin
+      (display "----> binary-tree-1-to-7 with tree->list-1:\n")
+      (tree->list-1-show-cons binary-tree-1-to-7))
+
+    (begin
+      (display "----> binary-tree-1-to-7 with tree->list-2:\n")
+      (tree->list-2-show-cons binary-tree-1-to-7))
+
+    (begin
+      (display "----> binary-tree-7-to-1 with tree->list-1:\n")
+      (tree->list-1-show-cons binary-tree-7-to-1))
+
+    (begin
+      (display "----> binary-tree-7-to-1 with tree->list-2:\n")
+      (tree->list-2-show-cons binary-tree-7-to-1))))
 
 (module+ test
   (require (submod ".." Section/2.2.4 test)
@@ -1557,4 +1694,6 @@
            (submod ".." Exercise/2.61 test)
            (submod ".." Exercise/2.62 test)
            (submod ".." Example/sets-as-binary-trees test)
-           (submod ".." Example/sets-as-binary-trees test-box-and-pointer)))
+           (submod ".." Example/sets-as-binary-trees test-box-and-pointer)
+           (submod ".." Exercise/2.63 test)
+           (submod ".." Exercise/2.63 test-count-cons)))
