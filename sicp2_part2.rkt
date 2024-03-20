@@ -1537,7 +1537,6 @@
 (module Exercise/2.63 sicp
   (#%require (only racket/base module+ format for)
              (only (submod ".." Example/sets-as-binary-trees)
-                   make-tree
                    entry
                    left-branch
                    right-branch
@@ -1622,7 +1621,7 @@
         (check-equal? res-1 res-2))))
 
   (module+ test-count-cons
-    (display "--> Exercise/2.63 (count-cons)\n")
+    (display "--> Exercise/2.63 (count cons)\n")
 
     (define (cons-custom x lst)
       (display (format "[cons] x: ~a, lst: ~a\n" x lst))
@@ -1666,6 +1665,72 @@
       (display "----> binary-tree-7-to-1 with tree->list-2:\n")
       (tree->list-2-show-cons binary-tree-7-to-1))))
 
+(module Exercise/2.64 sicp
+  (#%require (only racket/base module+)
+             (only (submod "sicp1.rkt" conversion-utils) pict->file)
+             (only (submod ".." Example/sets-as-binary-trees)
+                   make-tree
+                   tree->diagram
+                   binary-tree-1-to-7
+                   binary-tree-7-to-1))
+
+  ;; simply returns the binary tree of the result of partial-tree
+  (define (list->tree elements)
+    (car (partial-tree elements (length elements))))
+
+  #|
+  0. I have rewritten partial-tree using let* (I find it more clear)
+  1. The input is a list ELTS of ordered integers and N such that (>= (length ELTS) N)
+  2. The output is a cons of the tree corresponding to the first N elements of ELTS and
+     the remaining (- (length ELTS) N) elements in ELTS (to be denoted by RELTS)
+  3. If ELTS is empty, return a cons of an empty tree and the empty ELTS
+  4. Form the size of the left tree to construct as NL = (floor (/ N 2))
+  5. Recursively form the LEFT tree (using NL elements of ELTS)
+  6. Form the size NR of the right tree such that NL + NR = N - 1 (where one element is
+     left for the node itself)
+  7. Get the current NODE (the parent of the left and right trees) as (car RELTS)
+  8. Recursively form the RIGHT tree (using the first NR elements of (cdr RELTS))
+  9. Keep track of the elements that remain to be handled
+  10. Return the tree (make-tree NODE LEFT RIGHT) and the elements to be handled
+
+  SUMMARY:
+  Recursively construct a balanced tree (NODE LEFT RIGHT) such that the number of
+  nodes in the LEFT tree and the number of nodes in the RIGHT tree differ at most by
+  one (in the case N is even). The algorithm relies on the fact that the input list of
+  elements is sorted in increasing order.
+
+  ORDER OF GROWTH:
+  During each iteration we form two trees of size n/2 and the number of other
+  operations doesn't depend on n, so we have: T(n) = 2*T(n/2) + O(1), which is O(n).
+  |#
+
+  (define (partial-tree elts n)
+    (if (= n 0)
+        (cons '() elts)
+        (let* ([left-size (quotient (- n 1) 2)]
+               [left-result (partial-tree elts left-size)]
+               [left-tree (car left-result)]
+               [non-left-elts (cdr left-result)]
+               [right-size (- n (+ left-size 1))]
+               [this-entry (car non-left-elts)]
+               [right-result (partial-tree (cdr non-left-elts) right-size)]
+               [right-tree (car right-result)]
+               [remaining-elts (cdr right-result)])
+          (cons (make-tree this-entry left-tree right-tree) remaining-elts))))
+
+  (module+ test
+    (display "--> Exercise/2.64\n")
+
+    (pict->file (tree->diagram (list->tree '(1 3 5 7 9 11)))
+                #:file "out/binary-tree-1-to-11-odd.svg"
+                #:open #f)
+
+    ;; test with a larger tree
+    (define (n->1 n) (if (= n 1) (list 1) (cons n (n->1 (- n 1)))))
+    (pict->file (tree->diagram (list->tree (reverse (n->1 50))))
+                #:file "out/binary-tree-1-to-50.svg"
+                #:open #f)))
+
 (module+ test
   (require (submod ".." Section/2.2.4 test)
            (submod ".." Exercise/2.44 test)
@@ -1696,4 +1761,5 @@
            (submod ".." Example/sets-as-binary-trees test)
            (submod ".." Example/sets-as-binary-trees test-box-and-pointer)
            (submod ".." Exercise/2.63 test)
-           (submod ".." Exercise/2.63 test-count-cons)))
+           (submod ".." Exercise/2.63 test-count-cons)
+           (submod ".." Exercise/2.64 test)))
