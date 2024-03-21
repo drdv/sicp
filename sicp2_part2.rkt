@@ -1480,17 +1480,19 @@
 
   (define (tree->diagram tree)
     (define (construct-tree-diagram tree)
-      (define (node-label label)
+      (define (node->label record)
+        (define (record-to-string r)
+          (cond [(number? r) (number->string r)]
+                [(symbol? r) (symbol->string r)]
+                [(pair? r) (record-to-string (car r))]
+                [else r]))
         (cc-superimpose
-         (disk 30 #:color "white")
-         (text
-          (cond [(number? label) (number->string label)]
-                [(symbol? label) (symbol->string label)]
-                [else label]))))
+         (disk 30 #:color (if (pair? record) "gray" "white"))
+         (text (record-to-string record))))
 
       (cond [(pair? tree)
              (tree-layout
-              #:pict (node-label (entry tree))
+              #:pict (node->label (entry tree))
               (construct-tree-diagram (left-branch tree))
               (construct-tree-diagram (right-branch tree)))]
             [else #f]))
@@ -1787,6 +1789,71 @@
                 #:file "out/union-intersection-binary-tree.svg"
                 #:open #f)))
 
+(module Exercise/2.66 sicp
+  (#%require (only racket/base module+ λ)
+             (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate)
+             (only (submod "sicp1.rkt" conversion-utils) pict->file)
+             (only (submod ".." Example/sets-as-binary-trees)
+                   make-tree
+                   entry
+                   left-branch
+                   right-branch
+                   tree->diagram))
+
+  ;; my record representation
+  (define (make-record key name address) (list key name address))
+  (define (key record) (if (pair? record) (car record) record))
+
+  (define (lookup-set-as-unordered-list given-key set-of-records)
+    (if (null? set-of-records)
+        false
+        (let* ([record (entry set-of-records)]
+               [record-key (key record)])
+          (cond [(equal? given-key record-key) record]
+                [else (lookup-set-as-unordered-list given-key
+                                                    (cdr set-of-records))]))))
+
+  (define (lookup-set-as-binary-tree given-key set-of-records)
+    (if (null? set-of-records)
+        false
+        (let* ([record (entry set-of-records)]
+               [record-key (key record)])
+          (cond [(= given-key record-key) record]
+                [(< given-key record-key)
+                 (lookup-set-as-binary-tree given-key
+                                            (left-branch set-of-records))]
+                [(> given-key record-key)
+                 (lookup-set-as-binary-tree given-key
+                                            (right-branch set-of-records))]))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.66\n")
+
+    ;; use a small modification of adjoin-set to define the test data
+    (define (adjoin-record-to-set x set)
+      (cond ((null? set) (make-tree x '() '()))
+            ((= (key x) (key (entry set))) set)
+            ((< (key x) (key (entry set)))
+             (make-tree (entry set)
+                        (adjoin-record-to-set x (left-branch set))
+                        (right-branch set)))
+            ((> (key x) (key (entry set)))
+             (make-tree (entry set)
+                        (left-branch set)
+                        (adjoin-record-to-set x (right-branch set))))))
+
+    (define records
+      (map (λ (k) (make-record k
+                               (string-append "name-" (number->string k))
+                               (string-append "address-" (number->string k))))
+           '(1 2 3 4 5 6 7 8 9)))
+    (define records-bt (accumulate adjoin-record-to-set '() records))
+
+    ;; (pict->file (tree->diagram records-bt) #:open #t)
+    (check-equal? (lookup-set-as-binary-tree 7 records-bt)
+                  (lookup-set-as-unordered-list 7 records))))
+
 (module+ test
   (require (submod ".." Section/2.2.4 test)
            (submod ".." Exercise/2.44 test)
@@ -1819,4 +1886,5 @@
            (submod ".." Exercise/2.63 test)
            (submod ".." Exercise/2.63 test-count-cons)
            (submod ".." Exercise/2.64 test)
-           (submod ".." Exercise/2.65 test)))
+           (submod ".." Exercise/2.65 test)
+           (submod ".." Exercise/2.66 test)))
