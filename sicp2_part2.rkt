@@ -1851,8 +1851,9 @@
     (define records-bt (accumulate adjoin-record-to-set '() records))
 
     ;; (pict->file (tree->diagram records-bt) #:open #t)
-    (check-equal? (lookup-set-as-binary-tree 7 records-bt)
-                  (lookup-set-as-unordered-list 7 records))))
+    (let ([record-key 7])
+      (check-equal? (lookup-set-as-binary-tree record-key records-bt)
+                    (lookup-set-as-unordered-list record-key records)))))
 
 (module+ test
   (require (submod ".." Section/2.2.4 test)
