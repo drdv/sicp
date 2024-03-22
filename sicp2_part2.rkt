@@ -1443,20 +1443,26 @@
              left-branch
              right-branch
              adjoin-set
-             tree->diagram
+             binary-tree->diagram
+             node->label
              binary-tree-1-to-7
              binary-tree-7-to-1)
-  (#%require (only racket/base module+ module*)
+  (#%require (only racket/base module+ module* λ make-parameter)
              pict
              pict/tree-layout
              (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate)
              (only (submod "sicp1.rkt" conversion-utils) pict->file))
 
-  (define (entry tree) (car tree))
-  (define (left-branch tree) (cadr tree))
-  (define (right-branch tree) (caddr tree))
+  #|
+  In the book we have (define (make-tree entry left right) (list entry left right)) but
+  I put the left and right branches first because in Example/huffman-encoding I want to
+  reuse the binary-tree->diagram (I keep the same order in the function signature).
+  |#
+  (define (left-branch tree) (car tree))
+  (define (right-branch tree) (cadr tree))
+  (define (entry tree) (caddr tree))
   (define (make-tree entry left right)
-    (list entry left right))
+    (list left right entry))
 
   (define (element-of-set? x set)
     (cond ((null? set) false)
@@ -1478,21 +1484,32 @@
                       (left-branch set)
                       (adjoin-set x (right-branch set))))))
 
-  (define (tree->diagram tree)
-    (define (construct-tree-diagram tree)
-      (define (node->label record)
-        (define (record-to-string r)
-          (cond [(number? r) (number->string r)]
-                [(symbol? r) (symbol->string r)]
-                [(pair? r) (record-to-string (car r))]
-                [else r]))
-        (cc-superimpose
-         (disk 30 #:color (if (pair? record) "gray" "white"))
-         (text (record-to-string record))))
+  #|
+  The reason for defining node->label as a parameter deserves a clarification:
+  1. I want to reuse binary-tree->diagram for any binary tree (that uses the left-branch
+     and right-branch procedures from here).
+  2. Different binary trees need to display their nodes differently. A convenient way to
+     procede would be to pass node->label as a parameter to binary-tree->diagram but
+     I don't want to do that in all cases - i.e., I want to have a default behavior.
+  3. Unfortunately, in the sicp language we cannot have default values for function
+     parameters so I ended up using dynamic scoping.
+  |#
+  (define node->label
+    (make-parameter (λ (tree)
+                      (define (record-to-string record)
+                        (cond [(number? record) (number->string record)]
+                              [(symbol? record) (symbol->string record)]
+                              [(pair? record) (record-to-string (car record))]
+                              [else record]))
+                      (cc-superimpose
+                       (disk 30 #:color "white")
+                       (text (record-to-string (entry tree)))))))
 
+  (define (binary-tree->diagram tree)
+    (define (construct-tree-diagram tree)
       (cond [(pair? tree)
              (tree-layout
-              #:pict (node->label (entry tree))
+              #:pict ((node->label) tree)
               (construct-tree-diagram (left-branch tree))
               (construct-tree-diagram (right-branch tree)))]
             [else #f]))
@@ -1515,10 +1532,9 @@
                   (as 1 (as 2 (as 3 (as 4 (as 5 (as 6 (as 7 '()))))))))
 
     (pict->file (ht-append 50
-                           (tree->diagram binary-tree-1-to-7)
-                           (tree->diagram binary-tree-7-to-1))
-                #:file "out/binary-tree-1-to-7-and-7-to-1.svg"
-                #:open #f))
+                           (binary-tree->diagram binary-tree-1-to-7)
+                           (binary-tree->diagram binary-tree-7-to-1))
+                #:file "out/binary-tree-1-to-7-and-7-to-1.svg"))
 
   (module* test-box-and-pointer racket/base
     (#%require (only (submod "sicp1.rkt" conversion-utils) mcons->cons pict->file)
@@ -1528,13 +1544,11 @@
 
     (pict->file (sdraw (mcons->cons binary-tree-1-to-7)
                        #:null-style '/)
-                #:file "out/binary-tree-1-to-7-box-and-pointer.svg"
-                #:open #f)
+                #:file "out/binary-tree-1-to-7-box-and-pointer.svg")
 
     (pict->file (sdraw (mcons->cons binary-tree-7-to-1)
                        #:null-style '/)
-                #:file "out/binary-tree-7-to-1-box-and-pointer.svg"
-                #:open #f)))
+                #:file "out/binary-tree-7-to-1-box-and-pointer.svg")))
 
 (module Exercise/2.63 sicp
   (#%provide (rename tree->list-2 tree->list))
@@ -1545,7 +1559,7 @@
                    left-branch
                    right-branch
                    adjoin-set
-                   tree->diagram
+                   binary-tree->diagram
                    binary-tree-1-to-7
                    binary-tree-7-to-1)
              (only (submod "sicp1.rkt" conversion-utils) pict->file))
@@ -1573,11 +1587,10 @@
   (define binary-tree-figure-2.16-c (as 11 (as 7 (as 1 (as 9 (as 3 (as 5 '())))))))
 
   (pict->file (ht-append 50
-                         (tree->diagram binary-tree-figure-2.16-a)
-                         (tree->diagram binary-tree-figure-2.16-b)
-                         (tree->diagram binary-tree-figure-2.16-c))
-              #:file "out/binary-tree-figure-2.16.svg"
-              #:open #f)
+                         (binary-tree->diagram binary-tree-figure-2.16-a)
+                         (binary-tree->diagram binary-tree-figure-2.16-b)
+                         (binary-tree->diagram binary-tree-figure-2.16-c))
+              #:file "out/binary-tree-figure-2.16.svg")
 
   #|
   Task a:
@@ -1670,7 +1683,7 @@
              (only (submod "sicp1.rkt" conversion-utils) pict->file)
              (only (submod ".." Example/sets-as-binary-trees)
                    make-tree
-                   tree->diagram
+                   binary-tree->diagram
                    binary-tree-1-to-7
                    binary-tree-7-to-1))
 
@@ -1721,15 +1734,13 @@
   (module+ test
     (display "--> Exercise/2.64\n")
 
-    (pict->file (tree->diagram (list->tree '(1 3 5 7 9 11)))
-                #:file "out/binary-tree-1-to-11-odd.svg"
-                #:open #f)
+    (pict->file (binary-tree->diagram (list->tree '(1 3 5 7 9 11)))
+                #:file "out/binary-tree-1-to-11-odd.svg")
 
     ;; test with a larger tree
     (define (n->1 n) (if (= n 1) (list 1) (cons n (n->1 (- n 1)))))
-    (pict->file (tree->diagram (list->tree (reverse (n->1 50))))
-                #:file "out/binary-tree-1-to-50.svg"
-                #:open #f)))
+    (pict->file (binary-tree->diagram (list->tree (reverse (n->1 50))))
+                #:file "out/binary-tree-1-to-50.svg")))
 
 (module Exercise/2.65 sicp
   (#%require (only racket/base module+)
@@ -1744,7 +1755,7 @@
                      union-set)
              (only (submod ".." Example/sets-as-binary-trees)
                    adjoin-set
-                   tree->diagram
+                   binary-tree->diagram
                    binary-tree-1-to-7)
              (only (submod ".." Exercise/2.63) tree->list)
              (only (submod ".." Exercise/2.64) list->tree))
@@ -1777,17 +1788,17 @@
       (check-equal? (tree->list (union-set bt1 bt2)) res-sorted-union)
       (check-equal? (tree->list (intersection-set bt1 bt2)) res-sorted-intersection))
 
-    (pict->file (ht-append 50
-                           (tree->diagram binary-tree-1-to-7)
-                           (tree->diagram (list->tree (tree->list binary-tree-1-to-7))))
-                #:file "out/binary-tree-1-to-7-before-after.svg"
-                #:open #f)
+    (pict->file
+     (ht-append 50
+                (binary-tree->diagram binary-tree-1-to-7)
+                (binary-tree->diagram (list->tree (tree->list binary-tree-1-to-7))))
+     #:file "out/binary-tree-1-to-7-before-after.svg")
 
-    (pict->file (ht-append 50
-                           (tree->diagram (union-set bt1 bt2))
-                           (tree->diagram (intersection-set bt1 bt2)))
-                #:file "out/union-intersection-binary-tree.svg"
-                #:open #f)))
+    (pict->file
+     (ht-append 50
+                (binary-tree->diagram (union-set bt1 bt2))
+                (binary-tree->diagram (intersection-set bt1 bt2)))
+     #:file "out/union-intersection-binary-tree.svg")))
 
 (module Exercise/2.66 sicp
   (#%require (only racket/base module+ λ)
@@ -1798,7 +1809,7 @@
                    entry
                    left-branch
                    right-branch
-                   tree->diagram))
+                   binary-tree->diagram))
 
   ;; my record representation
   (define (make-record key name address) (list key name address))
@@ -1850,10 +1861,158 @@
            '(1 2 3 4 5 6 7 8 9)))
     (define records-bt (accumulate adjoin-record-to-set '() records))
 
-    ;; (pict->file (tree->diagram records-bt) #:open #t)
+    ;; (pict->file (binary-tree->diagram records-bt) #:open #t)
     (let ([record-key 7])
       (check-equal? (lookup-set-as-binary-tree record-key records-bt)
                     (lookup-set-as-unordered-list record-key records)))))
+
+(module Example/huffman-encoding sicp
+  (#%provide make-code-tree
+             make-leaf
+             decode
+             huffman-tree->diagram
+             huffman-tree-figure-2.18)
+  (#%require (only racket/base module+ λ parameterize)
+             racket/class
+             pict
+             pict/tree-layout
+             (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate)
+             (only (submod "sicp1.rkt" conversion-utils) pict->file)
+             (only (submod ".." Example/sets-as-binary-trees)
+                   left-branch
+                   right-branch
+                   binary-tree->diagram
+                   node->label))
+
+  (define (make-leaf symbol weight) (list 'leaf symbol weight))
+  (define (leaf? object) (eq? (car object) 'leaf))
+  (define (symbol-leaf x) (cadr x))
+  (define (weight-leaf x) (caddr x))
+
+  (define (make-code-tree left right)
+    (list left
+          right
+          (append (symbols left) (symbols right))
+          (+ (weight left) (weight right))))
+
+  (define (symbols tree)
+    (if (leaf? tree)
+        (list (symbol-leaf tree))
+        (caddr tree)))
+  (define (weight tree)
+    (if (leaf? tree)
+        (weight-leaf tree)
+        (cadddr tree)))
+
+  (define (decode bits tree)
+    (define (decode-1 bits current-branch)
+      (if (null? bits)
+          '()
+          (let ([next-branch (choose-branch (car bits) current-branch)])
+            (if (leaf? next-branch)
+                (cons (symbol-leaf next-branch)
+                      (decode-1 (cdr bits) tree))
+                (decode-1 (cdr bits) next-branch)))))
+    (decode-1 bits tree))
+
+  (define (choose-branch bit branch)
+    (cond ((= bit 0) (left-branch branch))
+          ((= bit 1) (right-branch branch))
+          (else (error "bad bit: CHOOSE-BRANCH" bit))))
+
+  ;; the x being added is assumed to not be in the set
+  (define (adjoin-set x set)
+    (cond [(null? set) (list x)]
+          [(< (weight x) (weight (car set)))
+           (cons x set)]
+          [else
+           (cons (car set) (adjoin-set x (cdr set)))]))
+
+  #|
+  I find it more clear to pass directly leafs instead of pairs (see pairs->leaf-set for
+  a version with pairs). If one has pairs, one could simply map them to leafs. This
+  procedure is equivalent to (accumulate adjoin-set '() leafs)
+  |#
+  (define (make-leaf-set leafs)
+    (if (null? leafs)
+        '()
+        (adjoin-set (car leafs) (make-leaf-set (cdr leafs)))))
+
+  ;; the original make-leaf-set from the book
+  (define (pairs->leaf-set pairs)
+    (if (null? pairs)
+        '()
+        (let ((pair (car pairs)))
+          (adjoin-set (make-leaf (car pair)   ; symbol
+                                 (cadr pair)) ; frequency
+                      (pairs->leaf-set (cdr pairs))))))
+
+  (define (huffman-tree->diagram tree)
+    (define (huffman-node->label tree)
+      (let ([node-weight (number->string (weight tree))]
+            [node-leafs (apply
+                         string-append
+                         (map (λ (s) (symbol->string s))
+                              (symbols tree)))])
+        (vc-append
+         (text node-leafs)
+         (cc-superimpose
+          (disk 30 #:color "white")
+          (text node-weight)))))
+
+    (parameterize ([node->label huffman-node->label])
+      (binary-tree->diagram tree)))
+
+  (define huffman-tree-figure-2.18
+    (make-code-tree (make-leaf 'A 8)
+                    (make-code-tree
+                     (make-code-tree
+                      (make-leaf 'B 3)
+                      (make-code-tree (make-leaf 'C 1) (make-leaf 'D 1)))
+                     (make-code-tree
+                      (make-code-tree (make-leaf 'E 1) (make-leaf 'F 1))
+                      (make-code-tree (make-leaf 'G 1) (make-leaf 'H 1))))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Example/huffman-encoding\n")
+
+    (let* ([pairs '((A 4) (B 2) (C 1) (D 1))]
+           [leafs (map (λ (p) (make-leaf (car p) (cadr p))) pairs)])
+      (check-equal? (make-leaf-set leafs)
+                    (pairs->leaf-set pairs))
+      (check-equal? (make-leaf-set leafs)
+                    (accumulate adjoin-set '() leafs)))
+
+    (pict->file (huffman-tree->diagram huffman-tree-figure-2.18)
+                #:file "out/huffman-tree-figure-2.18.svg")))
+
+(module Exercise/2.67 sicp
+  (#%require (only racket/base module+ λ)
+             (only (submod "sicp1.rkt" conversion-utils) pict->file)
+             (only (submod ".." Example/huffman-encoding)
+                   make-code-tree
+                   make-leaf
+                   decode
+                   huffman-tree->diagram))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.67\n")
+
+    (define sample-tree
+      (make-code-tree (make-leaf 'A 4)
+                      (make-code-tree
+                       (make-leaf 'B 2)
+                       (make-code-tree
+                        (make-leaf 'D 1)
+                        (make-leaf 'C 1)))))
+
+    (pict->file (huffman-tree->diagram sample-tree)
+                #:file "out/huffman-tree-exercise-2.67.svg")
+
+    (define sample-message '(0 1 1 0 0 1 0 1 0 1 1 1 0))
+    (check-equal? (decode sample-message sample-tree) '(A D A B B C A))))
 
 (module+ test
   (require (submod ".." Section/2.2.4 test)
@@ -1888,4 +2047,6 @@
            (submod ".." Exercise/2.63 test-count-cons)
            (submod ".." Exercise/2.64 test)
            (submod ".." Exercise/2.65 test)
-           (submod ".." Exercise/2.66 test)))
+           (submod ".." Exercise/2.66 test)
+           (submod ".." Example/huffman-encoding test)
+           (submod ".." Exercise/2.67 test)))
