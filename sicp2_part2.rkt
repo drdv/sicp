@@ -1957,7 +1957,7 @@
         (vc-append
          (text node-leafs)
          (cc-superimpose
-          (disk 30 #:color "white")
+          (disk 30 #:color (if (leaf? tree) "gray" "white"))
           (text node-weight)))))
 
     (parameterize ([node->label huffman-node->label])
