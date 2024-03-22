@@ -1243,7 +1243,8 @@
                   (deriv '((x * (x * x)) + (3 * x)) 'x))))
 
 (module Example/sets-as-unordered-lists sicp
-  (#%provide adjoin-set
+  (#%provide element-of-set?
+             adjoin-set
              intersection-set)
   (#%require (only racket/base module+))
 
@@ -1869,6 +1870,9 @@
 (module Example/huffman-encoding sicp
   (#%provide make-code-tree
              make-leaf
+             leaf?
+             symbol-leaf
+             symbols
              decode
              huffman-tree->diagram
              huffman-tree-figure-2.18)
@@ -1971,10 +1975,13 @@
                     (make-code-tree
                      (make-code-tree
                       (make-leaf 'B 3)
-                      (make-code-tree (make-leaf 'C 1) (make-leaf 'D 1)))
+                      (make-code-tree (make-leaf 'C 1)
+                                      (make-leaf 'D 1)))
                      (make-code-tree
-                      (make-code-tree (make-leaf 'E 1) (make-leaf 'F 1))
-                      (make-code-tree (make-leaf 'G 1) (make-leaf 'H 1))))))
+                      (make-code-tree (make-leaf 'E 1)
+                                      (make-leaf 'F 1))
+                      (make-code-tree (make-leaf 'G 1)
+                                      (make-leaf 'H 1))))))
 
   (module+ test
     (#%require rackunit)
@@ -1991,7 +1998,10 @@
                 #:file "out/huffman-tree-figure-2.18.svg")))
 
 (module Exercise/2.67 sicp
-  (#%require (only racket/base module+ λ)
+  (#%provide sample-tree
+             sample-message
+             sample-symbols)
+  (#%require (only racket/base module+)
              (only (submod "sicp1.rkt" conversion-utils) pict->file)
              (only (submod ".." Example/huffman-encoding)
                    make-code-tree
@@ -1999,23 +2009,100 @@
                    decode
                    huffman-tree->diagram))
 
+  (define sample-tree
+    (make-code-tree (make-leaf 'A 4)
+                    (make-code-tree
+                     (make-leaf 'B 2)
+                     (make-code-tree
+                      (make-leaf 'D 1)
+                      (make-leaf 'C 1)))))
+  (define sample-message '(0 1 1 0 0 1 0 1 0 1 1 1 0))
+  (define sample-symbols '(A D A B B C A))
+
   (module+ test
     (#%require rackunit)
     (display "--> Exercise/2.67\n")
 
-    (define sample-tree
-      (make-code-tree (make-leaf 'A 4)
-                      (make-code-tree
-                       (make-leaf 'B 2)
-                       (make-code-tree
-                        (make-leaf 'D 1)
-                        (make-leaf 'C 1)))))
-
     (pict->file (huffman-tree->diagram sample-tree)
                 #:file "out/huffman-tree-exercise-2.67.svg")
 
-    (define sample-message '(0 1 1 0 0 1 0 1 0 1 1 1 0))
-    (check-equal? (decode sample-message sample-tree) '(A D A B B C A))))
+    (check-equal? (decode sample-message sample-tree) sample-symbols)))
+
+(module Exercise/2.68 sicp
+  (#%require (only racket/base module+ λ exn:fail?)
+             (only (submod ".." Example/sets-as-unordered-lists) element-of-set?)
+             (only (submod ".." Example/sets-as-binary-trees)
+                   left-branch
+                   right-branch)
+             (only (submod ".." Example/huffman-encoding)
+                   leaf?
+                   symbol-leaf
+                   symbols
+                   huffman-tree-figure-2.18)
+             (only (submod ".." Exercise/2.67)
+                   sample-tree
+                   sample-message
+                   sample-symbols))
+
+  (define (encode-symbol symbol tree)
+    (cond [(leaf? tree)
+           (if (eq? (symbol-leaf tree) symbol)
+               '()
+               (error "unexpected leaf: ENCODE-SYMBOL" tree))]
+          [(element-of-set? symbol (symbols (left-branch tree)))
+           (cons 0 (encode-symbol symbol (left-branch tree)))]
+          [(element-of-set? symbol (symbols (right-branch tree)))
+           (cons 1 (encode-symbol symbol (right-branch tree)))]
+          [else (error "unknown symbol: ENCODE-SYMBOL" symbol)]))
+
+  (define (encode message tree)
+    (if (null? message)
+        '()
+        (append (encode-symbol (car message) tree)
+                (encode (cdr message) tree))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.68\n")
+
+    (check-equal? (encode-symbol 'A sample-tree) '(0))
+    (check-equal? (encode-symbol 'B sample-tree) '(1 0))
+    (check-equal? (encode-symbol 'C sample-tree) '(1 1 1))
+    (check-equal? (encode-symbol 'D sample-tree) '(1 1 0))
+    (check-exn exn:fail? (λ () (encode-symbol 'E sample-tree)))
+    (check-equal? (encode sample-symbols sample-tree) sample-message)
+
+    ;; see page 219 (this corresponds to the tree in Figure 2.18)
+    (check-equal? (encode-symbol 'A huffman-tree-figure-2.18) '(0))
+    (check-equal? (encode-symbol 'B huffman-tree-figure-2.18) '(1 0 0))
+    (check-equal? (encode-symbol 'C huffman-tree-figure-2.18) '(1 0 1 0))
+    (check-equal? (encode-symbol 'D huffman-tree-figure-2.18) '(1 0 1 1))
+    (check-equal? (encode-symbol 'E huffman-tree-figure-2.18) '(1 1 0 0))
+    (check-equal? (encode-symbol 'F huffman-tree-figure-2.18) '(1 1 0 1))
+    (check-equal? (encode-symbol 'G huffman-tree-figure-2.18) '(1 1 1 0))
+    (check-equal? (encode-symbol 'H huffman-tree-figure-2.18) '(1 1 1 1))
+    (check-exn exn:fail? (λ () (encode-symbol 'I huffman-tree-figure-2.18)))
+    (check-equal?
+     (encode '(B A C A D A E A F A B B A A A G A H) huffman-tree-figure-2.18)
+     '(1 0 0      ; B
+         0        ; A
+         1 0 1 0  ; C
+         0        ; A
+         1 0 1 1  ; D
+         0        ; A
+         1 1 0 0  ; E
+         0        ; A
+         1 1 0 1  ; F
+         0        ; A
+         1 0 0    ; B
+         1 0 0    ; B
+         0        ; A
+         0        ; A
+         0        ; A
+         1 1 1 0  ; G
+         0        ; A
+         1 1 1 1  ; H
+         ))))
 
 (module+ test
   (require (submod ".." Section/2.2.4 test)
@@ -2052,4 +2139,5 @@
            (submod ".." Exercise/2.65 test)
            (submod ".." Exercise/2.66 test)
            (submod ".." Example/huffman-encoding test)
-           (submod ".." Exercise/2.67 test)))
+           (submod ".." Exercise/2.67 test)
+           (submod ".." Exercise/2.68 test)))
