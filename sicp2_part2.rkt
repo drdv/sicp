@@ -1872,8 +1872,11 @@
              make-leaf
              leaf?
              symbol-leaf
+             weight-leaf
              symbols
              decode
+             adjoin-set
+             make-leaf-set
              huffman-tree->diagram
              huffman-tree-figure-2.18)
   (#%require (only racket/base module+ λ parameterize)
@@ -2104,6 +2107,50 @@
          1 1 1 1  ; H
          ))))
 
+(module Exercise/2.69 sicp
+  (#%require (only racket/base module+)
+             pict
+             (only (submod "sicp1.rkt" conversion-utils) pict->file)
+             (only (submod ".." Example/huffman-encoding)
+                   adjoin-set
+                   make-leaf
+                   make-leaf-set
+                   make-code-tree
+                   huffman-tree->diagram
+                   huffman-tree-figure-2.18))
+
+  (define (successive-merge set-of-trees)
+    (cond [(null? set-of-trees) '()]
+          [(= (length set-of-trees) 1) (car set-of-trees)]
+          [else (successive-merge
+                 (adjoin-set (make-code-tree (car set-of-trees)
+                                             (cadr set-of-trees))
+                             (cddr set-of-trees)))]))
+
+  (define (generate-huffman-tree leafs)
+    (successive-merge (make-leaf-set leafs)))
+
+  (module+ test
+    (display "--> Exercise/2.69\n")
+
+    (define leafs (list (make-leaf 'A 8)
+                        (make-leaf 'B 3)
+                        (make-leaf 'C 1)
+                        (make-leaf 'D 1)
+                        (make-leaf 'E 1)
+                        (make-leaf 'F 1)
+                        (make-leaf 'G 1)
+                        (make-leaf 'H 1)))
+
+    (define ht (generate-huffman-tree leafs))
+
+    ;; the two huffman trees are the same (up to order of nodes)
+    ;; FIXME: write a comparison for huffman trees
+    (pict->file (vl-append 50
+                           (huffman-tree->diagram ht)
+                           (huffman-tree->diagram huffman-tree-figure-2.18))
+                #:file "out/generate-huffman-tree-2.69.svg")))
+
 (module+ test
   (require (submod ".." Section/2.2.4 test)
            (submod ".." Exercise/2.44 test)
@@ -2140,4 +2187,5 @@
            (submod ".." Exercise/2.66 test)
            (submod ".." Example/huffman-encoding test)
            (submod ".." Exercise/2.67 test)
-           (submod ".." Exercise/2.68 test)))
+           (submod ".." Exercise/2.68 test)
+           (submod ".." Exercise/2.69 test)))

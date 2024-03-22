@@ -15,7 +15,7 @@ help: ## Show this help
 tex: ## Generate latex note
 	tectonic notes.tex
 
-test-1: clean ## Run tests for exercises in Chapter 1
+test-1: ## Run tests for exercises in Chapter 1
 	raco test sicp1.rkt
 
 test-2: clean ## Run tests for for exercises in Chapter 2
