@@ -1877,6 +1877,7 @@
              pict
              pict/tree-layout
              (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate)
+             (only (submod "sicp1.rkt" common-utils) string-join)
              (only (submod "sicp1.rkt" conversion-utils) pict->file)
              (only (submod ".." Example/sets-as-binary-trees)
                    left-branch
@@ -1948,12 +1949,14 @@
                       (pairs->leaf-set (cdr pairs))))))
 
   (define (huffman-tree->diagram tree)
+
     (define (huffman-node->label tree)
       (let ([node-weight (number->string (weight tree))]
-            [node-leafs (apply
-                         string-append
-                         (map (λ (s) (symbol->string s))
-                              (symbols tree)))])
+            [node-leafs (if (leaf? tree)
+                            (string-join (symbols tree) "")
+                            (string-append "{"
+                                           (string-join (symbols tree) ", ")
+                                           "}"))])
         (vc-append
          (text node-leafs)
          (cc-superimpose
