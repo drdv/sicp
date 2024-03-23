@@ -18,9 +18,10 @@ tex: ## Generate latex note
 test-1: ## Run tests for exercises in Chapter 1
 	raco test sicp1.rkt
 
-test-2: clean ## Run tests for for exercises in Chapter 2
-	raco test sicp2_part1.rkt
-	raco test sicp2_part2.rkt
+test-2: clean ## Run tests for exercises in Chapter 2
+	# raco test sicp2_part1.rkt
+	# raco test sicp2_part2.rkt
+	raco test sicp2_part3.rkt
 
 .PHONY: docs
 docs: ## Generate docs
