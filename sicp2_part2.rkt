@@ -1937,14 +1937,14 @@
            (cons (car set) (adjoin-set x (cdr set)))]))
 
   #|
-  I find it more clear to pass directly leafs instead of pairs (see pairs->leaf-set for
+  I find it more clear to pass directly leaves instead of pairs (see pairs->leaf-set for
   a version with pairs). If one has pairs, one could simply map them to leafs. This
-  procedure is equivalent to (accumulate adjoin-set '() leafs)
+  procedure is equivalent to (accumulate adjoin-set '() leaves)
   |#
-  (define (make-leaf-set leafs)
-    (if (null? leafs)
+  (define (make-leaf-set leaves)
+    (if (null? leaves)
         '()
-        (adjoin-set (car leafs) (make-leaf-set (cdr leafs)))))
+        (adjoin-set (car leaves) (make-leaf-set (cdr leaves)))))
 
   ;; the original make-leaf-set from the book
   (define (pairs->leaf-set pairs)
@@ -1991,11 +1991,11 @@
     (display "--> Example/huffman-encoding\n")
 
     (let* ([pairs '((A 4) (B 2) (C 1) (D 1))]
-           [leafs (map (λ (p) (make-leaf (car p) (cadr p))) pairs)])
-      (check-equal? (make-leaf-set leafs)
+           [leaves (map (λ (p) (make-leaf (car p) (cadr p))) pairs)])
+      (check-equal? (make-leaf-set leaves)
                     (pairs->leaf-set pairs))
-      (check-equal? (make-leaf-set leafs)
-                    (accumulate adjoin-set '() leafs)))
+      (check-equal? (make-leaf-set leaves)
+                    (accumulate adjoin-set '() leaves)))
 
     (pict->file (huffman-tree->diagram huffman-tree-figure-2.18)
                 #:file "out/huffman-tree-figure-2.18.svg")))
@@ -2129,22 +2129,22 @@
                                              (cadr set-of-trees))
                              (cddr set-of-trees)))]))
 
-  (define (generate-huffman-tree leafs)
-    (successive-merge (make-leaf-set leafs)))
+  (define (generate-huffman-tree leaves)
+    (successive-merge (make-leaf-set leaves)))
 
   (module+ test
     (display "--> Exercise/2.69\n")
 
-    (define leafs (list (make-leaf 'A 8)
-                        (make-leaf 'B 3)
-                        (make-leaf 'C 1)
-                        (make-leaf 'D 1)
-                        (make-leaf 'E 1)
-                        (make-leaf 'F 1)
-                        (make-leaf 'G 1)
-                        (make-leaf 'H 1)))
+    (define leaves (list (make-leaf 'A 8)
+                         (make-leaf 'B 3)
+                         (make-leaf 'C 1)
+                         (make-leaf 'D 1)
+                         (make-leaf 'E 1)
+                         (make-leaf 'F 1)
+                         (make-leaf 'G 1)
+                         (make-leaf 'H 1)))
 
-    (define ht (generate-huffman-tree leafs))
+    (define ht (generate-huffman-tree leaves))
 
     ;; the two huffman trees are the same (up to order of nodes)
     ;; FIXME: write a comparison for huffman trees
@@ -2163,7 +2163,7 @@
              (only (submod ".." Exercise/2.68) encode)
              (only (submod ".." Exercise/2.69) generate-huffman-tree))
 
-  ;; tree and encoding depends on the order of leafs
+  ;; tree and encoding depends on the order of leaves
   (define rock-songs-huffman-tree-1
     (generate-huffman-tree (list (make-leaf 'A 2)
                                  (make-leaf 'GET 2)
@@ -2222,6 +2222,48 @@
                            (huffman-tree->diagram rock-songs-huffman-tree-2))
                 #:file "out/rock-songs-huffman-tree-2.70.svg")))
 
+(module Exercise/2.71 sicp
+  (#%require (only racket/base module+)
+             pict
+             (only (submod "sicp1.rkt" conversion-utils) pict->file)
+             (only (submod ".." Example/huffman-encoding)
+                   make-leaf
+                   huffman-tree->diagram)
+             (only (submod ".." Exercise/2.69) generate-huffman-tree))
+
+  (define huffman-tree-5 (generate-huffman-tree (list (make-leaf 'A 1)
+                                                      (make-leaf 'B 2)
+                                                      (make-leaf 'C 4)
+                                                      (make-leaf 'D 8)
+                                                      (make-leaf 'E 16))))
+
+  (define huffman-tree-10 (generate-huffman-tree (list (make-leaf 'A 1)
+                                                       (make-leaf 'B 2)
+                                                       (make-leaf 'C 4)
+                                                       (make-leaf 'D 8)
+                                                       (make-leaf 'E 16)
+                                                       (make-leaf 'F 32)
+                                                       (make-leaf 'G 64)
+                                                       (make-leaf 'H 128)
+                                                       (make-leaf 'I 256)
+                                                       (make-leaf 'J 512))))
+
+  #|
+  1. The tree we observe is due to the fact that 2^0 + 2^1 + ... + 2^k < 2^{k+1} and in
+     generate-huffman-tree, before adding the leaf with weight 2^{k+1} we have "grouped"
+     all leaves with weights 2^0, 2^1, ..., 2^k.
+  2. 1 bit is required to encode the most frequent symbol.
+  3. n-1 bits are required to encode the least frequent symbol.
+  |#
+
+  (module+ test
+    (display "--> Exercise/2.71\n")
+
+    (pict->file (ht-append 50
+                           (huffman-tree->diagram huffman-tree-5)
+                           (huffman-tree->diagram huffman-tree-10))
+                #:file "out/huffman-tree-2.71.svg")))
+
 (module+ test
   (require (submod ".." Section/2.2.4 test)
            (submod ".." Exercise/2.44 test)
@@ -2260,4 +2302,5 @@
            (submod ".." Exercise/2.67 test)
            (submod ".." Exercise/2.68 test)
            (submod ".." Exercise/2.69 test)
-           (submod ".." Exercise/2.70 test)))
+           (submod ".." Exercise/2.70 test)
+           (submod ".." Exercise/2.71 test)))
