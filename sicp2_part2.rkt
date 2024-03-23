@@ -3,6 +3,22 @@
 ;; =====================================================================================
 #lang racket/base
 
+(module common-utils sicp
+  (#%provide string-join)
+
+  (define (string-join lst separator)
+    (define (element->string element)
+      (cond [(number? element) (number->string element)]
+            [(symbol? element) (symbol->string element)]
+            [(string? element) element]
+            ;; assume no nested lists
+            [else (error "unknown element: " element)]))
+    (cond [(null? lst) ""]
+          [(= (length lst) 1) (element->string (car lst))]
+          [else (string-append (element->string (car lst))
+                               separator
+                               (string-join (cdr lst) separator))])))
+
 (module Section/2.2.4 sicp
   (#%provide right-split
              up-split
@@ -1884,8 +1900,8 @@
              pict
              pict/tree-layout
              (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate)
-             (only (submod "sicp1.rkt" common-utils) string-join)
              (only (submod "sicp1.rkt" conversion-utils) pict->file)
+             (only (submod ".." common-utils) string-join)
              (only (submod ".." Example/sets-as-binary-trees)
                    left-branch
                    right-branch
@@ -2052,7 +2068,7 @@
     (cond [(leaf? tree)
            (if (eq? (symbol-leaf tree) symbol)
                '()
-               (error "unexpected leaf: ENCODE-SYMBOL" tree))]
+               (error "unexpected leaf (invalid huffman tree): ENCODE-SYMBOL" tree))]
           [(element-of-set? symbol (symbols (left-branch tree)))
            (cons 0 (encode-symbol symbol (left-branch tree)))]
           [(element-of-set? symbol (symbols (right-branch tree)))
@@ -2264,6 +2280,15 @@
                            (huffman-tree->diagram huffman-tree-10))
                 #:file "out/huffman-tree-2.71.svg")))
 
+(module Exercise/2.72 sicp
+  #|
+  In the worst case we have to perform n iterations for the huffman trees in
+  Exercise/2.71 but at each iteraction we have a call to element-of-set?, which is O(n)
+  due to our choice to use unordered list to model a set. Hence,
+  1. Encoding the most frequent symbol takes O(n).
+  2. Encoding the least frequent symbol takes O(n^2).
+  |#)
+
 (module+ test
   (require (submod ".." Section/2.2.4 test)
            (submod ".." Exercise/2.44 test)
@@ -2303,4 +2328,6 @@
            (submod ".." Exercise/2.68 test)
            (submod ".." Exercise/2.69 test)
            (submod ".." Exercise/2.70 test)
-           (submod ".." Exercise/2.71 test)))
+           (submod ".." Exercise/2.71 test)
+           ;; 2.72: no tests
+           ))

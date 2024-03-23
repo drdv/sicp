@@ -9,8 +9,7 @@
              cube
              average
              golden-ratio
-             run-n-times
-             string-join)
+             run-n-times)
 
   (define tolerance 1e-5)
 
@@ -32,20 +31,7 @@
                         func
                         args
                         (append output
-                                (list (apply func args))))]))
-
-  (define (string-join lst separator)
-    (define (element->string element)
-      (cond [(number? element) (number->string element)]
-            [(symbol? element) (symbol->string element)]
-            [(string? element) element]
-            ;; assume no nested lists
-            [else (error "unknown element: " element)]))
-    (cond [(null? lst) ""]
-          [(= (length lst) 1) (element->string (car lst))]
-          [else (string-append (element->string (car lst))
-                               separator
-                               (string-join (cdr lst) separator))])))
+                                (list (apply func args))))])))
 
 (module conversion-utils racket/base
   (#%provide mcons->cons
