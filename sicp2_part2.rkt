@@ -2032,6 +2032,7 @@
     (check-equal? (decode sample-message sample-tree) sample-symbols)))
 
 (module Exercise/2.68 sicp
+  (#%provide encode)
   (#%require (only racket/base module+ λ exn:fail?)
              (only (submod ".." Example/sets-as-unordered-lists) element-of-set?)
              (only (submod ".." Example/sets-as-binary-trees)
@@ -2108,6 +2109,7 @@
          ))))
 
 (module Exercise/2.69 sicp
+  (#%provide generate-huffman-tree)
   (#%require (only racket/base module+)
              pict
              (only (submod "sicp1.rkt" conversion-utils) pict->file)
@@ -2151,6 +2153,75 @@
                            (huffman-tree->diagram huffman-tree-figure-2.18))
                 #:file "out/generate-huffman-tree-2.69.svg")))
 
+(module Exercise/2.70 sicp
+  (#%require (only racket/base module+)
+             pict
+             (only (submod "sicp1.rkt" conversion-utils) pict->file)
+             (only (submod ".." Example/huffman-encoding)
+                   make-leaf
+                   huffman-tree->diagram)
+             (only (submod ".." Exercise/2.68) encode)
+             (only (submod ".." Exercise/2.69) generate-huffman-tree))
+
+  ;; tree and encoding depends on the order of leafs
+  (define rock-songs-huffman-tree-1
+    (generate-huffman-tree (list (make-leaf 'A 2)
+                                 (make-leaf 'GET 2)
+                                 (make-leaf 'SHA 3)
+                                 (make-leaf 'WAH 1)
+                                 (make-leaf 'BOOM 1)
+                                 (make-leaf 'JOB 2)
+                                 (make-leaf 'NA 16)
+                                 (make-leaf 'YIP 9))))
+
+  (define rock-songs-huffman-tree-2
+    (generate-huffman-tree (list (make-leaf 'A 2)
+                                 (make-leaf 'BOOM 1)
+                                 (make-leaf 'GET 2)
+                                 (make-leaf 'JOB 2)
+                                 (make-leaf 'SHA 3)
+                                 (make-leaf 'NA 16)
+                                 (make-leaf 'WAH 1)
+                                 (make-leaf 'YIP 9))))
+
+  (define song '(GET A JOB
+                     SHA NA NA NA NA NA NA NA NA
+                     GET A JOB
+                     SHA NA NA NA NA NA NA NA NA
+                     WAH YIP YIP YIP YIP YIP YIP YIP YIP YIP
+                     SHA BOOM))
+
+  #|
+  1. 84 bits are required for the encoding
+  2. We need 3 bits to encode an 8 symbol alphabet. Since the song has 36 symbols, we
+     would need 3*36 = 108 bits.
+  |#
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.70\n")
+
+    (define encoded-message-1
+      '(1 1 1 1 1 1 1 0 0 1 1 1 1 0 1 1 1 0 0 0 0 0 0 0 0 0 1 1 1
+          1 1 1 1 0 0 1 1 1 1 0 1 1 1 0 0 0 0 0 0 0 0 0 1 1 0 1 1
+          1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 1 1 0 1 1 0 1 0))
+
+    (define encoded-message-2
+      '(1 1 1 1 1 1 1 0 0 1 1 1 1 0 1 1 1 0 0 0 0 0 0 0 0 0 1 1 1
+          1 1 1 1 0 0 1 1 1 1 0 1 1 1 0 0 0 0 0 0 0 0 0 1 1 0 1 0
+          1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 1 1 0 1 1 0 1 1))
+
+    (let ([n 84])
+      (check-equal? (length encoded-message-1) n)
+      (check-equal? (length encoded-message-2) n))
+    (check-equal? (length song) 36)
+    (check-equal? (encode song rock-songs-huffman-tree-1) encoded-message-1)
+    (check-equal? (encode song rock-songs-huffman-tree-2) encoded-message-2)
+    (pict->file (vl-append 50
+                           (huffman-tree->diagram rock-songs-huffman-tree-1)
+                           (huffman-tree->diagram rock-songs-huffman-tree-2))
+                #:file "out/rock-songs-huffman-tree-2.70.svg")))
+
 (module+ test
   (require (submod ".." Section/2.2.4 test)
            (submod ".." Exercise/2.44 test)
@@ -2188,4 +2259,5 @@
            (submod ".." Example/huffman-encoding test)
            (submod ".." Exercise/2.67 test)
            (submod ".." Exercise/2.68 test)
-           (submod ".." Exercise/2.69 test)))
+           (submod ".." Exercise/2.69 test)
+           (submod ".." Exercise/2.70 test)))
