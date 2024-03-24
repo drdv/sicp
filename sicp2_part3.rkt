@@ -201,8 +201,9 @@
              make-from-mag-ang
              get
              put
-             get-op-type-table)
-  (#%require (only racket/base module+ λ hash-set! hash-ref make-hash)
+             get-op-type-table
+             clear-op-type-table)
+  (#%require (only racket/base module+ λ hash-set! hash-ref make-hash hash-clear!)
              (only racket/base local-require submod only-in)
              (only (submod "sicp1.rkt" common-utils) square tolerance)
              (only (submod ".." Section/2.4.2) attach-tag type-tag contents))
@@ -219,6 +220,9 @@
     (hash-set! OP-TYPE-TABLE (cons op type) item))
   (define (get op type)
     (hash-ref OP-TYPE-TABLE (cons op type)))
+
+  (define (clear-op-type-table)
+    (hash-clear! OP-TYPE-TABLE))
   ;; this is useful (to examine the table) when I use put and get in another module
   (define (get-op-type-table)
     OP-TYPE-TABLE)
@@ -298,7 +302,7 @@
       (check-within (angle z) 0.927295 tolerance))))
 
 (module Exercise/2.73 sicp
-  (#%require (only racket/base module+ λ for hash-clear!)
+  (#%require (only racket/base module+ λ for)
              (only (submod "sicp2_part2.rkt" Example/symbolic-differentiation)
                    variable?
                    same-variable?
@@ -312,8 +316,12 @@
                    base
                    exponent
                    make-exponentiation)
-             (rename (submod "sicp2_part2.rkt" Exercise/2.56) deriv-old deriv)
-             (only (submod ".." Section/2.4.3) get put get-op-type-table))
+             (rename (submod "sicp2_part2.rkt" Exercise/2.56) deriv-original deriv)
+             (only (submod ".." Section/2.4.3)
+                   get
+                   put
+                   get-op-type-table
+                   clear-op-type-table))
 
   #|
   Task A:
@@ -339,7 +347,7 @@
   (define (operator exp) (car exp))
   #|
   Since I want to reuse the original code as is (which is the whole point of the
-  Data-Directed Programming section), I change the `operands` procedure to return the
+  Data-Directed Programming section), I changed the `operands` procedure to return the
   original expression instead of using (define (operands exp) (cdr exp)) which is given
   in the exercise. Note that in the case of e.g., the '+ operation we have defined
   (define (addend s) (cadr s))
@@ -367,7 +375,7 @@
                                                 (multiplicand expr)))))
     'deriv-product-installed)
 
-  (hash-clear! (get-op-type-table))
+  (clear-op-type-table)
   (install-deriv-sum)
   (get-op-type-table)
 
@@ -412,7 +420,7 @@
                     (* (* x y) (+ x 3))
                     (** (+ (* 4 x) 3) 2))])
         (check-equal? (deriv expr var)
-                      (deriv-old expr var))))))
+                      (deriv-original expr var))))))
 
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
