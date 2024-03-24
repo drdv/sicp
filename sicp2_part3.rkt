@@ -341,10 +341,15 @@
   Since I want to reuse the original code as is (which is the whole point of the
   Data-Directed Programming section), I change the `operands` procedure to return the
   original expression instead of using (define (operands exp) (cdr exp)) which is given
-  in the exercise. Note that, in the case of e.g., the '+ operation we have defined
+  in the exercise. Note that in the case of e.g., the '+ operation we have defined
   (define (addend s) (cadr s))
   (define (augend s) (caddr s))
   i.e., addend and augend jump over the operator (so it has to be present).
+  Of course, if we are ready to change addend and augend, we could return just the
+  operands with (cdr exp) and then use
+  (define (addend s) (car s))
+  (define (augend s) (cadr s))
+  Similarly for base and exponent.
   |#
   (define (operands exp) exp)
 
