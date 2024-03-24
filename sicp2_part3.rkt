@@ -198,7 +198,10 @@
              magnitude
              angle
              make-from-real-imag
-             make-from-mag-ang)
+             make-from-mag-ang
+             get
+             put
+             get-op-type-table)
   (#%require (only racket/base module+ λ hash-set! hash-ref make-hash)
              (only racket/base local-require submod only-in)
              (only (submod "sicp1.rkt" common-utils) square tolerance)
@@ -216,6 +219,9 @@
     (hash-set! OP-TYPE-TABLE (cons op type) item))
   (define (get op type)
     (hash-ref OP-TYPE-TABLE (cons op type)))
+  ;; this is useful (to examine the table) when I use put and get in another module
+  (define (get-op-type-table)
+    OP-TYPE-TABLE)
 
   (define (install-rectangular-package)
     (local-require (only-in (submod ".." Section/2.4.1 rectangular-package)
@@ -291,8 +297,121 @@
       (check-within (magnitude z) 5 tolerance)
       (check-within (angle z) 0.927295 tolerance))))
 
+(module Exercise/2.73 sicp
+  (#%require (only racket/base module+ λ for hash-clear!)
+             (only (submod "sicp2_part2.rkt" Example/symbolic-differentiation)
+                   variable?
+                   same-variable?
+                   addend
+                   augend
+                   multiplier
+                   multiplicand
+                   make-sum
+                   make-product)
+             (only (submod "sicp2_part2.rkt" Exercise/2.56)
+                   base
+                   exponent
+                   make-exponentiation)
+             (rename (submod "sicp2_part2.rkt" Exercise/2.56) deriv-old deriv)
+             (only (submod ".." Section/2.4.3) get put get-op-type-table))
+
+  #|
+  Task A:
+  There are two cases:
+  1. Handle expressions with an operator (e.g., sum, product)
+  2. Handle expressions without an operator: number?, variable?
+  To include the latter case in the former we would need for the `operator` procedure to
+  be able to return a 'no-operator token so that under the ('deriv . 'no-operator) key
+  we could store:
+  (λ (expr var)
+     (cond [(number? exp) 0]
+           [(variable? exp) (if (same-variable? exp var) 1 0)]))
+  While this seems possible, it doesn't really help as the point is to make a dispatch
+  on new operators (while the 'no-operator case could be handled once regardless where).
+  |#
+  (define (deriv exp var)
+    (cond [(number? exp) 0]
+          [(variable? exp) (if (same-variable? exp var) 1 0)]
+          [else
+           ((get 'deriv (operator exp))
+            (operands exp) var)]))
+
+  (define (operator exp) (car exp))
+  #|
+  Since I want to reuse the original code as is (which is the whole point of the
+  Data-Directed Programming section), I change the `operands` procedure to return the
+  original expression instead of using (define (operands exp) (cdr exp)) which is given
+  in the exercise. Note that, in the case of e.g., the '+ operation we have defined
+  (define (addend s) (cadr s))
+  (define (augend s) (caddr s))
+  i.e., addend and augend jump over the operator (so it has to be present).
+  |#
+  (define (operands exp) exp)
+
+  ;; Task B
+  (define (install-deriv-sum)
+    (put 'deriv '+ (λ (expr var) (make-sum (deriv (addend expr) var)
+                                           (deriv (augend expr) var))))
+    'deriv-sum-installed)
+
+  (define (install-deriv-product)
+    (put 'deriv '* (λ (expr var) (make-sum
+                                  (make-product (multiplier expr)
+                                                (deriv (multiplicand expr) var))
+                                  (make-product (deriv (multiplier expr) var)
+                                                (multiplicand expr)))))
+    'deriv-product-installed)
+
+  (hash-clear! (get-op-type-table))
+  (install-deriv-sum)
+  (get-op-type-table)
+
+  (install-deriv-product)
+  (get-op-type-table)
+
+  ;; Task C
+  (define (install-deriv-exponentiate)
+    (put 'deriv '** (λ (expr var)
+                      (let ([b (base expr)]
+                            [n (exponent expr)])
+                        (make-product
+                         (make-product n (make-exponentiation b (make-sum n -1)))
+                         (deriv b var)))))
+    'deriv-exponentiate-installed)
+
+  (install-deriv-exponentiate)
+  (get-op-type-table)
+
+  #|
+  Task D:
+  If we use (get (operator exp) 'deriv) instead of (get 'deriv (operator exp)) we would
+  have to use:
+  (put '+ 'deriv ...)
+  (put '* 'deriv ...)
+  (put '** 'deriv ...)
+  instead of
+  (put 'deriv '+ ...)
+  (put 'deriv '* ...)
+  (put 'deriv '** ...)
+  |#
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.73\n")
+
+    (let ([var 'x])
+      (for ([expr '(x
+                    y
+                    (+ x 3)
+                    (* x y)
+                    (* (* x y) (+ x 3))
+                    (** (+ (* 4 x) 3) 2))])
+        (check-equal? (deriv expr var)
+                      (deriv-old expr var))))))
+
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
            (submod ".." Section/2.4.1 polar-package test)
            (submod ".." Section/2.4.2 test)
-           (submod ".." Section/2.4.3 test)))
+           (submod ".." Section/2.4.3 test)
+           (submod ".." Exercise/2.73 test)))

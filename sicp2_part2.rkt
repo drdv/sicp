@@ -937,7 +937,8 @@
              multiplicand
              =number?
              make-sum
-             make-product)
+             make-product
+             deriv)
   (#%require (only racket/base module+))
 
   (define (variable? x) (symbol? x))
@@ -1149,7 +1150,7 @@
 
     (define (sum? x) (and (pair? x) (eq? (cadr x) '+)))
     (define (addend s) (car s))
-    (define (augend s) (caddr s))
+    (define (augend s) (caddr s)) ; FIXME: require from Example/symbolic-differentiation
     (define (product? x) (and (pair? x) (eq? (cadr x) '*)))
     (define (multiplicand p) (caddr p))
 
