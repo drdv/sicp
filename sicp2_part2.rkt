@@ -1150,7 +1150,7 @@
 
     (define (sum? x) (and (pair? x) (eq? (cadr x) '+)))
     (define (addend s) (car s))
-    (define (augend s) (caddr s)) ; FIXME: require from Example/symbolic-differentiation
+    (define (augend s) (caddr s)) ; same as in Example/symbolic-differentiation
     (define (product? x) (and (pair? x) (eq? (cadr x) '*)))
     (define (multiplicand p) (caddr p))
 
