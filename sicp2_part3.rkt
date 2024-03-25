@@ -81,10 +81,6 @@
         (check-equal? (angle z) 0.927295)))))
 
 (module Section/2.4.2 sicp
-  #|
-  This section demonstrates an antipattern (see Section/2.4.3) so I don't provide
-  real-part, imag-part, magnitude, angle, make-from-real-imag and make-from-mag-ang.
-  |#
   (#%provide attach-tag
              type-tag
              contents)
@@ -777,6 +773,46 @@
      (length (find-employee-record "Ghost Employee" personal-records-files))
      3)))
 
+(module Exercise/2.75 sicp
+  (#%require (only racket/base module+ module)
+             (only (submod "sicp1.rkt" common-utils) square tolerance))
+
+  (define (make-from-real-imag x y)
+    (define (dispatch op)
+      (cond ((eq? op 'real-part) x)
+            ((eq? op 'imag-part) y)
+            ((eq? op 'magnitude) (sqrt (+ (square x) (square y))))
+            ((eq? op 'angle) (atan y x))
+            (else (error "Unknown op: MAKE-FROM-REAL-IMAG" op))))
+    dispatch)
+
+  (define (make-from-mag-ang r a)
+    (define (dispatch op)
+      (cond ((eq? op 'real-part) (* r (cos a)))
+            ((eq? op 'imag-part) (* r (sin a)))
+            ((eq? op 'magnitude) r)
+            ((eq? op 'angle) a)
+            (else (error "Unknown op: MAKE-FROM-MAG-ANG" op))))
+    dispatch)
+
+  (define (apply-generic op arg) (arg op))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.75\n")
+
+    (let ([z (make-from-real-imag 3 4)])
+      (check-equal? (apply-generic 'real-part z) 3)
+      (check-equal? (apply-generic 'imag-part z) 4)
+      (check-within (apply-generic 'magnitude z) 5 tolerance)
+      (check-within (apply-generic 'angle z) 0.927295 tolerance))
+
+    (let ([z (make-from-mag-ang 5 0.927295)])
+      (check-within (apply-generic 'real-part z) 3 tolerance)
+      (check-within (apply-generic 'imag-part z) 4 tolerance)
+      (check-equal? (apply-generic 'magnitude z) 5)
+      (check-equal? (apply-generic 'angle z) 0.927295))))
+
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
            (submod ".." Section/2.4.1 polar-package test)
@@ -786,4 +822,5 @@
            (submod ".." Exercise/2.74 division-paris test)
            (submod ".." Exercise/2.74 division-stockholm test)
            (submod ".." Exercise/2.74 division-tokyo test)
-           (submod ".." Exercise/2.74 test)))
+           (submod ".." Exercise/2.74 test)
+           (submod ".." Exercise/2.75 test)))
