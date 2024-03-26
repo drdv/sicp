@@ -206,7 +206,7 @@
 
   #|
   Implementations of put and get are not given so in order to test the code I use a
-  built-in hash-table to implement double displatch with (op . type) as a key. Actually,
+  built-in hash-table to implement double dispatch with (op . type) as a key. Actually,
   we model multiple dispatch because, in the book, the second element in the cons (i.e.,
   the type) is (sometimes) a list.
   |#
@@ -424,12 +424,12 @@
 
   #|
   My specification:
-  1. I will consider three divisions modelling sets in three different ways:
-     - Paris: sets are modelled as unordered lists
-     - Stockholm: sets are modelled as ordered lists
-     - Tokyo: sets are modelled as binary trees
+  1. I will consider three divisions modeling sets in three different ways:
+     - Paris: sets are modeled as unordered lists
+     - Stockholm: sets are modeled as ordered lists
+     - Tokyo: sets are modeled as binary trees
   2. The names of an employee are stored as a string. I assume that no two employees
-     of a division have the same name (but there could be duplicates accross divisions).
+     of a division have the same name (but there could be duplicates across divisions).
   3. The records of each division could contain different fields and could be structured
      differently (e.g., the order of fields need not be the same). Some fields could
      be stored e.g., as (cons "address" "some address").
@@ -837,7 +837,7 @@
      - adding new operations: simply add the operation (handle all types inside)
 
   2. data-directed style
-     Adding a new type/operation requires updating the interface. Thats is, adding a
+     Adding a new type/operation requires updating the interface. That is, adding a
      new key (operation . type). for all new operation/type. In addition installing the
      interface is required.
 
@@ -845,10 +845,10 @@
      - adding new types: simply add the type (handle all operations inside)
      - adding new operations: each new operation requires adding a case under each type
 
-  When only new types must offen be added, "message-passing" seems appropriate.
-  When only new operations must offen be added, "generic operations with explicit
+  When only new types must often be added, "message-passing" seems appropriate.
+  When only new operations must often be added, "generic operations with explicit
   dispatch" seems appropriate. In both cases using "data-directed style" could be
-  reasonable (assuming that we have already committed to maintaining a gloabal table).
+  reasonable (assuming that we have already committed to maintaining a global table).
   |#)
 
 (module+ test
