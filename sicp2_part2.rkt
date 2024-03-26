@@ -1973,7 +1973,6 @@
                       (pairs->leaf-set (cdr pairs))))))
 
   (define (huffman-tree->diagram tree)
-
     (define (huffman-node->label tree)
       (let ([node-weight (number->string (weight tree))]
             [node-leafs (if (leaf? tree)

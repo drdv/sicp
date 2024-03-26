@@ -622,13 +622,17 @@
 
   (module division-tokyo sicp
     (#%provide personal-records-file)
-    (#%require (only racket/base module+)
+    (#%require (only racket/base module+ parameterize)
+               pict
+               (only (submod "sicp1.rkt" conversion-utils) pict->file)
                (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate)
                (only (submod "sicp2_part2.rkt" Example/sets-as-binary-trees)
                      make-tree
                      entry
                      left-branch
-                     right-branch)
+                     right-branch
+                     binary-tree->diagram
+                     node->label)
                (only (submod ".." common-library)
                      make-field
                      field->name
@@ -686,6 +690,16 @@
                         (left-branch set)
                         (adjoin-set x (right-branch set))))))
 
+    (define (tokyo-division-records->diagram tree)
+      (define (tokyo-division-record->label tree)
+        (let ([employee-name (get-record-key (entry tree))])
+          (vc-append
+           (text employee-name)
+           (disk 30 #:color "white"))))
+
+      (parameterize ([node->label tokyo-division-record->label])
+        (binary-tree->diagram tree)))
+
     (define (register-interface)
       (put 'get-record division-name get-record)
       (put 'get-record-key division-name get-record-key)
@@ -707,6 +721,9 @@
     (module+ test
       (#%require rackunit)
       (display "--> Exercise/2.74 (tokyo division)\n")
+
+      (pict->file (tokyo-division-records->diagram personal-records)
+                  #:file "out/tokyo-personal-records-2.74.svg")
 
       (let ([name "Haruki Ito"]
             [record (make-record "Haruki Ito" "3 Ameya Yokocho" 3)])
@@ -733,7 +750,7 @@
     Each division file should contains the division tag.
 
     Task B:
-    Each record should contains the division tag but this need not be the case in the
+    Each record should contain the division tag but this need not be the case in the
     original records - we add it upon record retrieval. Note that I have renamed
     get-salary to get-record-salary.
 
@@ -774,7 +791,7 @@
      3)))
 
 (module Exercise/2.75 sicp
-  (#%require (only racket/base module+ module)
+  (#%require (only racket/base module+)
              (only (submod "sicp1.rkt" common-utils) square tolerance))
 
   (define (make-from-real-imag x y)
