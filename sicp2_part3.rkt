@@ -830,6 +830,27 @@
       (check-equal? (apply-generic 'magnitude z) 5)
       (check-equal? (apply-generic 'angle z) 0.927295))))
 
+(module Exercise/2.76 sicp
+  #|
+  1. generic operations with explicit dispatch
+     - adding new types: each new type requires adding a case under each operation
+     - adding new operations: simply add the operation (handle all types inside)
+
+  2. data-directed style
+     Adding a new type/operation requires updating the interface. Thats is, adding a
+     new key (operation . type). for all new operation/type. In addition installing the
+     interface is required.
+
+  3. objects with dispatch (message-passing)
+     - adding new types: simply add the type (handle all operations inside)
+     - adding new operations: each new operation requires adding a case under each type
+
+  When only new types must offen be added, "message-passing" seems appropriate.
+  When only new operations must offen be added, "generic operations with explicit
+  dispatch" seems appropriate. In both cases using "data-directed style" could be
+  reasonable (assuming that we have already committed to maintaining a gloabal table).
+  |#)
+
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
            (submod ".." Section/2.4.1 polar-package test)
@@ -840,4 +861,6 @@
            (submod ".." Exercise/2.74 division-stockholm test)
            (submod ".." Exercise/2.74 division-tokyo test)
            (submod ".." Exercise/2.74 test)
-           (submod ".." Exercise/2.75 test)))
+           (submod ".." Exercise/2.75 test)
+           ;; 2.76: no tests
+           ))
