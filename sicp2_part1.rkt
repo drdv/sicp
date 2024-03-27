@@ -4,6 +4,13 @@
 #lang racket/base
 
 (module Exercise/2.1 sicp
+  (#%provide make-rat
+             numer
+             denom
+             add-rat
+             sub-rat
+             mul-rat
+             div-rat)
   (#%require (only racket/base module+ λ format let-values exn:fail?))
 
   ;; there are simpler solutions but I wanted to learn how to use let-values
