@@ -372,13 +372,6 @@
                                                 (multiplicand expr)))))
     'deriv-product-installed)
 
-  (clear-op-type-table)
-  (install-deriv-sum)
-  (get-op-type-table)
-
-  (install-deriv-product)
-  (get-op-type-table)
-
   ;; Task C
   (define (install-deriv-exponentiate)
     (put 'deriv '** (λ (expr var)
@@ -388,9 +381,6 @@
                          (make-product n (make-exponentiation b (make-sum n -1)))
                          (deriv b var)))))
     'deriv-exponentiate-installed)
-
-  (install-deriv-exponentiate)
-  (get-op-type-table)
 
   #|
   Task D:
@@ -408,6 +398,16 @@
   (module+ test
     (#%require rackunit)
     (display "--> Exercise/2.73\n")
+
+    (clear-op-type-table) ; because of the way tests are run
+    (install-deriv-sum)
+    (get-op-type-table)
+
+    (install-deriv-product)
+    (get-op-type-table)
+
+    (install-deriv-exponentiate)
+    (get-op-type-table)
 
     (let ([var 'x])
       (for ([expr '(x
@@ -445,6 +445,7 @@
                field->value
                attach-tag
                put
+               clear-op-type-table
                get-record
                get-record-key
                get-record-salary
@@ -452,7 +453,10 @@
     (#%require (only racket/base λ)
                (only (submod "sicp2_part1.rkt" Section/2.2.3) filter)
                (only (submod ".." ".." Section/2.4.2) attach-tag)
-               (only (submod ".." ".." Section/2.4.3) get put))
+               (only (submod ".." ".." Section/2.4.3)
+                     get
+                     put
+                     clear-op-type-table))
 
     (define (make-field field-name field-value)
       (cons field-name field-value))
@@ -489,7 +493,7 @@
       (filter (λ (x) (cdr x)) (iter list-of-division-files '()))))
 
   (module division-paris sicp
-    (#%provide personal-records-file)
+    (#%provide install-interface personal-records-file)
     (#%require (only racket/base module+ λ)
                (only (submod ".." common-library)
                      make-field
@@ -522,12 +526,11 @@
             [(string=? (get-record-key (car records)) key) (car records)]
             [else (get-record key (cdr records))]))
 
-    (define (register-interface)
+    (define (install-interface)
       (put 'get-record division-name get-record)
       (put 'get-record-key division-name get-record-key)
       (put 'get-record-salary division-name get-record-salary))
 
-    (register-interface)
     ;; ---------------------------------------------------------------------------------
 
     (define personal-records
@@ -549,7 +552,7 @@
         (check-false (get-record "Nonexistent Name" personal-records)))))
 
   (module division-stockholm sicp
-    (#%provide personal-records-file)
+    (#%provide install-interface personal-records-file)
     (#%require (only racket/base module+)
                (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate)
                (only (submod ".." common-library)
@@ -590,12 +593,11 @@
                              (get-record-key head)) (cons x set)]
                   [else (cons head (adjoin-set x tail))]))))
 
-    (define (register-interface)
+    (define (install-interface)
       (put 'get-record division-name get-record)
       (put 'get-record-key division-name get-record-key)
       (put 'get-record-salary division-name get-record-salary))
 
-    (register-interface)
     ;; ---------------------------------------------------------------------------------
 
     (define personal-records
@@ -618,7 +620,7 @@
         (check-false (get-record "Nonexistent Name" personal-records)))))
 
   (module division-tokyo sicp
-    (#%provide personal-records-file)
+    (#%provide install-interface personal-records-file)
     (#%require (only racket/base module+ parameterize)
                pict
                (only (submod "sicp1.rkt" conversion-utils) pict->file)
@@ -697,12 +699,11 @@
       (parameterize ([node->label tokyo-division-record->label])
         (binary-tree->diagram tree)))
 
-    (define (register-interface)
+    (define (install-interface)
       (put 'get-record division-name get-record)
       (put 'get-record-key division-name get-record-key)
       (put 'get-record-salary division-name get-record-salary))
 
-    (register-interface)
     ;; ---------------------------------------------------------------------------------
 
     (define personal-records
@@ -730,17 +731,29 @@
   (module+ test
     (#%require rackunit
                (only (submod ".." common-library)
+                     clear-op-type-table
                      get-record
                      get-record-key
                      get-record-salary
                      find-employee-record)
                (rename (submod ".." division-paris)
+                       install-interface-paris install-interface)
+               (rename (submod ".." division-paris)
                        personal-records-file-paris personal-records-file)
+               (rename (submod ".." division-stockholm)
+                       install-interface-stockholm install-interface)
                (rename (submod ".." division-stockholm)
                        personal-records-file-stockholm personal-records-file)
                (rename (submod ".." division-tokyo)
+                       install-interface-tokyo install-interface)
+               (rename (submod ".." division-tokyo)
                        personal-records-file-tokyo personal-records-file))
     (display "--> Exercise/2.74\n")
+
+    (clear-op-type-table) ; because of the way tests are run
+    (install-interface-paris)
+    (install-interface-stockholm)
+    (install-interface-tokyo)
 
     #|
     Task A:
@@ -756,9 +769,9 @@
     employees found (at most one per division).
 
     Task D:
-    Each new division should simply implement the interface (see register-interface) and
-    provide the personal-records-file. No changes in get-record, get-record-key or
-    get-record-salary are required.
+    Each new division should simply provide the procedure install-interface and
+    personal-records-file (we store it in a variable but in reality it would be a file).
+    No changes in get-record, get-record-key or get-record-salary are required.
     |#
     (let* ([employee-name "Gabriel Granger"]
            [record (get-record employee-name personal-records-file-paris)])
