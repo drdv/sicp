@@ -889,54 +889,45 @@
 (module Section/2.5.1 sicp
   (#%provide install-racket-numbers-package
              install-rational-numbers-package
-             install-complex-numbers-package)
-  (#%require (only racket/base module+ module))
+             install-complex-numbers-package
+             add
+             sub
+             mul
+             div
+             make-racket-number
+             make-rational
+             make-complex-from-real-imag
+             make-complex-from-mag-ang
+             real-part
+             imag-part
+             magnitude
+             angle)
+  (#%require (only racket/base module+ module)
+             (only (submod ".." Section/2.4.3) apply-generic get))
 
-  (module common-library sicp
-    (#%provide put
-               clear-op-type-table
-               attach-tag
-               add
-               sub
-               mul
-               div
-               make-racket-number
-               make-rational
-               make-complex-from-real-imag
-               make-complex-from-mag-ang
-               real-part
-               imag-part
-               magnitude
-               angle)
-    (#%require (only (submod ".." ".." Section/2.4.2) attach-tag)
-               (only (submod ".." ".." Section/2.4.3)
-                     apply-generic
-                     get
-                     put
-                     clear-op-type-table))
+  ;; operations
+  (define (add x y) (apply-generic 'add x y))
+  (define (sub x y) (apply-generic 'sub x y))
+  (define (mul x y) (apply-generic 'mul x y))
+  (define (div x y) (apply-generic 'div x y))
 
-    ;; operations
-    (define (add x y) (apply-generic 'add x y))
-    (define (sub x y) (apply-generic 'sub x y))
-    (define (mul x y) (apply-generic 'mul x y))
-    (define (div x y) (apply-generic 'div x y))
+  ;; constructors
+  (define (make-racket-number n) ((get 'make 'racket-number) n))
+  (define (make-rational n d) ((get 'make 'rational) n d))
+  (define (make-complex-from-real-imag x y) ((get 'make-from-real-imag 'complex) x y))
+  (define (make-complex-from-mag-ang r a) ((get 'make-from-mag-ang 'complex) r a))
 
-    ;; constructors
-    (define (make-racket-number n) ((get 'make 'racket-number) n))
-    (define (make-rational n d) ((get 'make 'rational) n d))
-    (define (make-complex-from-real-imag x y) ((get 'make-from-real-imag 'complex) x y))
-    (define (make-complex-from-mag-ang r a) ((get 'make-from-mag-ang 'complex) r a))
-
-    ;; selectors
-    (define (real-part n) ((get 'real-part '(complex)) n))
-    (define (imag-part n) ((get 'imag-part '(complex)) n))
-    (define (magnitude n) ((get 'magnitude '(complex)) n))
-    (define (angle n) ((get 'angle '(complex)) n)))
+  ;; selectors
+  (define (real-part n) ((get 'real-part '(complex)) n))
+  (define (imag-part n) ((get 'imag-part '(complex)) n))
+  (define (magnitude n) ((get 'magnitude '(complex)) n))
+  (define (angle n) ((get 'angle '(complex)) n))
 
   (module racket-numbers-package sicp
     (#%provide install-racket-numbers-package)
     (#%require (only racket/base λ)
-               (only (submod ".." common-library) attach-tag put))
+               (only (submod ".." ".." Section/2.4.2) attach-tag)
+               (only (submod ".." ".." Section/2.4.3) put))
 
     (define (install-racket-numbers-package)
       (define (tag x) (attach-tag 'racket-number x))
@@ -950,6 +941,8 @@
   (module rational-numbers-package sicp
     (#%provide install-rational-numbers-package)
     (#%require (only racket/base λ)
+               (only (submod ".." ".." Section/2.4.2) attach-tag)
+               (only (submod ".." ".." Section/2.4.3) put)
                (only (submod "sicp2_part1.rkt" Exercise/2.1)
                      make-rat
                      numer
@@ -957,8 +950,7 @@
                      add-rat
                      sub-rat
                      mul-rat
-                     div-rat)
-               (only (submod ".." common-library) attach-tag put))
+                     div-rat))
 
     (define (install-rational-numbers-package)
       (define (tag x) (attach-tag 'rational x))
@@ -972,7 +964,9 @@
   (module complex-numbers-package sicp
     (#%provide install-complex-numbers-package)
     (#%require (only racket/base λ)
+               (only (submod ".." ".." Section/2.4.2) attach-tag)
                (only (submod ".." ".." Section/2.4.3)
+                     put
                      real-part
                      imag-part
                      magnitude
@@ -984,8 +978,7 @@
                      mul-complex
                      div-complex
                      install-rectangular-package
-                     install-polar-package)
-               (only (submod ".." common-library) attach-tag put))
+                     install-polar-package))
 
     (define (install-complex-numbers-package)
       ;; install dependencies
@@ -1016,20 +1009,7 @@
   (module+ test
     (#%require rackunit
                (only (submod "sicp1.rkt" common-utils) tolerance)
-               (only (submod ".." common-library)
-                     clear-op-type-table
-                     add
-                     sub
-                     mul
-                     div
-                     make-racket-number
-                     make-rational
-                     make-complex-from-real-imag
-                     make-complex-from-mag-ang
-                     real-part
-                     imag-part
-                     magnitude
-                     angle))
+               (only (submod ".." ".." Section/2.4.3) clear-op-type-table))
     (display "--> Section/2.5.1\n")
 
     (clear-op-type-table)
