@@ -4,9 +4,9 @@
 #lang racket/base
 
 (module Section/2.4.1 sicp
-  (#%require (only racket/base module*))
+  (#%require (only racket/base module))
 
-  (module* rectangular-package sicp ; by Ben Bitdiddle
+  (module rectangular-package sicp ; by Ben Bitdiddle
     (#%provide real-part
                imag-part
                magnitude
@@ -44,7 +44,7 @@
         (check-within (magnitude z) 5 tolerance)
         (check-within (angle z) 0.927295 tolerance))))
 
-  (module* polar-package sicp ; by Alyssa P. Hacker
+  (module polar-package sicp ; by Alyssa P. Hacker
     (#%provide real-part
                imag-part
                magnitude
@@ -887,6 +887,9 @@
   |#)
 
 (module Section/2.5.1 sicp
+  (#%provide install-racket-numbers-package
+             install-rational-numbers-package
+             install-complex-numbers-package)
   (#%require (only racket/base module+ module))
 
   (module common-library sicp
@@ -956,6 +959,7 @@
                      mul-rat
                      div-rat)
                (only (submod ".." common-library) attach-tag put))
+
     (define (install-rational-numbers-package)
       (define (tag x) (attach-tag 'rational x))
       (put 'add '(rational rational) (λ (x y) (tag (add-rat x y))))
@@ -982,6 +986,7 @@
                      install-rectangular-package
                      install-polar-package)
                (only (submod ".." common-library) attach-tag put))
+
     (define (install-complex-numbers-package)
       ;; install dependencies
       (install-rectangular-package)
@@ -1001,15 +1006,16 @@
       (put 'angle '(complex) angle)
       'complex-numbers-package-installed))
 
+  (#%require (only (submod "." racket-numbers-package)
+                   install-racket-numbers-package)
+             (only (submod "." rational-numbers-package)
+                   install-rational-numbers-package)
+             (only (submod "." complex-numbers-package)
+                   install-complex-numbers-package))
+
   (module+ test
     (#%require rackunit
                (only (submod "sicp1.rkt" common-utils) tolerance)
-               (only (submod ".." racket-numbers-package)
-                     install-racket-numbers-package)
-               (only (submod ".." rational-numbers-package)
-                     install-rational-numbers-package)
-               (only (submod ".." complex-numbers-package)
-                     install-complex-numbers-package)
                (only (submod ".." common-library)
                      clear-op-type-table
                      add
