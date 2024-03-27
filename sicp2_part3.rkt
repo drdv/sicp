@@ -198,7 +198,8 @@
              get
              put
              get-op-type-table
-             clear-op-type-table)
+             clear-op-type-table
+             apply-generic)
   (#%require (only racket/base module+ λ hash-set! hash-ref make-hash hash-clear!)
              (only racket/base local-require submod only-in)
              (only (submod "sicp1.rkt" common-utils) square tolerance)
@@ -442,26 +443,22 @@
     (#%provide make-field
                field->name
                field->value
-               tag-object
-               get-division
-               get-content
-               get
+               attach-tag
                put
-               get-op-type-table
                get-record
                get-record-key
                get-record-salary
                find-employee-record)
     (#%require (only racket/base λ)
                (only (submod "sicp2_part1.rkt" Section/2.2.3) filter)
-               (only (submod ".." ".." Section/2.4.3) get put get-op-type-table))
+               (only (submod ".." ".." Section/2.4.2) attach-tag)
+               (only (submod ".." ".." Section/2.4.3) get put))
 
     (define (make-field field-name field-value)
       (cons field-name field-value))
     (define (field->name field) (car field))
     (define (field->value field) (cdr field))
 
-    (define (tag-object division object) (cons division object))
     (define (get-division tagged-object) (car tagged-object))
     (define (get-content tagged-object) (cdr tagged-object))
 
@@ -469,7 +466,7 @@
       (let* ([division (get-division personal-records-file)]
              [records (get-content personal-records-file)]
              [proc (get 'get-record division)])
-        (tag-object division (proc employee-name records))))
+        (attach-tag division (proc employee-name records))))
 
     (define (get-record-key tagged-record)
       (let* ([division (get-division tagged-record)]
@@ -498,7 +495,7 @@
                      make-field
                      field->name
                      field->value
-                     tag-object
+                     attach-tag
                      put)
                (only (submod "sicp2_part2.rkt" Example/sets-as-unordered-lists)
                      adjoin-set))
@@ -540,7 +537,7 @@
             (make-record "Louis Dumas" "4 Avenue Victor Hugo" 4)
             (make-record "Liam Petit" "5 Rue des Francs-Bourgeois" 5)
             (make-record "Ghost Employee" "Everywhere" 6)))
-    (define personal-records-file (tag-object division-name personal-records))
+    (define personal-records-file (attach-tag division-name personal-records))
 
     (module+ test
       (#%require rackunit)
@@ -559,7 +556,7 @@
                      make-field
                      field->name
                      field->value
-                     tag-object
+                     attach-tag
                      put))
 
     (define division-name 'stockholm)
@@ -609,7 +606,7 @@
                         (make-record "Alexander Svensson" "4 Gamla Stan" 4)
                         (make-record "Ebba Berg" "5 Kungsgatan" 5)
                         (make-record "Ghost Employee" "Everywhere" 6))))
-    (define personal-records-file (tag-object division-name personal-records))
+    (define personal-records-file (attach-tag division-name personal-records))
 
     (module+ test
       (#%require rackunit)
@@ -637,7 +634,7 @@
                      make-field
                      field->name
                      field->value
-                     tag-object
+                     attach-tag
                      put))
 
     (define division-name 'tokyo)
@@ -716,7 +713,7 @@
                         (make-record "Akari Kobayashi" "4 Nakano" 4)
                         (make-record "Chika Ishita" "5 Omotesando" 5)
                         (make-record "Ghost Employee" "Everywhere" 6))))
-    (define personal-records-file (tag-object division-name personal-records))
+    (define personal-records-file (attach-tag division-name personal-records))
 
     (module+ test
       (#%require rackunit)
