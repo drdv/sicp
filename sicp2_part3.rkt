@@ -1085,15 +1085,15 @@
   This exercise requires a simple change but I have to duplicate a lot of code to do it.
   Normally one would rely on a version-control system to avoid such duplication (and yet
   keep both versions of the code) but these exercises are not normal code.
+
+  FIXME: maybe I could adopt a different code organization. Take a look into Units.
   |#
   (#%provide type-tag
              contents
              attach-tag
              apply-generic
              ;; -------------------------------
-             install-racket-numbers-package
-             install-rational-numbers-package
-             install-complex-numbers-package
+             install-generic-arithmetic-package
              ;; -------------------------------
              add
              sub
@@ -1244,6 +1244,11 @@
              (only (submod "." complex-numbers-package)
                    install-complex-numbers-package))
 
+  (define (install-generic-arithmetic-package)
+    (install-racket-numbers-package)
+    (install-rational-numbers-package)
+    (install-complex-numbers-package))
+
   (module+ test
     (#%require rackunit
                (only (submod "sicp1.rkt" common-utils) tolerance)
@@ -1289,6 +1294,80 @@
       (check-within (angle (mul z z)) 1.85459 tolerance)
       (check-equal? (div z z) (make-complex-from-mag-ang 1 0.0)))))
 
+(module Exercise/2.79 sicp
+  (#%provide equ?
+             approx-equ?
+             install-generic-arithmetic-package-equality)
+  (#%require (only racket/base module+ λ)
+             (only (submod ".." Exercise/2.78)
+                   apply-generic
+                   ;; -------------------------------
+                   install-generic-arithmetic-package
+                   ;; -------------------------------
+                   make-rational
+                   make-complex-from-real-imag
+                   make-complex-from-mag-ang
+                   ;; -------------------------------
+                   real-part
+                   imag-part
+                   magnitude
+                   angle)
+             (only (submod ".." Section/2.4.3) get put)
+             (only (submod "sicp2_part1.rkt" Exercise/2.1)
+                   numer
+                   denom
+                   equal-rat?))
+
+  (define (equ? x y) (apply-generic 'equ? x y))
+  (define (approx-equ? x y tol) (apply-generic 'approx-equ? x y tol))
+
+  (define (install-generic-arithmetic-package-equality)
+    (put 'equ? '(racket-number racket-number) (λ (x y) (= x y)))
+    (put 'equ? '(rational rational) (λ (x y) (equal-rat? x y)))
+    (put 'equ? '(complex complex) (λ (x y) (and (= (real-part x) (real-part y))
+                                                (= (imag-part x) (imag-part y)))))
+    (put 'approx-equ? '(racket-number racket-number racket-number)
+         (λ (x y tol)
+           (< (abs (- x y)) tol)))
+    ;; element-wise comparison (could lead to inconsistencies but this is not the point)
+    (put 'approx-equ? '(rational rational racket-number)
+         (λ (x y tol)
+           (and (< (abs (- (numer x) (numer y))) tol)
+                (< (abs (- (denom x) (denom y))) tol))))
+    (put 'approx-equ? '(complex complex racket-number)
+         (λ (x y tol)
+           (and (< (abs (- (real-part x) (real-part y))) tol)
+                (< (abs (- (imag-part x) (imag-part y))) tol))))
+    'generic-arithmetic-package-equality-installed)
+
+  (module+ test
+    (#%require rackunit
+               (only racket/math pi)
+               (only (submod "sicp1.rkt" common-utils) tolerance)
+               (only (submod ".." ".." Section/2.4.3) clear-op-type-table))
+    (display "--> Exercise/2.79\n")
+
+    (clear-op-type-table)
+    (install-generic-arithmetic-package)
+    (install-generic-arithmetic-package-equality)
+
+    (check-true (equ? 4 4))
+    (check-false (equ? 4 5))
+    (check-true (equ? (make-rational 3 5) (make-rational 6 10)))
+    (check-false (equ? (make-rational 3 5) (make-rational 6 11)))
+    (let* ([z1 (make-complex-from-real-imag 3 5)]
+           [z2 (make-complex-from-real-imag 3 6)]
+           [m1 (magnitude z1)]
+           [a1 (angle z1)]
+           [z3 (make-complex-from-mag-ang m1 a1)]
+           [z4 (make-complex-from-mag-ang m1 (+ a1 (* 2 pi)))])
+      (check-true (equ? z1 z1))
+      (check-false (equ? z1 z2))
+      (check-true (equ? z3 z3))
+      (check-false (equ? z3 z4)) ; false due to double precision
+      (check-true (approx-equ? z3 z4 tolerance))
+      (check-true (approx-equ? z1 z3 tolerance)))))
+
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
            (submod ".." Section/2.4.1 polar-package test)
@@ -1303,6 +1382,5 @@
            ;; 2.76: no tests
            (submod ".." Section/2.5.1 test)
            (submod ".." Exercise/2.77 test)
-           (submod ".." Exercise/2.78 test)))
-
-;; TODO: in exercise 2.79 define in addition approx-equ?
+           (submod ".." Exercise/2.78 test)
+           (submod ".." Exercise/2.79 test)))
