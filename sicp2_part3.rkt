@@ -918,10 +918,10 @@
   (define (make-complex-from-mag-ang r a) ((get 'make-from-mag-ang 'complex) r a))
 
   ;; selectors
-  (define (real-part n) ((get 'real-part '(complex)) n))
-  (define (imag-part n) ((get 'imag-part '(complex)) n))
-  (define (magnitude n) ((get 'magnitude '(complex)) n))
-  (define (angle n) ((get 'angle '(complex)) n))
+  (define (real-part n) (apply-generic 'real-part n))
+  (define (imag-part n) (apply-generic 'imag-part n))
+  (define (magnitude n) (apply-generic 'magnitude n))
+  (define (angle n) (apply-generic 'angle n))
 
   (module racket-numbers-package sicp
     (#%provide install-racket-numbers-package)
@@ -1042,6 +1042,41 @@
       (check-within (angle (mul z z)) 1.85459 tolerance)
       (check-equal? (div z z) (make-complex-from-mag-ang 1 0.0)))))
 
+(module Exercise/2.77 sicp
+  (#%require (only racket/base module+)
+             (only (submod ".." Section/2.5.1)
+                   install-complex-numbers-package
+                   make-complex-from-mag-ang
+                   magnitude))
+
+  (module+ test
+    (#%require rackunit
+               (only (submod "sicp1.rkt" common-utils) tolerance))
+    (display "--> Exercise/2.77\n")
+
+    (install-complex-numbers-package)
+    (check-equal? (magnitude (make-complex-from-mag-ang 5 1)) 5)
+    #|
+    0. (magnitude (complex polar 5 . 1))
+    1. (apply-generic 'magnitude (complex polar 5 . 1))
+       This executes the procedure stored at (cons 'magnitude '(complex)) with
+       (polar 5 . 1), as an argument i.e., (cdr (complex polar 5 . 1)).
+    2. (define magnitude-of-complex-number (get 'magnitude '(complex)))
+    3. (magnitude-of-complex-number (polar 5 . 1))
+    4. (apply-generic 'magnitude (polar 5 . 1))
+       This executes the procedure stored at (cons 'magnitude '(polar)). Note that in
+       install-complex-numbers-package we have installed the polar-package (from
+       Section/2.4.1) as dependency and this is what provides at the
+       (cons 'magnitude '(polar)) key the procedure used to find the magnitude of
+       complex numbers in polar form.
+    5. (define magnitude-of-complex-number-in-polar-form (get 'magnitude '(polar)))
+    6. (magnitude-of-complex-number-in-polar-form (cdr (polar 5 . 1)))
+       This applies the procedure (define (magnitude z) (car z)) from the polar-package
+       resulting in a 5
+
+    Hence, apply-generic is invoked twice (in steps 1 and 4 above).
+    |#))
+
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
            (submod ".." Section/2.4.1 polar-package test)
@@ -1054,4 +1089,5 @@
            (submod ".." Exercise/2.74 test)
            (submod ".." Exercise/2.75 test)
            ;; 2.76: no tests
-           (submod ".." Section/2.5.1 test)))
+           (submod ".." Section/2.5.1 test)
+           (submod ".." Exercise/2.77 test)))
