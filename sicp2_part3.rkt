@@ -1312,7 +1312,7 @@
                    imag-part
                    magnitude
                    angle)
-             (only (submod ".." Section/2.4.3) get put)
+             (only (submod ".." Section/2.4.3) put)
              (only (submod "sicp2_part1.rkt" Exercise/2.1)
                    numer
                    denom
@@ -1329,7 +1329,6 @@
     (put 'approx-equ? '(racket-number racket-number racket-number)
          (λ (x y tol)
            (< (abs (- x y)) tol)))
-    ;; element-wise comparison (could lead to inconsistencies but this is not the point)
     (put 'approx-equ? '(rational rational racket-number)
          (λ (x y tol)
            (and (< (abs (- (numer x) (numer y))) tol)
@@ -1368,6 +1367,51 @@
       (check-true (approx-equ? z3 z4 tolerance))
       (check-true (approx-equ? z1 z3 tolerance)))))
 
+(module Exercise/2.80 sicp
+  (#%provide =zero?
+             install-generic-arithmetic-package-zero)
+  (#%require (only racket/base module+ λ)
+             (only (submod ".." Exercise/2.78)
+                   attach-tag
+                   apply-generic
+                   ;; -------------------------------
+                   install-generic-arithmetic-package
+                   ;; -------------------------------
+                   make-rational
+                   make-complex-from-real-imag
+                   make-complex-from-mag-ang)
+             (only (submod ".." Exercise/2.79)
+                   equ?
+                   install-generic-arithmetic-package-equality)
+             (only (submod ".." Section/2.4.3) put)
+             (only (submod "sicp2_part1.rkt" Exercise/2.1) numer))
+
+  (define (=zero? x) (apply-generic '=zero? x))
+
+  (define (install-generic-arithmetic-package-zero)
+    (put '=zero? '(racket-number) (λ (x) (equ? x 0)))
+    (put '=zero? '(rational) (λ (x) (equ? (numer x) 0)))
+    (put '=zero? '(complex) (λ (x) (equ? (attach-tag 'complex x)
+                                         (make-complex-from-real-imag 0 0))))
+    'generic-arithmetic-package-=zero-installed)
+
+  (module+ test
+    (#%require rackunit
+               (only (submod ".." ".." Section/2.4.3) clear-op-type-table))
+    (display "--> Exercise/2.80\n")
+
+    (clear-op-type-table)
+    (install-generic-arithmetic-package)
+    (install-generic-arithmetic-package-equality)
+    (install-generic-arithmetic-package-zero)
+
+    (check-true (=zero? 0))
+    (check-false (=zero? 1))
+    (check-true (=zero? (make-rational 0 1)))
+    (check-false (=zero? (make-rational 1 1)))
+    (check-true (=zero? (make-complex-from-real-imag 0 0)))
+    (check-false (=zero? (make-complex-from-real-imag 1 1)))))
+
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
            (submod ".." Section/2.4.1 polar-package test)
@@ -1383,4 +1427,5 @@
            (submod ".." Section/2.5.1 test)
            (submod ".." Exercise/2.77 test)
            (submod ".." Exercise/2.78 test)
-           (submod ".." Exercise/2.79 test)))
+           (submod ".." Exercise/2.79 test)
+           (submod ".." Exercise/2.80 test)))
