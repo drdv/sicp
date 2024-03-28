@@ -890,14 +890,17 @@
   (#%provide install-racket-numbers-package
              install-rational-numbers-package
              install-complex-numbers-package
+             ;; -------------------------------
              add
              sub
              mul
              div
+             ;; -------------------------------
              make-racket-number
              make-rational
              make-complex-from-real-imag
              make-complex-from-mag-ang
+             ;; -------------------------------
              real-part
              imag-part
              magnitude
@@ -1077,6 +1080,215 @@
     Hence, apply-generic is invoked twice (in steps 1 and 4 above).
     |#))
 
+(module Exercise/2.78 sicp
+  #|
+  This exercise requires a simple change but I have to duplicate a lot of code to do it.
+  Normally one would rely on a version-control system to avoid such duplication (and yet
+  keep both versions of the code) but these exercises are not normal code.
+  |#
+  (#%provide type-tag
+             contents
+             attach-tag
+             apply-generic
+             ;; -------------------------------
+             install-racket-numbers-package
+             install-rational-numbers-package
+             install-complex-numbers-package
+             ;; -------------------------------
+             add
+             sub
+             mul
+             div
+             ;; -------------------------------
+             make-racket-number
+             make-rational
+             make-complex-from-real-imag
+             make-complex-from-mag-ang
+             ;; -------------------------------
+             real-part
+             imag-part
+             magnitude
+             angle)
+  (#%require (only racket/base module+ module)
+             (only (submod ".." Section/2.4.3) get)
+             ;; constructors can be reused
+             (only (submod ".." Section/2.5.1)
+                   make-racket-number
+                   make-rational
+                   make-complex-from-real-imag
+                   make-complex-from-mag-ang))
+
+  ;; this module contains all the necessary changes
+  (module common-library sicp
+    (#%provide type-tag
+               contents
+               attach-tag)
+
+    (define (attach-tag type-tag contents)
+      (if (number? contents)
+          contents
+          (cons type-tag contents)))
+
+    (define (type-tag datum)
+      (cond [(number? datum) 'racket-number]
+            [(pair? datum) (car datum)]
+            [else (error "Bad tagged datum: TYPE-TAG" datum)]))
+
+    (define (contents datum)
+      (cond [(number? datum) datum]
+            [(pair? datum) (cdr datum)]
+            [else (error "Bad tagged datum: CONTENTS" datum)])))
+
+  (#%require (only (submod "." common-library) attach-tag type-tag contents))
+
+  (define (apply-generic op . args)
+    (let* ([type-tags (map type-tag args)]
+           [proc (get op type-tags)])
+      (if proc
+          (apply proc (map contents args))
+          (error "No method for these types: APPLY-GENERIC"
+                 (list op type-tags)))))
+
+  ;; operations
+  (define (add x y) (apply-generic 'add x y))
+  (define (sub x y) (apply-generic 'sub x y))
+  (define (mul x y) (apply-generic 'mul x y))
+  (define (div x y) (apply-generic 'div x y))
+
+  ;; selectors
+  (define (real-part n) (apply-generic 'real-part n))
+  (define (imag-part n) (apply-generic 'imag-part n))
+  (define (magnitude n) (apply-generic 'magnitude n))
+  (define (angle n) (apply-generic 'angle n))
+
+  (module racket-numbers-package sicp
+    (#%provide install-racket-numbers-package)
+    (#%require (only racket/base λ)
+               (only (submod ".." common-library) attach-tag)
+               (only (submod ".." ".." Section/2.4.3) put))
+
+    (define (install-racket-numbers-package)
+      (define (tag x) (attach-tag 'racket-number x))
+      (put 'add '(racket-number racket-number) (λ (x y) (tag (+ x y))))
+      (put 'sub '(racket-number racket-number) (λ (x y) (tag (- x y))))
+      (put 'mul '(racket-number racket-number) (λ (x y) (tag (* x y))))
+      (put 'div '(racket-number racket-number) (λ (x y) (tag (/ x y))))
+      (put 'make 'racket-number (λ (x) (tag x)))
+      'racket-numbers-package-installed))
+
+  (module rational-numbers-package sicp
+    (#%provide install-rational-numbers-package)
+    (#%require (only racket/base λ)
+               (only (submod ".." common-library) attach-tag)
+               (only (submod ".." ".." Section/2.4.3) put)
+               (only (submod "sicp2_part1.rkt" Exercise/2.1)
+                     make-rat
+                     numer
+                     denom
+                     add-rat
+                     sub-rat
+                     mul-rat
+                     div-rat))
+
+    (define (install-rational-numbers-package)
+      (define (tag x) (attach-tag 'rational x))
+      (put 'add '(rational rational) (λ (x y) (tag (add-rat x y))))
+      (put 'sub '(rational rational) (λ (x y) (tag (sub-rat x y))))
+      (put 'mul '(rational rational) (λ (x y) (tag (mul-rat x y))))
+      (put 'div '(rational rational) (λ (x y) (tag (div-rat x y))))
+      (put 'make 'rational (λ (n d) (tag (make-rat n d))))
+      'rational-numbers-package-installed))
+
+  (module complex-numbers-package sicp
+    (#%provide install-complex-numbers-package)
+    (#%require (only racket/base λ)
+               (only (submod ".." common-library) attach-tag)
+               (only (submod ".." ".." Section/2.4.3)
+                     put
+                     real-part
+                     imag-part
+                     magnitude
+                     angle
+                     make-from-real-imag
+                     make-from-mag-ang
+                     add-complex
+                     sub-complex
+                     mul-complex
+                     div-complex
+                     install-rectangular-package
+                     install-polar-package))
+
+    (define (install-complex-numbers-package)
+      ;; install dependencies
+      (install-rectangular-package)
+      (install-polar-package)
+
+      (define (tag z) (attach-tag 'complex z))
+      (put 'add '(complex complex) (λ (z1 z2) (tag (add-complex z1 z2))))
+      (put 'sub '(complex complex) (λ (z1 z2) (tag (sub-complex z1 z2))))
+      (put 'mul '(complex complex) (λ (z1 z2) (tag (mul-complex z1 z2))))
+      (put 'div '(complex complex) (λ (z1 z2) (tag (div-complex z1 z2))))
+      (put 'make-from-real-imag 'complex (λ (x y) (tag (make-from-real-imag x y))))
+      (put 'make-from-mag-ang 'complex (λ (r a) (tag (make-from-mag-ang r a))))
+
+      (put 'real-part '(complex) real-part)
+      (put 'imag-part '(complex) imag-part)
+      (put 'magnitude '(complex) magnitude)
+      (put 'angle '(complex) angle)
+      'complex-numbers-package-installed))
+
+  (#%require (only (submod "." racket-numbers-package)
+                   install-racket-numbers-package)
+             (only (submod "." rational-numbers-package)
+                   install-rational-numbers-package)
+             (only (submod "." complex-numbers-package)
+                   install-complex-numbers-package))
+
+  (module+ test
+    (#%require rackunit
+               (only (submod "sicp1.rkt" common-utils) tolerance)
+               (only (submod ".." ".." Section/2.4.3) clear-op-type-table))
+    (display "--> Exercise/2.78\n")
+
+    (clear-op-type-table)
+    (install-racket-numbers-package)
+    (install-rational-numbers-package)
+    (install-complex-numbers-package)
+
+    ;; verify that racket numbers can be used directly
+    (let ([x 10]
+          [y 5])
+      (check-equal? (add x y) 15)
+      (check-equal? (sub x y) 5)
+      (check-equal? (mul x y) 50)
+      (check-equal? (div x y) 2))
+
+    ;; we can still use make-racket-number
+    (let ([constructor make-racket-number])
+      (let ([x (constructor 10)]
+            [y (constructor 5)])
+        (check-equal? (add x y) (constructor 15))
+        (check-equal? (sub x y) (constructor 5))
+        (check-equal? (mul x y) (constructor 50))
+        (check-equal? (div x y) (constructor 2))))
+
+    (let ([constructor make-rational])
+      (let ([x (constructor 10 3)]
+            [y (constructor 6 4)])
+        (check-equal? (add x y) (constructor 29 6))
+        (check-equal? (sub x y) (constructor 11 6))
+        (check-equal? (mul x y) (constructor 5 1))
+        (check-equal? (div x y) (constructor 20 9))))
+
+    (let ([z (make-complex-from-real-imag 3 4)])
+      (check-equal? (add z z) (make-complex-from-real-imag 6 8))
+      (check-equal? (sub z z) (make-complex-from-real-imag 0 0))
+      (check-equal? (real-part z) 3)
+      (check-equal? (imag-part z) 4)
+      (check-equal? (magnitude (mul z z)) 25)
+      (check-within (angle (mul z z)) 1.85459 tolerance)
+      (check-equal? (div z z) (make-complex-from-mag-ang 1 0.0)))))
+
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
            (submod ".." Section/2.4.1 polar-package test)
@@ -1090,4 +1302,7 @@
            (submod ".." Exercise/2.75 test)
            ;; 2.76: no tests
            (submod ".." Section/2.5.1 test)
-           (submod ".." Exercise/2.77 test)))
+           (submod ".." Exercise/2.77 test)
+           (submod ".." Exercise/2.78 test)))
+
+;; TODO: in exercise 2.79 define in addition approx-equ?
