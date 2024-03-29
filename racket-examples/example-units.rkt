@@ -1,10 +1,10 @@
 #|
 Simple example of using Units https://docs.racket-lang.org/guide/units.html
 |#
-#lang racket
+#lang racket/base
 
-(module my-units racket
-  (provide procedure-parameters^
+(module my-units sicp
+  (#%provide procedure-parameters^
            ;; -----------------------------------------------------------
            ;; two implementations of the procedure-parameters^ signature
            ;; -----------------------------------------------------------
@@ -19,6 +19,7 @@ Simple example of using Units https://docs.racket-lang.org/guide/units.html
            ;; another library
            ;; -----------------------------------------------------------
            other-library@)
+  (#%require (only racket/unit define-signature define-unit import export))
 
   (define-signature procedure-parameters^ (f g))
   (define-unit procedure-parameters-v1@
@@ -53,30 +54,33 @@ Simple example of using Units https://docs.racket-lang.org/guide/units.html
     (define (f x) (parameter-procedure x))))
 
 (module m1 racket
-  (provide f g h p)
-  (require (only-in (submod ".." my-units)
-                    procedure-parameters-v1@
-                    parameterized-library@))
+  (#%provide f g h p)
+  (#%require (only racket/unit define-values/invoke-unit/infer)
+             (only (submod ".." my-units)
+                   procedure-parameters-v1@
+                   parameterized-library@))
   (define-values/invoke-unit/infer procedure-parameters-v1@)
   (define-values/invoke-unit/infer parameterized-library@)
   (define (p x)
     (+ (h x) 1)))
 
-(module m2 racket
-  (provide f g h p)
-  (require (only-in (submod ".." my-units)
-                    procedure-parameters-v2@
-                    parameterized-library@))
+(module m2 sicp
+  (#%provide f g h p)
+  (#%require (only racket/unit define-values/invoke-unit/infer)
+             (only (submod ".." my-units)
+                   procedure-parameters-v2@
+                   parameterized-library@))
   (define-values/invoke-unit/infer procedure-parameters-v2@)
   (define-values/invoke-unit/infer parameterized-library@)
   (define (p x)
     (+ (h x) 1)))
 
-(module m3 racket
-  (provide f)
-  (require (only-in (submod ".." my-units) other-library@))
+(module m3 sicp
+  (#%provide f)
+  (#%require (only racket/unit define-values/invoke-unit/infer)
+             (only (submod ".." my-units) other-library@))
 
-  ;; we can simply define the specification manually
+  ;; we can define the specification manually
   (define (parameter-procedure x) (+ x 1))
   (define-values/invoke-unit/infer other-library@))
 
