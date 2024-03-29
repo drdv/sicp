@@ -1,4 +1,6 @@
-;; Simple example of using Units https://docs.racket-lang.org/guide/units.html
+#|
+Simple example of using Units https://docs.racket-lang.org/guide/units.html
+|#
 #lang racket
 
 (module my-units racket
@@ -12,11 +14,13 @@
            ;; a library using the procedure-parameters^ signature
            ;; -----------------------------------------------------------
            parameterized-library^
-           parameterized-library@)
+           parameterized-library@
+           ;; -----------------------------------------------------------
+           ;; another library
+           ;; -----------------------------------------------------------
+           other-library@)
 
-  (define-signature procedure-parameters^
-    (f g))
-
+  (define-signature procedure-parameters^ (f g))
   (define-unit procedure-parameters-v1@
     (import)
     (export procedure-parameters^)
@@ -31,15 +35,22 @@
     (define (f x) (* 3 x))
     (define (g x) (* 4 x)))
 
-  (define-signature parameterized-library^
-    (h))
-
+  (define-signature parameterized-library^ (h))
   (define-unit parameterized-library@
     (import procedure-parameters^)
     (export parameterized-library^)
 
     (define (h x) (+ (f x)
-                     (g x)))))
+                     (g x))))
+
+  (define-signature other-library-parameter^ (parameter-procedure))
+  (define-signature other-library^ (f))
+
+  (define-unit other-library@
+    (import other-library-parameter^)
+    (export other-library^)
+
+    (define (f x) (parameter-procedure x))))
 
 (module m1 racket
   (provide f g h p)
@@ -61,6 +72,14 @@
   (define (p x)
     (+ (h x) 1)))
 
+(module m3 racket
+  (provide f)
+  (require (only-in (submod ".." my-units) other-library@))
+
+  ;; we can simply define the specification manually
+  (define (parameter-procedure x) (+ x 1))
+  (define-values/invoke-unit/infer other-library@))
+
 (require (rename-in (submod "." m1)
                     [p p1]
                     [f f1]
@@ -70,7 +89,9 @@
                     [p p2]
                     [f f2]
                     [g g2]
-                    [h h2]))
+                    [h h2])
+         (rename-in (submod "." m3)
+                    [f f3]))
 
 (f1 3)
 (g1 3)
@@ -81,3 +102,5 @@
 (g2 3)
 (h2 3)
 (p2 3)
+
+(f3 3)
