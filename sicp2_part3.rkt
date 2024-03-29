@@ -1083,7 +1083,7 @@
 (module Exercise/2.78 sicp
   #|
   This exercise requires a simple change but I have to duplicate a lot of code to do it.
-  NOTE: I can avoid such code duplication using racket Units.
+  Such code duplication could be avoided using racket Units.
   |#
   (#%provide type-tag
              contents
