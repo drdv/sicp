@@ -1083,10 +1083,7 @@
 (module Exercise/2.78 sicp
   #|
   This exercise requires a simple change but I have to duplicate a lot of code to do it.
-  Normally one would rely on a version-control system to avoid such duplication (and yet
-  keep both versions of the code) but these exercises are not normal code.
-
-  FIXME: maybe I could adopt a different code organization. Take a look into Units.
+  NOTE: I can avoid such code duplication using racket Units.
   |#
   (#%provide type-tag
              contents
