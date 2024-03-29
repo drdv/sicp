@@ -4,6 +4,8 @@ Simple example of using Units https://docs.racket-lang.org/guide/units.html
 #lang racket/base
 
 (module my-units sicp
+  (#%require (only racket/base λ))
+
   (#%provide procedure-parameters^
            ;; -----------------------------------------------------------
            ;; two implementations of the procedure-parameters^ signature
@@ -41,8 +43,8 @@ Simple example of using Units https://docs.racket-lang.org/guide/units.html
     (import procedure-parameters^)
     (export parameterized-library^)
 
-    (define (h x) (+ (f x)
-                     (g x))))
+    (define h (λ (x) (+ (f x)
+                        (g x)))))
 
   (define-signature other-library-parameter^ (parameter-procedure))
   (define-signature other-library^ (f))
