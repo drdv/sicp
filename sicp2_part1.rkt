@@ -2064,8 +2064,8 @@
 
     ; return #t if the new-cell threatens any of the existing queens on the board
     (define (threatens? new-cell board)
-      ;; FIXME: I have to pass (λ (x y) (or x y)) because there is a problem when
-      ;; directly passing `or`. Maybe this is because `or` is a special form?
+      ;; NOTE: I have to pass (λ (x y) (or x y)) because or/and are macros, see
+      ;; https://stackoverflow.com/a/5859945
       (accumulate (λ (x y) (or x y)) #f
                   (map (λ (cell)
                          (visible-cells cell new-cell))

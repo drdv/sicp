@@ -1296,7 +1296,8 @@
   (#%provide put-coercion
              get-coercion
              clear-coercion-table
-             get-coercion-table)
+             get-coercion-table
+             install-coercion-racket-number->complex)
   (#%require (only racket/base module+
                    λ
                    format
@@ -1309,16 +1310,14 @@
              (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
              (only (submod ".." Exercise/2.78) type-tag contents)
              ;; to partially satisfy the generic-arithmetic-package-imports^
-             (only (submod ".." Section/2.4.3) get put)
+             (only (submod ".." Section/2.4.3) get put clear-op-type-table)
              (only (submod ".." Exercise/2.78) attach-tag))
 
   (define COERCION-TABLE (make-hash))
   (define (put-coercion type1 type2 item)
     (hash-set! COERCION-TABLE (cons type1 type2) item))
   (define (get-coercion type1 type2)
-    (let ([proc (hash-ref COERCION-TABLE (cons type1 type2) #f)])
-      (display (format "~a -> ~a: ~a\n" type1 type2 proc))
-      proc))
+    (hash-ref COERCION-TABLE (cons type1 type2) #f))
 
   (define (clear-coercion-table)
     (hash-clear! COERCION-TABLE))
@@ -1354,10 +1353,13 @@
     (display "-------------------- exp --------------------\n")
     (apply-generic 'exp x y))
 
-  ;; this is an addition to the racket-numbers-package
+  #|
+  This is an addition to the racket-numbers-package. Note that in the book they add a
+  tag (cons 'racket-number (expt x y)) but I use the code from Exercise/2.78 where we
+  don't need tags for racket numbers.
+  |#
   (define (install-racket-number-exp)
-    (put 'exp '(racket-number racket-number) (λ (x y)
-                                               (cons 'racket-number (expt x y)))))
+    (put 'exp '(racket-number racket-number) (λ (x y) (expt x y))))
 
   (define (install-coercion-racket-number->complex)
     (put-coercion 'racket-number
@@ -1387,6 +1389,8 @@
     (#%require rackunit)
     (display "--> Exercise/2.81\n")
 
+    (clear-op-type-table)
+    (clear-coercion-table)
     (install-generic-arithmetic-package)
     (install-racket-number-exp)
     (install-coercion-racket-number->complex)
@@ -1398,6 +1402,139 @@
                                     (make-complex-from-real-imag 1 1))))
     (check-exn exn:fail? (λ () (exp 1
                                     (make-complex-from-real-imag 1 1))))))
+
+(module Exercise/2.82 sicp
+  (#%require (only racket/base module+ λ format let-values exn:fail?)
+             (only (submod "sicp2_part1.rkt" Section/2.2.3) accumulate)
+             (only (submod "sicp2_part2.rkt" Example/sets-as-unordered-lists)
+                   adjoin-set)
+             (only racket/unit define-values/invoke-unit/infer)
+             (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
+             (only (submod ".." Exercise/2.79)
+                   equ?
+                   install-generic-arithmetic-package-equality)
+             (only (submod ".." Exercise/2.81)
+                   get-coercion
+                   clear-coercion-table
+                   install-coercion-racket-number->complex)
+             (only (submod ".." Exercise/2.78) type-tag contents)
+             ;; to partially satisfy the generic-arithmetic-package-imports^
+             (only (submod ".." Section/2.4.3)
+                   get
+                   put
+                   clear-op-type-table)
+             (only (submod ".." Exercise/2.78) attach-tag))
+
+  #|
+  Below I limit myself to generalizing apply-generic according to the strategy given
+  in the exercise, i.e., attempt to coerce all arguments to the type of the first
+  argument and if this is not possble attempt to coerce all arguments to the type of the
+  second argument etc. A better strategy would be developed in the next exercises.
+
+  As an example demonstrating that our strategy is not general enough consider
+  (add3 1 2 3), where add3 is defined only for complex numbers. Clearly, there is no
+  way for our strategy to identify 'complex as a valid target type for coercion even
+  though a racket-number->complex conversion is defined. See end of test section for
+  verification.
+  |#
+
+  ;; Return coercion procedures for a given target type.
+  (define (get-coercion-procedures target-type types)
+    (cond [(null? types) '()]
+          [else (cons (if (eq? (car types) target-type)
+                          (λ (x) x)
+                          (get-coercion (car types) target-type))
+                      (get-coercion-procedures target-type (cdr types)))]))
+
+  (define (all-defined lst)
+    (accumulate (lambda (x y) (and x y)) #t lst))
+
+  ;; Return a valid coercion target type and the associated coercion procedures.
+  (define (get-vaild-coercion-procedures all-types)
+    (define (helper candidate-types)
+      (if (null? candidate-types)
+          (values #f #f)
+          (let ([procedures (get-coercion-procedures (car candidate-types) all-types)])
+            (if (all-defined procedures)
+                (values (car candidate-types) procedures)
+                (helper (cdr candidate-types))))))
+    (helper all-types))
+
+  (define (apply-generic op . args)
+    (let ([type-tags (map type-tag args)])
+      (let ([proc (get op type-tags)])
+        (display (format "[~a] ~a\n" op args))
+        (display (format "type-tags: ~a\n" type-tags))
+        (display (format "proc: ~a\n" proc))
+        (display "---------------------------------------------\n")
+        (if proc
+            (apply proc (map contents args))
+            (if (= 1 (length (accumulate adjoin-set '() type-tags)))
+                (error "Same types: no progress is possible with current strategy.")
+                (let-values ([(target-type coercion-procedures)
+                              (get-vaild-coercion-procedures type-tags)])
+                  (display (format "[~a] ~a\n" target-type coercion-procedures))
+                  (display "=============================================\n")
+                  (if coercion-procedures
+                      (apply apply-generic
+                             op
+                             (map (λ (f x) (f x)) coercion-procedures args))
+                      (error "No method for these types"
+                             (list op type-tags)))))))))
+
+  (define-values/invoke-unit/infer generic-arithmetic-package@)
+
+  (define (add3 x y z)
+    (apply-generic 'add3 x y z))
+
+  ;; this is an addition to the complex-numbers-package
+  (define (install-complex-numbers-add3)
+    (define (tag z) (attach-tag 'complex z))
+    (put 'add3 '(complex complex complex) (λ (x y z)
+                                            (add (add (tag x) (tag y)) (tag z)))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.82\n")
+
+    (clear-op-type-table)
+    (clear-coercion-table)
+    (install-generic-arithmetic-package)
+    (install-complex-numbers-add3)
+    (install-coercion-racket-number->complex)
+    (install-generic-arithmetic-package-equality)
+
+    (check-true
+     (all-defined
+      (get-coercion-procedures 'complex '(racket-number racket-number))))
+
+    (check-false
+     (all-defined
+      (get-coercion-procedures 'racket-number '(racket-number complex racket-number))))
+
+    (check-false
+     (all-defined
+      (get-coercion-procedures 'missing '(racket-number complex racket-number))))
+
+    (check-false
+     (all-defined
+      (get-coercion-procedures 'racket-number '(missing complex racket-number))))
+
+    (let-values ([(target-type coercion-procedures)
+                  (get-vaild-coercion-procedures '(racket-number complex))])
+      (check-eq? target-type 'complex))
+
+    (let ([x (make-complex-from-real-imag 1 2)]
+          [y (make-complex-from-real-imag 3 4)]
+          [z (make-complex-from-real-imag 5 6)])
+      (check-true (equ? (add3 x y z)
+                        (make-complex-from-real-imag 9 12)))
+      (check-true (equ? (add3 x y 3)
+                        (make-complex-from-real-imag 7 6)))
+      (check-true (equ? (add3 x 2 3)
+                        (make-complex-from-real-imag 6 2)))
+      ;; Demonstrate a limitation of our strategy - complex cannot be identified here
+      (check-exn exn:fail? (λ () (add3 1 2 3))))))
 
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
@@ -1416,4 +1553,5 @@
            (submod ".." Exercise/2.78 test)
            (submod ".." Exercise/2.79 test)
            (submod ".." Exercise/2.80 test)
-           (submod ".." Exercise/2.81 test)))
+           (submod ".." Exercise/2.81 test)
+           (submod ".." Exercise/2.82 test)))
