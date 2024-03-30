@@ -1108,7 +1108,7 @@
              (only (submod ".." Section/2.4.3) put))
 
   ;; this module contains all the necessary changes
-  (module common-library sicp
+  (module necessary-changes sicp
     (#%provide type-tag
                contents
                attach-tag)
@@ -1128,7 +1128,7 @@
             [(pair? datum) (cdr datum)]
             [else (error "Bad tagged datum: CONTENTS" datum)])))
 
-  (#%require (only (submod "." common-library) attach-tag type-tag contents))
+  (#%require (only (submod "." necessary-changes) attach-tag type-tag contents))
 
   (define (apply-generic op . args)
     (let* ([type-tags (map type-tag args)]
