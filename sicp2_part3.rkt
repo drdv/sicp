@@ -222,7 +222,8 @@
   (define (put op type item)
     (hash-set! OP-TYPE-TABLE (cons op type) item))
   (define (get op type)
-    (hash-ref OP-TYPE-TABLE (cons op type)))
+    ;; #f is returned as a failure result
+    (hash-ref OP-TYPE-TABLE (cons op type) #f))
 
   (define (clear-op-type-table)
     (hash-clear! OP-TYPE-TABLE))
@@ -955,15 +956,6 @@
     (import generic-arithmetic-package-imports^)
     (export generic-arithmetic-package-exports^)
 
-    (define (install-rational-numbers-package)
-      (define (tag x) (attach-tag 'rational x))
-      (put 'add '(rational rational) (λ (x y) (tag (add-rat x y))))
-      (put 'sub '(rational rational) (λ (x y) (tag (sub-rat x y))))
-      (put 'mul '(rational rational) (λ (x y) (tag (mul-rat x y))))
-      (put 'div '(rational rational) (λ (x y) (tag (div-rat x y))))
-      (put 'make 'rational (λ (n d) (tag (make-rat n d))))
-      'rational-numbers-package-installed)
-
     (define (install-racket-numbers-package)
       (define (tag x) (attach-tag 'racket-number x))
       (put 'add '(racket-number racket-number) (λ (x y) (tag (+ x y))))
@@ -972,6 +964,15 @@
       (put 'div '(racket-number racket-number) (λ (x y) (tag (/ x y))))
       (put 'make 'racket-number (λ (x) (tag x)))
       'racket-numbers-package-installed)
+
+    (define (install-rational-numbers-package)
+      (define (tag x) (attach-tag 'rational x))
+      (put 'add '(rational rational) (λ (x y) (tag (add-rat x y))))
+      (put 'sub '(rational rational) (λ (x y) (tag (sub-rat x y))))
+      (put 'mul '(rational rational) (λ (x y) (tag (mul-rat x y))))
+      (put 'div '(rational rational) (λ (x y) (tag (div-rat x y))))
+      (put 'make 'rational (λ (n d) (tag (make-rat n d))))
+      'rational-numbers-package-installed)
 
     (define (install-complex-numbers-package)
       ;; install dependencies
@@ -995,7 +996,8 @@
     (define (install-generic-arithmetic-package)
       (install-racket-numbers-package)
       (install-rational-numbers-package)
-      (install-complex-numbers-package))
+      (install-complex-numbers-package)
+      'generic-arithmetic-package-installed)
 
     ;; operations
     (define (add x y) (apply-generic 'add x y))
@@ -1290,6 +1292,113 @@
     (check-true (=zero? (make-complex-from-real-imag 0 0)))
     (check-false (=zero? (make-complex-from-real-imag 1 1)))))
 
+(module Exercise/2.81 sicp
+  (#%provide put-coercion
+             get-coercion
+             clear-coercion-table
+             get-coercion-table)
+  (#%require (only racket/base module+
+                   λ
+                   format
+                   hash-set!
+                   hash-ref
+                   make-hash
+                   hash-clear!
+                   exn:fail?)
+             (only racket/unit define-values/invoke-unit/infer)
+             (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
+             (only (submod ".." Exercise/2.78) type-tag contents)
+             ;; to partially satisfy the generic-arithmetic-package-imports^
+             (only (submod ".." Section/2.4.3) get put)
+             (only (submod ".." Exercise/2.78) attach-tag))
+
+  (define COERCION-TABLE (make-hash))
+  (define (put-coercion type1 type2 item)
+    (hash-set! COERCION-TABLE (cons type1 type2) item))
+  (define (get-coercion type1 type2)
+    (let ([proc (hash-ref COERCION-TABLE (cons type1 type2) #f)])
+      (display (format "~a -> ~a: ~a\n" type1 type2 proc))
+      proc))
+
+  (define (clear-coercion-table)
+    (hash-clear! COERCION-TABLE))
+  (define (get-coercion-table)
+    COERCION-TABLE)
+
+  ;; NOTE: this is the modified version of apply-generic as per Task C
+  ;;       it completes the implementation of generic-arithmetic-package-imports^
+  (define (apply-generic op . args)
+    (display "apply-generic\n")
+    (let ([type-tags (map type-tag args)])
+      (let ([proc (get op type-tags)])
+        (if proc
+            (apply proc (map contents args))
+            (let ([type1 (car type-tags)]
+                  [type2 (cadr type-tags)])
+              (if (and (= (length args) 2)
+                       (not (eq? type1 type2)))
+                  (let ([a1 (car args)]
+                        [a2 (cadr args)])
+                    (let ([t1->t2 (get-coercion type1 type2)]
+                          [t2->t1 (get-coercion type2 type1)])
+                      (cond [t1->t2 (apply-generic op (t1->t2 a1) a2)]
+                            [t2->t1 (apply-generic op a1 (t2->t1 a2))]
+                            [else (error "No method for these types"
+                                         (list op type-tags))])))
+                  (error "No method for these types"
+                         (list op type-tags))))))))
+
+  (define-values/invoke-unit/infer generic-arithmetic-package@)
+
+  (define (exp x y)
+    (display "-------------------- exp --------------------\n")
+    (apply-generic 'exp x y))
+
+  ;; this is an addition to the racket-numbers-package
+  (define (install-racket-number-exp)
+    (put 'exp '(racket-number racket-number) (λ (x y)
+                                               (cons 'racket-number (expt x y)))))
+
+  (define (install-coercion-racket-number->complex)
+    (put-coercion 'racket-number
+                  'complex
+                  (λ (n) (make-complex-from-real-imag (contents n) 0))))
+
+  (define (install-self-type-coercion)
+    (put-coercion 'racket-number 'racket-number (λ (x) x))
+    (put-coercion 'complex 'complex (λ (x) x)))
+
+  #|
+  Task A:
+  With the suggestion of Louis Reasoner, evaluating exp with two complex numbers results
+  in an infinite loop - we keep calling apply-generic with the same arguments. Calling
+  exp with a complex number and a racket number results in the same infinite loop after
+  one 'racket-number to 'complex coercion.
+
+  Task B:
+  The original apply-generic (from page 265) works correctly - it raises an error when
+  an operation is not defined for two arguments with the same type.
+
+  Task C:
+  The modified apply-generic is given above.
+  |#
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.81\n")
+
+    (install-generic-arithmetic-package)
+    (install-racket-number-exp)
+    (install-coercion-racket-number->complex)
+    ; install Louis' coercion as it is never used with the modified apply-generic
+    (install-self-type-coercion)
+
+    (check-equal? (exp 2 3) 8)
+    (check-exn exn:fail? (λ () (exp (make-complex-from-real-imag 1 1)
+                                    (make-complex-from-real-imag 1 1))))
+    (check-exn exn:fail? (λ () (exp 1
+                                    (make-complex-from-real-imag 1 1))))))
+
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
            (submod ".." Section/2.4.1 polar-package test)
@@ -1306,4 +1415,5 @@
            (submod ".." Exercise/2.77 test)
            (submod ".." Exercise/2.78 test)
            (submod ".." Exercise/2.79 test)
-           (submod ".." Exercise/2.80 test)))
+           (submod ".." Exercise/2.80 test)
+           (submod ".." Exercise/2.81 test)))
