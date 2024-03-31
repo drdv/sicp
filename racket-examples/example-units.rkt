@@ -6,62 +6,66 @@ Simple example of using Units https://docs.racket-lang.org/guide/units.html
 (module my-units sicp
   (#%require (only racket/base λ))
 
-  (#%provide procedure-parameters^
-           ;; -----------------------------------------------------------
-           ;; two implementations of the procedure-parameters^ signature
-           ;; -----------------------------------------------------------
-           procedure-parameters-v1@
-           procedure-parameters-v2@
-           ;; -----------------------------------------------------------
-           ;; a library using the procedure-parameters^ signature
-           ;; -----------------------------------------------------------
-           parameterized-library^
-           parameterized-library@
-           ;; -----------------------------------------------------------
-           ;; another library
-           ;; -----------------------------------------------------------
-           other-library@)
+  (#%provide
+   ;; -----------------------------------------------------------
+   ;; a library using the parameters^ signature as inputs
+   ;; -----------------------------------------------------------
+   parameters^
+   parameterized-library-output^
+   parameterized-library@
+   ;; -----------------------------------------------------------
+   ;; two implementations of the parameters^ signature
+   ;; -----------------------------------------------------------
+   parameters-v1@
+   parameters-v2@
+   ;; -----------------------------------------------------------
+   ;; another library and its input/output signatures
+   ;; -----------------------------------------------------------
+   other-parameters^
+   other-parameterized-library-output^
+   other-parameterized-library@)
   (#%require (only racket/unit define-signature define-unit import export))
 
-  (define-signature procedure-parameters^ (f g))
-  (define-unit procedure-parameters-v1@
+  ;; input parameters for the parameterized-library@ unit
+  (define-signature parameters^ (f g))
+  (define-unit parameters-v1@
     (import)
-    (export procedure-parameters^)
+    (export parameters^)
 
     (define (f x) (* 2 x))
     (define (g x) (* 3 x)))
 
-  (define-unit procedure-parameters-v2@
+  (define-unit parameters-v2@
     (import)
-    (export procedure-parameters^)
+    (export parameters^)
 
     (define (f x) (* 3 x))
     (define (g x) (* 4 x)))
 
-  (define-signature parameterized-library^ (h))
+  (define-signature parameterized-library-output^ (h))
   (define-unit parameterized-library@
-    (import procedure-parameters^)
-    (export parameterized-library^)
+    (import parameters^)
+    (export parameterized-library-output^)
 
     (define h (λ (x) (+ (f x)
                         (g x)))))
 
-  (define-signature other-library-parameter^ (parameter-procedure))
-  (define-signature other-library^ (f))
+  (define-signature other-parameters^ (w))
+  (define-signature other-parameterized-library-output^ (q))
 
-  (define-unit other-library@
-    (import other-library-parameter^)
-    (export other-library^)
+  (define-unit other-parameterized-library@
+    (import other-parameters^)
+    (export other-parameterized-library-output^)
 
-    (define (f x) (parameter-procedure x))))
+    (define (q x) (w x))))
 
 (module m1 racket
   (#%provide f g h p)
   (#%require (only racket/unit define-values/invoke-unit/infer)
              (only (submod ".." my-units)
-                   procedure-parameters-v1@
+                   parameters-v1@
                    parameterized-library@))
-  (define-values/invoke-unit/infer procedure-parameters-v1@)
+  (define-values/invoke-unit/infer parameters-v1@)
   (define-values/invoke-unit/infer parameterized-library@)
   (define (p x)
     (+ (h x) 1)))
@@ -70,21 +74,21 @@ Simple example of using Units https://docs.racket-lang.org/guide/units.html
   (#%provide f g h p)
   (#%require (only racket/unit define-values/invoke-unit/infer)
              (only (submod ".." my-units)
-                   procedure-parameters-v2@
+                   parameters-v2@
                    parameterized-library@))
-  (define-values/invoke-unit/infer procedure-parameters-v2@)
+  (define-values/invoke-unit/infer parameters-v2@)
   (define-values/invoke-unit/infer parameterized-library@)
   (define (p x)
     (+ (h x) 1)))
 
 (module m3 sicp
-  (#%provide f)
+  (#%provide q)
   (#%require (only racket/unit define-values/invoke-unit/infer)
-             (only (submod ".." my-units) other-library@))
+             (only (submod ".." my-units) other-parameterized-library@))
 
   ;; we can define the specification manually
-  (define (parameter-procedure x) (+ x 1))
-  (define-values/invoke-unit/infer other-library@))
+  (define (w x) (+ x 1))
+  (define-values/invoke-unit/infer other-parameterized-library@))
 
 (require (rename-in (submod "." m1)
                     [p p1]
@@ -96,8 +100,7 @@ Simple example of using Units https://docs.racket-lang.org/guide/units.html
                     [f f2]
                     [g g2]
                     [h h2])
-         (rename-in (submod "." m3)
-                    [f f3]))
+         (only-in (submod "." m3) q))
 
 (f1 3)
 (g1 3)
@@ -109,4 +112,4 @@ Simple example of using Units https://docs.racket-lang.org/guide/units.html
 (h2 3)
 (p2 3)
 
-(f3 3)
+(q 3)
