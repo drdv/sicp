@@ -90,6 +90,36 @@ Simple example of using Units https://docs.racket-lang.org/guide/units.html
   (define (w x) (+ x 1))
   (define-values/invoke-unit/infer other-parameterized-library@))
 
+(module m4 sicp
+  (#%provide my-compound-unit@)
+  (#%require (only racket/unit
+                   import
+                   export
+                   link
+                   define-values/invoke-unit/infer
+                   define-compound-unit/infer)
+             (only (submod ".." my-units)
+                   parameters^
+                   parameterized-library-output^
+                   parameterized-library@)
+             (only (submod ".." my-units)
+                   other-parameters^
+                   other-parameterized-library-output^
+                   other-parameterized-library@))
+
+  (define-compound-unit/infer my-compound-unit@
+    (import parameters^ other-parameters^)
+    (export parameterized-library-output^ other-parameterized-library-output^)
+    (link parameterized-library@ other-parameterized-library@))
+
+  (define (f x) (+ x 1))
+  (define (g x) (+ x 2))
+  (define (w x) (+ x 3))
+  (define-values/invoke-unit/infer my-compound-unit@)
+
+  (h 1)
+  (q 1))
+
 (require (rename-in (submod "." m1)
                     [p p1]
                     [f f1]
