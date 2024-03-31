@@ -896,7 +896,9 @@
   units (https://docs.racket-lang.org/guide/units.html) helps avoiding the copy/paste.
   See racket-examples/example-units.rkt for a simple example of using units.
   |#
-  (#%provide generic-arithmetic-package@)
+  (#%provide generic-arithmetic-package@
+             generic-arithmetic-package-imports^
+             generic-arithmetic-package-exports^)
   (#%require (only racket/base module+ module λ)
              (only racket/unit
                    define-signature
@@ -907,12 +909,12 @@
              ;; used in racket-numbers-package@
              (only (submod "sicp2_part1.rkt" Exercise/2.1)
                    make-rat
-                   numer
-                   denom
                    add-rat
                    sub-rat
                    mul-rat
                    div-rat)
+             (rename (submod "sicp2_part1.rkt" Exercise/2.1) numer-rat numer)
+             (rename (submod "sicp2_part1.rkt" Exercise/2.1) denom-rat denom)
              ;; used in complex-numbers-package@
              (only (submod ".." Section/2.4.3)
                    real-part
@@ -927,6 +929,10 @@
                    div-complex
                    install-rectangular-package
                    install-polar-package)
+             (rename (submod ".." Section/2.4.3) real-part-complex real-part)
+             (rename (submod ".." Section/2.4.3) imag-part-complex imag-part)
+             (rename (submod ".." Section/2.4.3) magnitude-complex magnitude)
+             (rename (submod ".." Section/2.4.3) angle-complex angle)
              ;; to satisfy the generic-arithmetic-package-imports^
              (only (submod ".." Section/2.4.3) apply-generic get put)
              (only (submod ".." Section/2.4.2) attach-tag))
@@ -950,6 +956,8 @@
      imag-part
      magnitude
      angle
+     numer
+     denom
      install-generic-arithmetic-package))
 
   (define-unit generic-arithmetic-package@
@@ -972,6 +980,9 @@
       (put 'mul '(rational rational) (λ (x y) (tag (mul-rat x y))))
       (put 'div '(rational rational) (λ (x y) (tag (div-rat x y))))
       (put 'make 'rational (λ (n d) (tag (make-rat n d))))
+
+      (put 'numer '(rational) numer-rat)
+      (put 'denom '(rational) denom-rat)
       'rational-numbers-package-installed)
 
     (define (install-complex-numbers-package)
@@ -987,10 +998,10 @@
       (put 'make-from-real-imag 'complex (λ (x y) (tag (make-from-real-imag x y))))
       (put 'make-from-mag-ang 'complex (λ (r a) (tag (make-from-mag-ang r a))))
 
-      (put 'real-part '(complex) real-part)
-      (put 'imag-part '(complex) imag-part)
-      (put 'magnitude '(complex) magnitude)
-      (put 'angle '(complex) angle)
+      (put 'real-part '(complex) real-part-complex)
+      (put 'imag-part '(complex) imag-part-complex)
+      (put 'magnitude '(complex) magnitude-complex)
+      (put 'angle '(complex) angle-complex)
       'complex-numbers-package-installed)
 
     (define (install-generic-arithmetic-package)
@@ -1015,7 +1026,10 @@
     (define (real-part n) (apply-generic 'real-part n))
     (define (imag-part n) (apply-generic 'imag-part n))
     (define (magnitude n) (apply-generic 'magnitude n))
-    (define (angle n) (apply-generic 'angle n)))
+    (define (angle n) (apply-generic 'angle n))
+
+    (define (numer n) (apply-generic 'numer n))
+    (define (denom n) (apply-generic 'denom n)))
 
   (define-values/invoke-unit/infer generic-arithmetic-package@)
 
@@ -1042,7 +1056,9 @@
         (check-equal? (add x y) (constructor 29 6))
         (check-equal? (sub x y) (constructor 11 6))
         (check-equal? (mul x y) (constructor 5 1))
-        (check-equal? (div x y) (constructor 20 9))))
+        (check-equal? (div x y) (constructor 20 9))
+        (check-equal? (numer x) 10)
+        (check-equal? (denom x) 3)))
 
     (let ([z (make-complex-from-real-imag 3 4)])
       (check-equal? (add z z) (make-complex-from-real-imag 6 8))
@@ -1173,7 +1189,9 @@
         (check-equal? (add x y) (constructor 29 6))
         (check-equal? (sub x y) (constructor 11 6))
         (check-equal? (mul x y) (constructor 5 1))
-        (check-equal? (div x y) (constructor 20 9))))
+        (check-equal? (div x y) (constructor 20 9))
+        (check-equal? (numer x) 10)
+        (check-equal? (denom x) 3)))
 
     (let ([z (make-complex-from-real-imag 3 4)])
       (check-equal? (add z z) (make-complex-from-real-imag 6 8))
@@ -1190,10 +1208,7 @@
              install-generic-arithmetic-package-equality)
   (#%require (only racket/base module+ λ)
              (only racket/unit define-values/invoke-unit/infer)
-             (only (submod "sicp2_part1.rkt" Exercise/2.1)
-                   numer
-                   denom
-                   equal-rat?)
+             (only (submod "sicp2_part1.rkt" Exercise/2.1) equal-rat?)
              (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
              (only (submod ".." Section/2.4.3) get put)
              (only (submod ".." Exercise/2.78) apply-generic attach-tag))
@@ -1257,7 +1272,7 @@
              (only (submod ".." Exercise/2.79)
                    equ?
                    install-generic-arithmetic-package-equality)
-             (only (submod "sicp2_part1.rkt" Exercise/2.1) numer)
+             ;; (only (submod "sicp2_part1.rkt" Exercise/2.1) numer)
              (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
              (only (submod ".." Section/2.4.3) get put)
              (only (submod ".." Exercise/2.78) apply-generic attach-tag))
@@ -1268,7 +1283,7 @@
 
   (define (install-generic-arithmetic-package-zero)
     (put '=zero? '(racket-number) (λ (x) (equ? x 0)))
-    (put '=zero? '(rational) (λ (x) (equ? (numer x) 0)))
+    (put '=zero? '(rational) (λ (x) (equ? (numer (attach-tag 'rational x)) 0)))
     (put '=zero? '(complex) (λ (x) (equ? (attach-tag 'complex x)
                                          (make-complex-from-real-imag 0 0))))
     'generic-arithmetic-package-=zero-installed)

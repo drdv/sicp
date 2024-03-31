@@ -17,6 +17,7 @@
   ;; there are simpler solutions but I wanted to learn how to use let-values
   (define (make-rat n d)
     (cond [(= d 0) (error "Not a number")]
+          [(= n 0) (cons n d)]
           [else (let-values ([(n-normalized d-normalized)
                               (cond [(or (and (> n 0) (> d 0))
                                          (and (< n 0) (> d 0)))
@@ -67,15 +68,18 @@
     (let* ([neg-neg (make-rat -1 -3)]
            [neg-pos (make-rat -1  3)]
            [pos-neg (make-rat  1 -3)]
-           [neg-neg (make-rat -1 -3)])
-      (check-equal? (car neg-neg)  1)
-      (check-equal? (cdr neg-neg)  3)
-      (check-equal? (car neg-pos) -1)
-      (check-equal? (cdr neg-pos)  3)
-      (check-equal? (car pos-neg) -1)
-      (check-equal? (cdr pos-neg)  3)
-      (check-equal? (car neg-neg)  1)
-      (check-equal? (cdr neg-neg)  3))
+           [neg-neg (make-rat -1 -3)]
+           [zero-something (make-rat 0 1)])
+      (check-equal? (numer neg-neg)  1)
+      (check-equal? (denom neg-neg)  3)
+      (check-equal? (numer neg-pos) -1)
+      (check-equal? (denom neg-pos)  3)
+      (check-equal? (numer pos-neg) -1)
+      (check-equal? (denom pos-neg)  3)
+      (check-equal? (numer neg-neg)  1)
+      (check-equal? (denom neg-neg)  3)
+      (check-equal? (numer zero-something) 0)
+      (check-equal? (denom zero-something) 1))
 
     (check-exn
      exn:fail?
