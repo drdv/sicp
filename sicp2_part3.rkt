@@ -1195,7 +1195,6 @@
                    denom
                    equal-rat?)
              (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
-             ;; to satisfy the generic-arithmetic-package-imports^
              (only (submod ".." Section/2.4.3) get put)
              (only (submod ".." Exercise/2.78) apply-generic attach-tag))
 
@@ -1260,7 +1259,6 @@
                    install-generic-arithmetic-package-equality)
              (only (submod "sicp2_part1.rkt" Exercise/2.1) numer)
              (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
-             ;; to satisfy the generic-arithmetic-package-imports^
              (only (submod ".." Section/2.4.3) get put)
              (only (submod ".." Exercise/2.78) apply-generic attach-tag))
 
@@ -1309,7 +1307,6 @@
              (only racket/unit define-values/invoke-unit/infer)
              (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
              (only (submod ".." Exercise/2.78) type-tag contents)
-             ;; to partially satisfy the generic-arithmetic-package-imports^
              (only (submod ".." Section/2.4.3) get put clear-op-type-table)
              (only (submod ".." Exercise/2.78) attach-tag))
 
@@ -1418,7 +1415,6 @@
                    clear-coercion-table
                    install-coercion-racket-number->complex)
              (only (submod ".." Exercise/2.78) type-tag contents)
-             ;; to partially satisfy the generic-arithmetic-package-imports^
              (only (submod ".." Section/2.4.3)
                    get
                    put
@@ -1487,7 +1483,7 @@
   (define (add3 x y z)
     (apply-generic 'add3 x y z))
 
-  ;; this is an addition to the complex-numbers-package
+  ;; this could be seen as an addition to the complex-numbers-package
   (define (install-complex-numbers-add3)
     (define (tag z) (attach-tag 'complex z))
     (put 'add3 '(complex complex complex) (λ (x y z)
