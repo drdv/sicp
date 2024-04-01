@@ -1558,6 +1558,10 @@
       (check-exn exn:fail? (λ () (add3 1 2 3))))))
 
 (module Exercise/2.83 sicp
+  (#%provide type-tag
+             install-racket-integers-package
+             (rename install-tower-of-types-v2 install-tower-of-types)
+             (rename raise-v2 raise))
   (#%require (only racket/base module+ λ exn:fail?)
              (only racket/unit define-values/invoke-unit/infer)
              (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
@@ -1736,6 +1740,125 @@
       (check-equal? (div x y) 1.5)
       (check-exn exn:fail? (λ () (add n x))))))
 
+(module Exercise/2.84 sicp
+  (#%require (only racket/base module+ λ exn:fail?)
+             (only racket/unit define-values/invoke-unit/infer)
+             (only (submod "sicp1.rkt" Exercise/1.43) repeated)
+             (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
+             (only (submod ".." Exercise/2.78) contents attach-tag)
+             (only (submod ".." Exercise/2.83)
+                   type-tag
+                   install-racket-integers-package
+                   install-tower-of-types
+                   raise)
+             (only (submod ".." Section/2.4.3) get put clear-op-type-table))
+
+  ;; determine the level of a type by walking the tower starting from racket-integer
+  (define (type-level reference-instance)
+    (define (iter current-instance level)
+      (if (eq? (type-tag current-instance)
+               (type-tag reference-instance))
+          level
+          (iter (raise current-instance)
+                (+ level 1))))
+    (iter 1 0))
+
+  ;; This version handles two arguments only (it is not used, I keep it as a reference)
+  (define (raise-lower x y)
+    (define (successive-raise z reference-type)
+      (if (eq? (type-tag z) reference-type)
+          z
+          (successive-raise (raise z) reference-type)))
+    (cond [(= (type-level x) (type-level y))
+           (list x y)]
+          [(> (type-level x) (type-level y))
+           (list x (successive-raise y (type-tag x)))]
+          [(< (type-level x) (type-level y))
+           (list (successive-raise x (type-tag y)) y)]))
+
+  ;; find the highest type in the given arguments: return (level . type)
+  (define (find-reference-type args)
+    (define (iter remaining-args result)
+      (if (null? remaining-args)
+          result
+          (let* ([current-arg (car remaining-args)]
+                 [current-type-level (type-level current-arg)]
+                 [best-result (iter (cdr remaining-args) result)])
+            (if (> current-type-level (car best-result))
+                (cons current-type-level (type-tag current-arg))
+                best-result))))
+    (iter args (cons 0 'racket-integer)))
+
+  ;; return a procedure that raises a given argument to the reference type
+  (define (raise-to-reference-type reference-type)
+    (define (successive-raise arg)
+      ;; (type-tag arg) cannot be higher than reference-type in the tower
+      (if (eq? (type-tag arg) reference-type)
+          arg
+          (successive-raise (raise arg))))
+    successive-raise)
+
+  (define (apply-generic op . args)
+    (let* ([reference-type (cdr (find-reference-type args))]
+           [coerced-args (map (raise-to-reference-type reference-type) args)]
+           [type-tags (map type-tag coerced-args)]
+           [proc (get op type-tags)])
+      (if proc
+          (apply proc (map contents coerced-args))
+          (error "No method for these types: APPLY-GENERIC"
+                 (list op type-tags)))))
+
+  (define-values/invoke-unit/infer generic-arithmetic-package@)
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.84\n")
+
+    (clear-op-type-table)
+    (install-generic-arithmetic-package)
+    (install-racket-integers-package)
+    (install-tower-of-types)
+
+    (let ([i 2]
+          [r (make-rational 2 1)]
+          [n 2.0]
+          [c (make-complex-from-real-imag 2.0 0)])
+      (check-equal? (type-level i) 0)
+      (check-equal? (type-level r) 1)
+      (check-equal? (type-level n) 2)
+      (check-equal? (type-level c) 3)
+      ;; -------------------------------------------------------------
+      (check-equal? (raise-lower i ((repeated raise 1) i)) (list r r))
+      (check-equal? (raise-lower i ((repeated raise 2) i)) (list n n))
+      (check-equal? (raise-lower i ((repeated raise 3) i)) (list c c))
+      (check-equal? (raise-lower ((repeated raise 1) i) i) (list r r))
+      (check-equal? (raise-lower ((repeated raise 2) i) i) (list n n))
+      (check-equal? (raise-lower ((repeated raise 3) i) i) (list c c)))
+
+    (let ([i 2]
+          [r (make-rational 2 1)]
+          [n 2.0]
+          [c (make-complex-from-real-imag 2.0 0)])
+      (check-eq? (cdr (find-reference-type (list i i i i))) 'racket-integer)
+      (check-eq? (cdr (find-reference-type (list i r i i))) 'rational)
+      (check-eq? (cdr (find-reference-type (list i r n i))) 'racket-number)
+      (check-eq? (cdr (find-reference-type (list i c n i))) 'complex))
+
+    (let ([m 3]
+          [n 2])
+      (let ([s (+ m n)]
+            [p (* m n)])
+        (check-equal? (add m n) s)
+        (check-equal? (add ((repeated raise 1) m) n) (make-rational s 1))
+        (check-equal? (add ((repeated raise 2) m) n) (exact->inexact s))
+        (check-equal? (add ((repeated raise 3) m) n)
+                      (make-complex-from-real-imag (exact->inexact s) 0))
+        (check-equal? (mul m n) p)
+        (check-equal? (mul n ((repeated raise 1) m)) (make-rational p 1))
+        (check-equal? (mul n ((repeated raise 2) m)) (exact->inexact p))
+        (check-equal? (mul n ((repeated raise 3) m))
+                      (make-complex-from-mag-ang (exact->inexact p) 0))))))
+
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
            (submod ".." Section/2.4.1 polar-package test)
@@ -1755,4 +1878,5 @@
            (submod ".." Exercise/2.80 test)
            (submod ".." Exercise/2.81 test)
            (submod ".." Exercise/2.82 test)
-           (submod ".." Exercise/2.83 test)))
+           (submod ".." Exercise/2.83 test)
+           (submod ".." Exercise/2.84 test)))
