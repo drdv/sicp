@@ -1559,6 +1559,7 @@
 
 (module Exercise/2.83 sicp
   (#%provide type-tag
+             apply-generic
              install-racket-integers-package
              (rename install-tower-of-types-raise-v2 install-tower-of-types-raise)
              (rename raise-v2 raise))
@@ -1741,7 +1742,10 @@
       (check-exn exn:fail? (λ () (add n x))))))
 
 (module Exercise/2.84 sicp
-  (#%require (only racket/base module+ λ exn:fail?)
+  (#%provide find-reference-type
+             raise-to-reference-type
+             apply-generic)
+  (#%require (only racket/base module+ λ)
              (only racket/unit define-values/invoke-unit/infer)
              (only (submod "sicp1.rkt" Exercise/1.43) repeated)
              (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
@@ -1859,6 +1863,105 @@
         (check-equal? (mul n ((repeated raise 3) m))
                       (make-complex-from-mag-ang (exact->inexact p) 0))))))
 
+(module Exercise/2.85 sicp
+  (#%require (only racket/base module+ λ exn:fail?)
+             (only racket/unit define-values/invoke-unit/infer)
+             (only (submod "sicp1.rkt" Exercise/1.43) repeated)
+             (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
+             (only (submod ".." Exercise/2.78) contents attach-tag)
+             (only (submod ".." Exercise/2.79)
+                   equ?
+                   install-generic-arithmetic-package-equality)
+             (only (submod ".." Exercise/2.83)
+                   type-tag
+                   install-racket-integers-package
+                   install-tower-of-types-raise
+                   raise)
+             (only (submod ".." Exercise/2.84)
+                   find-reference-type
+                   raise-to-reference-type)
+             (rename (submod ".." Exercise/2.84) apply-generic-original apply-generic)
+             (only (submod ".." Section/2.4.3) get put clear-op-type-table))
+
+  (define (complex->racket-number x) (exact->inexact (real-part x)))
+  (define (racket-number->rational x) (make-rational (inexact->exact (round x)) 1))
+  (define (rational->racket-integer x) (inexact->exact (round (/ (numer x) (denom x)))))
+
+  (define (install-tower-of-types-drop)
+    (put 'project '(complex)
+         (λ (x) (complex->racket-number (attach-tag 'complex x))))
+    (put 'project '(racket-number) racket-number->rational)
+    (put 'project '(rational)
+         (λ (x) (rational->racket-integer (attach-tag 'rational x)))))
+
+  ;; here we cannot use the apply-generic from below
+  (define (project x) (apply-generic-original 'project x))
+
+  #|
+  For the base case of the recursion we could check whether x is an integer, i.e.,
+  (and (integer? x) (exact? x)), but checking whether a projection functionality is
+  defined seems more general.
+  |#
+  (define (drop x)
+    (cond [(not (get 'project (list (type-tag x)))) x]
+          [else (let ([proj-x (project x)])
+                  (if (equ? (raise proj-x) x)
+                      (drop proj-x)
+                      x))]))
+
+  ;; Just apply drop to the output of apply-generic from Exercise/2.84
+  (define (apply-generic op . args)
+    (let* ([reference-type (cdr (find-reference-type args))]
+           [coerced-args (map (raise-to-reference-type reference-type) args)]
+           [type-tags (map type-tag coerced-args)]
+           [proc (get op type-tags)])
+      (if proc
+          (drop (apply proc (map contents coerced-args)))
+          (error "No method for these types: APPLY-GENERIC"
+                 (list op type-tags)))))
+
+  (define-values/invoke-unit/infer generic-arithmetic-package@)
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.85\n")
+
+    (clear-op-type-table)
+    (install-generic-arithmetic-package)
+    (install-generic-arithmetic-package-equality)
+    (install-racket-integers-package)
+    (install-tower-of-types-raise)
+    (install-tower-of-types-drop)
+
+    (let ([c (make-complex-from-real-imag 2.1 1)])
+      (check-equal? ((repeated project 1) c) (make-racket-number 2.1))
+      (check-equal? ((repeated project 2) c) (make-rational 2 1))
+      (check-equal? ((repeated project 3) c) 2)
+      (check-exn exn:fail? (λ () (project 2))))
+
+    (check-equal? (drop (make-complex-from-real-imag 2.0 1))
+                  (make-complex-from-real-imag 2.0 1))
+    (check-equal? (drop (make-complex-from-real-imag 2.1 0)) 2.1)
+    (check-equal? (drop (make-complex-from-real-imag 2.0 0)) 2)
+    (check-equal? (drop 2.0) 2)
+    (check-equal? (drop (make-rational 2 1)) 2)
+
+    ;; finally test the new apply-generic procedure
+    (check-equal? (sub (make-complex-from-real-imag 2.0 1)
+                       (make-complex-from-real-imag 1.0 1)) 1)
+    (check-equal? (sub (make-complex-from-real-imag 2.1 1)
+                       (make-complex-from-real-imag 1.0 1)) 1.1)
+    (check-equal? (sub (make-complex-from-real-imag 2.1 2)
+                       (make-complex-from-real-imag 1.0 1))
+                  (make-complex-from-real-imag 1.1 1))
+    (check-equal? (sub 2.0 1.0) 1)
+    (check-equal? (sub 2.1 1.0) 1.1)
+    (check-equal? (sub (make-rational 5 2) (make-rational 1 2)) 2)
+    (check-equal? (mul (make-rational 2 3) (make-rational 9 2)) 3)
+    (check-equal? (add (make-rational 2 3) (make-rational 3 2))
+                  (make-rational 13 6))
+    (check-equal? (sub 2 1) 1)))
+
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
            (submod ".." Section/2.4.1 polar-package test)
@@ -1879,4 +1982,5 @@
            (submod ".." Exercise/2.81 test)
            (submod ".." Exercise/2.82 test)
            (submod ".." Exercise/2.83 test)
-           (submod ".." Exercise/2.84 test)))
+           (submod ".." Exercise/2.84 test)
+           (submod ".." Exercise/2.85 test)))
