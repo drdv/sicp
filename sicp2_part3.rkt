@@ -1572,8 +1572,7 @@
   In addition to the types we have already defined in our generic arithmetic package,
   the tower (integer -> rational -> real -> complex) in Figure 2.25 contains an integer
   type. I introduce a racket-integer type below and assume that a racket-number is a
-  floating-point number. I focus only on the raise operation and don't implement add,
-  sub, mul, div for the integer type.
+  floating-point number.
 
   The tower can be modelled in many ways. Below I test two approaches:
   version 1: define as a coercion in the coercion-table
@@ -1597,6 +1596,29 @@
 
   (define-values/invoke-unit/infer generic-arithmetic-package@)
 
+  (define (install-racket-integers-package)
+    (put 'add '(racket-integer racket-integer) (λ (x y) (+ x y)))
+    (put 'sub '(racket-integer racket-integer) (λ (x y) (- x y)))
+    (put 'mul '(racket-integer racket-integer) (λ (x y) (* x y)))
+    #|
+    This produces an integer whenever possible or a racket-number otherwise. Another
+    option would be to round to integer or to return a rational number.
+    |#
+    (put 'div '(racket-integer racket-integer)
+         (λ (x y)
+           (let ([result (/ x y)])
+             (if (integer? result)
+                 result
+                 (exact->inexact result)))))
+    'racket-integers-package-installed)
+
+  #|
+  I am a bit inconsistent but it is OK. With the current implementation:
+  (make-racket-integer 1.0) would fail (by design)
+  (make-racket-integer 1) would produce an integer (by design)
+  (make-racket-number 1.0) would return a floating-point number (by design)
+  (make-racket-number 1) would return a racket-integer (not quite by design)
+  |#
   (define (make-racket-integer x)
     (if (and (integer? x)
              (exact? x))
@@ -1662,10 +1684,14 @@
     (clear-op-type-table)
     (clear-coercion-table)
     (install-generic-arithmetic-package)
+    (install-racket-integers-package)
     (install-tower-of-types-v1)
     (install-tower-of-types-v2)
 
     (check-exn exn:fail? (λ () (make-racket-integer 1.0)))
+    (check-eq? (type-tag (make-racket-number 1.0)) 'racket-number)
+    (check-eq? (type-tag (make-racket-number 1)) 'racket-integer)
+
     (let* ([i 2]
            [r (raise-v1 i)]
            [n (raise-v1 r)]
@@ -1696,10 +1722,19 @@
       (check-equal? c (make-complex-from-real-imag 2.0 0))
       (check-exn exn:fail? (λ () (raise-v2 c))))
 
-    ;; add, sub, mul, div are not implemented for racket-integer
-    (check-exn exn:fail? (λ () (add 1 2)))
-    (check-exn exn:fail? (λ () (add 1 2.0)))
-    (check-equal? (add 1.0 2.0) 3.0)))
+    (let ([n 3]
+          [m 2]
+          [x 3.0]
+          [y 2.0])
+      (check-equal? (add n m) 5)
+      (check-equal? (sub n m) 1)
+      (check-equal? (mul n m) 6)
+      (check-equal? (div n m) 1.5)
+      (check-equal? (add x y) 5.0)
+      (check-equal? (sub x y) 1.0)
+      (check-equal? (mul x y) 6.0)
+      (check-equal? (div x y) 1.5)
+      (check-exn exn:fail? (λ () (add n x))))))
 
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
