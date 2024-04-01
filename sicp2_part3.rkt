@@ -1560,7 +1560,7 @@
 (module Exercise/2.83 sicp
   (#%provide type-tag
              install-racket-integers-package
-             (rename install-tower-of-types-v2 install-tower-of-types)
+             (rename install-tower-of-types-raise-v2 install-tower-of-types-raise)
              (rename raise-v2 raise))
   (#%require (only racket/base module+ λ exn:fail?)
              (only racket/unit define-values/invoke-unit/infer)
@@ -1654,7 +1654,7 @@
     (make-complex-from-real-imag n 0))
   ;; -----------------------------------------------------------------------------------
 
-  (define (install-tower-of-types-v1)
+  (define (install-tower-of-types-raise-v1)
     (put-coercion 'racket-integer 'next-tower-level racket-integer->rational)
     (put-coercion 'rational 'next-tower-level rational->racket-number)
     (put-coercion 'racket-number 'next-tower-level racket-number->complex)
@@ -1668,7 +1668,7 @@
   for both the rectangular and polar representation of a complex number (and anyway, it
   is not required in the exercise).
   |#
-  (define (install-tower-of-types-v2)
+  (define (install-tower-of-types-raise-v2)
     (put 'raise '(racket-integer) racket-integer->rational)
     (put 'raise '(rational)
          ;; I need to add a tag because I use numer/denom in rational->racket-number
@@ -1689,8 +1689,8 @@
     (clear-coercion-table)
     (install-generic-arithmetic-package)
     (install-racket-integers-package)
-    (install-tower-of-types-v1)
-    (install-tower-of-types-v2)
+    (install-tower-of-types-raise-v1)
+    (install-tower-of-types-raise-v2)
 
     (check-exn exn:fail? (λ () (make-racket-integer 1.0)))
     (check-eq? (type-tag (make-racket-number 1.0)) 'racket-number)
@@ -1749,7 +1749,7 @@
              (only (submod ".." Exercise/2.83)
                    type-tag
                    install-racket-integers-package
-                   install-tower-of-types
+                   install-tower-of-types-raise
                    raise)
              (only (submod ".." Section/2.4.3) get put clear-op-type-table))
 
@@ -1817,7 +1817,7 @@
     (clear-op-type-table)
     (install-generic-arithmetic-package)
     (install-racket-integers-package)
-    (install-tower-of-types)
+    (install-tower-of-types-raise)
 
     (let ([i 2]
           [r (make-rational 2 1)]
