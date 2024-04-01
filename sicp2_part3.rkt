@@ -1018,7 +1018,14 @@
 
     ;; constructors
     (define (make-racket-number n) ((get 'make 'racket-number) n))
-    (define (make-rational n d) ((get 'make 'rational) n d))
+    (define (make-rational n d)
+      ; note that (integer? 1.0) gives #t
+      (if (and (integer? n)
+               (exact? n)
+               (integer? d)
+               (exact? d))
+          ((get 'make 'rational) n d)
+          (error "Integer input expected:" n d)))
     (define (make-complex-from-real-imag x y) ((get 'make-from-real-imag 'complex) x y))
     (define (make-complex-from-mag-ang r a) ((get 'make-from-mag-ang 'complex) r a))
 
@@ -1336,8 +1343,11 @@
   (define (get-coercion-table)
     COERCION-TABLE)
 
-  ;; NOTE: this is the modified version of apply-generic as per Task C
-  ;;       it completes the implementation of generic-arithmetic-package-imports^
+  #|
+  NOTE:
+  This is the modified version of apply-generic as per Task C. It completes the
+  implementation of generic-arithmetic-package-imports^
+  |#
   (define (apply-generic op . args)
     (display "apply-generic\n")
     (let ([type-tags (map type-tag args)])
@@ -1547,6 +1557,150 @@
       ;; Demonstrate a limitation of our strategy - complex cannot be identified here
       (check-exn exn:fail? (λ () (add3 1 2 3))))))
 
+(module Exercise/2.83 sicp
+  (#%require (only racket/base module+ λ exn:fail?)
+             (only racket/unit define-values/invoke-unit/infer)
+             (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
+             (only (submod ".." Exercise/2.78) contents attach-tag)
+             (only (submod ".." Exercise/2.81)
+                   get-coercion
+                   put-coercion
+                   clear-coercion-table)
+             (only (submod ".." Section/2.4.3) get put clear-op-type-table))
+
+  #|
+  In addition to the types we have already defined in our generic arithmetic package,
+  the tower (integer -> rational -> real -> complex) in Figure 2.25 contains an integer
+  type. I introduce a racket-integer type below and assume that a racket-number is a
+  floating-point number. I focus only on the raise operation and don't implement add,
+  sub, mul, div for the integer type.
+
+  The tower can be modelled in many ways. Below I test two approaches:
+  version 1: define as a coercion in the coercion-table
+  version 2: define as an operation in the op-type-table
+  |#
+
+  (define (type-tag datum)
+    (cond [(and (integer? datum) (exact? datum)) 'racket-integer] ; order matters
+          [(number? datum) 'racket-number]
+          [(pair? datum) (car datum)]
+          [else (error "Bad tagged datum: TYPE-TAG" datum)]))
+
+  ;; this is apply-generic from Exercise/2.78 but it has to take type-tag into account
+  (define (apply-generic op . args)
+    (let* ([type-tags (map type-tag args)]
+           [proc (get op type-tags)])
+      (if proc
+          (apply proc (map contents args))
+          (error "No method for these types: APPLY-GENERIC"
+                 (list op type-tags)))))
+
+  (define-values/invoke-unit/infer generic-arithmetic-package@)
+
+  (define (make-racket-integer x)
+    (if (and (integer? x)
+             (exact? x))
+        x
+        (error "Input is not integer:" x)))
+
+  ;; -----------------------------------------------------------------------------------
+  ;; coercion routines
+  ;; -----------------------------------------------------------------------------------
+  (define (racket-integer->rational n)
+    (make-rational n 1))
+
+  #|
+  I distinguish between racket-integer and racket-number using integer?/exact? and
+  number? (i.e., I don't use a tag starting from Exercise/2.78) so I have to use
+  exact->inexact when I convert rational to racket-number, otherwise e.g., (/ 4 2)
+  would give me a racket-integer while I want it to be a racket-number.
+
+  NOTE:
+  When one wants to use raise-v1 with racket-integer and racket-number that have tags
+  one has to use `(contents n)` instead of `n` in racket-integer->rational and
+  racket-number->complex. I could use it even now (as it would have no effect).
+  |#
+  (define (rational->racket-number n)
+    (exact->inexact (/ (numer n)
+                       (denom n))))
+
+  (define (racket-number->complex n)
+    (make-complex-from-real-imag n 0))
+  ;; -----------------------------------------------------------------------------------
+
+  (define (install-tower-of-types-v1)
+    (put-coercion 'racket-integer 'next-tower-level racket-integer->rational)
+    (put-coercion 'rational 'next-tower-level rational->racket-number)
+    (put-coercion 'racket-number 'next-tower-level racket-number->complex)
+    (put-coercion 'complex 'next-tower-level
+                  (λ (n)
+                    (display "WARNING: complex is the top of the hierarchy\n")
+                    n)))
+
+  #|
+  Here I don't use complex->complex because I would have to define a raise operation
+  for both the rectangular and polar representation of a complex number (and anyway, it
+  is not required in the exercise).
+  |#
+  (define (install-tower-of-types-v2)
+    (put 'raise '(racket-integer) racket-integer->rational)
+    (put 'raise '(rational)
+         ;; I need to add a tag because I use numer/denom in rational->racket-number
+         (λ (n) (rational->racket-number (attach-tag 'rational n))))
+    (put 'raise '(racket-number) racket-number->complex))
+
+  (define (raise-v1 n)
+    ((get-coercion (type-tag n) 'next-tower-level) n))
+
+  (define (raise-v2 n)
+    (apply-generic 'raise n))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.83\n")
+
+    (clear-op-type-table)
+    (clear-coercion-table)
+    (install-generic-arithmetic-package)
+    (install-tower-of-types-v1)
+    (install-tower-of-types-v2)
+
+    (check-exn exn:fail? (λ () (make-racket-integer 1.0)))
+    (let* ([i 2]
+           [r (raise-v1 i)]
+           [n (raise-v1 r)]
+           [c (raise-v1 n)]
+           [cc (raise-v1 c)])
+      (check-eq? (type-tag i) 'racket-integer)
+      (check-eq? (type-tag r) 'rational)
+      (check-eq? (type-tag n) 'racket-number)
+      (check-eq? (type-tag c) 'complex)
+      (check-eq? (type-tag cc) 'complex)
+      (check-equal? i (make-racket-integer 2))
+      (check-equal? r (make-rational 2 1))
+      (check-equal? n (make-racket-number 2.0))
+      (check-equal? c (make-complex-from-real-imag 2.0 0))
+      (check-equal? cc (make-complex-from-real-imag 2.0 0)))
+
+    (let* ([i 2]
+           [r (raise-v2 i)]
+           [n (raise-v2 r)]
+           [c (raise-v2 n)])
+      (check-eq? (type-tag i) 'racket-integer)
+      (check-eq? (type-tag r) 'rational)
+      (check-eq? (type-tag n) 'racket-number)
+      (check-eq? (type-tag c) 'complex)
+      (check-equal? i (make-racket-integer 2))
+      (check-equal? r (make-rational 2 1))
+      (check-equal? n (make-racket-number 2.0))
+      (check-equal? c (make-complex-from-real-imag 2.0 0))
+      (check-exn exn:fail? (λ () (raise-v2 c))))
+
+    ;; add, sub, mul, div are not implemented for racket-integer
+    (check-exn exn:fail? (λ () (add 1 2)))
+    (check-exn exn:fail? (λ () (add 1 2.0)))
+    (check-equal? (add 1.0 2.0) 3.0)))
+
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
            (submod ".." Section/2.4.1 polar-package test)
@@ -1565,4 +1719,5 @@
            (submod ".." Exercise/2.79 test)
            (submod ".." Exercise/2.80 test)
            (submod ".." Exercise/2.81 test)
-           (submod ".." Exercise/2.82 test)))
+           (submod ".." Exercise/2.82 test)
+           (submod ".." Exercise/2.83 test)))
