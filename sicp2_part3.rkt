@@ -1386,7 +1386,8 @@
   (define (install-coercion-racket-number->complex)
     (put-coercion 'racket-number
                   'complex
-                  (λ (n) (make-complex-from-real-imag (contents n) 0))))
+                  ;; no need to use (contents n) as racket-number has no tag
+                  (λ (n) (make-complex-from-real-imag n 0))))
 
   (define (install-self-type-coercion)
     (put-coercion 'racket-number 'racket-number (λ (x) x))
@@ -1802,6 +1803,11 @@
           (successive-raise (raise arg))))
     successive-raise)
 
+  #|
+  When there is no operation defined for the highest type in the given arguments, I
+  raise one of the arguments (after they have been coerced) and keep searching for the
+  operation until we reach the highest type in the tower.
+  |#
   (define (apply-generic op . args)
     (let* ([reference-type (cdr (find-reference-type args))]
            [coerced-args (map (raise-to-reference-type reference-type) args)]
@@ -1809,8 +1815,12 @@
            [proc (get op type-tags)])
       (if proc
           (apply proc (map contents coerced-args))
-          (error "No method for these types: APPLY-GENERIC"
-                 (list op type-tags)))))
+          ;; assume we know the highest type in the tower
+          (if (eq? reference-type 'complex)
+              (error "No method for these types: APPLY-GENERIC"
+                     (list op type-tags))
+              ;; raise one argument to explore procedures on super types
+              (apply apply-generic op (cons (raise (car args)) (cdr args)))))))
 
   (define-values/invoke-unit/infer generic-arithmetic-package@)
 
@@ -1909,7 +1919,7 @@
                       (drop proj-x)
                       x))]))
 
-  ;; Just apply drop to the output of apply-generic from Exercise/2.84
+  ;; Simply apply drop to the output of apply-generic from Exercise/2.84
   (define (apply-generic op . args)
     (let* ([reference-type (cdr (find-reference-type args))]
            [coerced-args (map (raise-to-reference-type reference-type) args)]
@@ -1917,10 +1927,26 @@
            [proc (get op type-tags)])
       (if proc
           (drop (apply proc (map contents coerced-args)))
-          (error "No method for these types: APPLY-GENERIC"
-                 (list op type-tags)))))
+          ;; assume we know the highest type in the tower
+          (if (eq? reference-type 'complex)
+              (error "No method for these types: APPLY-GENERIC"
+                     (list op type-tags))
+              ;; raise one argument to explore procedures on super types
+              (apply apply-generic op (cons (raise (car args)) (cdr args)))))))
 
   (define-values/invoke-unit/infer generic-arithmetic-package@)
+
+  ;; -----------------------------------------------------------------------------------
+  ;; add3 from Exercise/2.82 with new apply-generic
+  ;; -----------------------------------------------------------------------------------
+  (define (add3 x y z)
+    (apply-generic 'add3 x y z))
+
+  (define (install-complex-numbers-add3)
+    (define (tag z) (attach-tag 'complex z))
+    (put 'add3 '(complex complex complex) (λ (x y z)
+                                            (add (add (tag x) (tag y)) (tag z)))))
+  ;; -----------------------------------------------------------------------------------
 
   (module+ test
     (#%require rackunit)
@@ -1932,12 +1958,14 @@
     (install-racket-integers-package)
     (install-tower-of-types-raise)
     (install-tower-of-types-drop)
+    (install-complex-numbers-add3)
 
     (let ([c (make-complex-from-real-imag 2.1 1)])
       (check-equal? ((repeated project 1) c) (make-racket-number 2.1))
       (check-equal? ((repeated project 2) c) (make-rational 2 1))
       (check-equal? ((repeated project 3) c) 2)
-      (check-exn exn:fail? (λ () (project 2))))
+      ;; this works because of the (raise (car args)) trick in apply-generic
+      (check-equal? (project 2) 2))
 
     (check-equal? (drop (make-complex-from-real-imag 2.0 1))
                   (make-complex-from-real-imag 2.0 1))
@@ -1946,7 +1974,7 @@
     (check-equal? (drop 2.0) 2)
     (check-equal? (drop (make-rational 2 1)) 2)
 
-    ;; finally test the new apply-generic procedure
+    ;; test the new apply-generic procedure
     (check-equal? (sub (make-complex-from-real-imag 2.0 1)
                        (make-complex-from-real-imag 1.0 1)) 1)
     (check-equal? (sub (make-complex-from-real-imag 2.1 1)
@@ -1960,7 +1988,29 @@
     (check-equal? (mul (make-rational 2 3) (make-rational 9 2)) 3)
     (check-equal? (add (make-rational 2 3) (make-rational 3 2))
                   (make-rational 13 6))
-    (check-equal? (sub 2 1) 1)))
+    (check-equal? (sub 2 1) 1)
+
+    ;; cross-type operations
+    (check-equal? (add 1 (make-complex-from-real-imag 2 0)) 3)
+    (check-equal? (add3 1 2 (make-complex-from-real-imag 2.0 0)) 5)
+    (check-equal? (add3 1 (make-rational 2 1) (make-complex-from-real-imag 3 0)) 6)
+    ;; this works because of the (raise (car args)) trick in apply-generic
+    (check-equal? (add3 1 2 3) 6)
+    (check-equal? (add3 1 2 (make-rational 3 1)) 6)
+
+    #|
+    We get 6.0 instead of 6 because the first argument (i.e., 1) is successively raised
+    to complex (in the process it becomes a racket-number which I model as a float).
+    This could be avoided by using tags (instead of handling the difference between
+    racket-integer and racket-number using exact?) but after Exercise/2.78 I adopted
+    this approach and I don't want to change it now.
+    |#
+    (check-equal? (add3 1
+                        (make-complex-from-real-imag 2 0)
+                        (make-complex-from-real-imag 3 1))
+                  (make-complex-from-real-imag 6.0 1))
+    (check-equal? (add 1 (make-complex-from-real-imag 5 1))
+                  (make-complex-from-real-imag 6.0 1))))
 
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
