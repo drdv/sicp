@@ -958,6 +958,9 @@
      angle
      numer
      denom
+     install-racket-numbers-package
+     install-rational-numbers-package
+     install-complex-numbers-package
      install-generic-arithmetic-package))
 
   (define-unit generic-arithmetic-package@
@@ -1563,7 +1566,8 @@
              apply-generic
              install-racket-integers-package
              (rename install-tower-of-types-raise-v2 install-tower-of-types-raise)
-             (rename raise-v2 raise))
+             (rename raise-v2 raise)
+             rational->racket-number)
   (#%require (only racket/base module+ λ exn:fail?)
              (only racket/unit define-values/invoke-unit/infer)
              (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
@@ -1576,9 +1580,10 @@
 
   #|
   In addition to the types we have already defined in our generic arithmetic package,
-  the tower (integer -> rational -> real -> complex) in Figure 2.25 contains an integer
+  the tower integer -> rational -> real -> complex in Figure 2.25 contains an integer
   type. I introduce a racket-integer type below and assume that a racket-number is a
-  floating-point number.
+  floating-point number. That is, I have:
+  racket-integer -> rational -> racket-number -> complex.
 
   The tower can be modelled in many ways. Below I test two approaches:
   version 1: define as a coercion in the coercion-table
@@ -1874,6 +1879,7 @@
                       (make-complex-from-mag-ang (exact->inexact p) 0))))))
 
 (module Exercise/2.85 sicp
+  (#%provide install-tower-of-types-drop)
   (#%require (only racket/base module+ λ exn:fail?)
              (only racket/unit define-values/invoke-unit/infer)
              (only (submod "sicp1.rkt" Exercise/1.43) repeated)
@@ -1904,7 +1910,11 @@
     (put 'project '(rational)
          (λ (x) (rational->racket-integer (attach-tag 'rational x)))))
 
-  ;; here we cannot use the apply-generic from below
+  #|
+  Here we cannot use the apply-generic from below because we don't want drop to be
+  applied on the output. That is, we expect (project 2.0) to give (rational 2 . 1)
+  rather than 2 (as would (drop 2.0) do). The case of `raise` is similar.
+  |#
   (define (project x) (apply-generic-original 'project x))
 
   #|
@@ -1915,11 +1925,18 @@
   (define (drop x)
     (cond [(not (get 'project (list (type-tag x)))) x]
           [else (let ([proj-x (project x)])
+                  ;; the equ? we use here cannot handle coercion but it is OK becuase
+                  ;; the type of (raise (project x)) is the same as the type of x
                   (if (equ? (raise proj-x) x)
                       (drop proj-x)
                       x))]))
 
-  ;; Simply apply drop to the output of apply-generic from Exercise/2.84
+  #|
+  Simply apply drop to the output of apply-generic from Exercise/2.84. Note that the
+  apply-generic from below cannot be used in general because the output of operations
+  like raise and project cannot be dropped. So it is better to keep using apply-generic
+  from Exercise/2.84 and manually applying drop whenever necessary.
+  |#
   (define (apply-generic op . args)
     (let* ([reference-type (cdr (find-reference-type args))]
            [coerced-args (map (raise-to-reference-type reference-type) args)]
