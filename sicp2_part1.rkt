@@ -2066,10 +2066,16 @@
     (define (add-cell board cell) (cons (board-size board)
                                         (cons cell (board-cells board))))
 
-    ; return #t if the new-cell threatens any of the existing queens on the board
+    ;# return #t if the new-cell threatens any of the existing queens on the board
     (define (threatens? new-cell board)
-      ;; NOTE: I have to pass (λ (x y) (or x y)) because or/and are macros, see
-      ;; https://stackoverflow.com/a/5859945
+      #|
+      I have to pass (λ (x y) (or x y)) because or/and are "syntactic forms", see:
+      https://docs.racket-lang.org/guide/conditionals.html#(part._and+or)
+      https://stackoverflow.com/a/5859945
+      A prodecure is basically a value that can be used in any way we want but a
+      syntactic form cannot be passed as an argument to a higher-order function. That is
+      why we cannot do (map and ...).
+      |#
       (accumulate (λ (x y) (or x y)) #f
                   (map (λ (cell)
                          (visible-cells cell new-cell))

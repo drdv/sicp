@@ -1750,6 +1750,7 @@
 (module Exercise/2.84 sicp
   (#%provide find-reference-type
              raise-to-reference-type
+             type-level
              apply-generic)
   (#%require (only racket/base module+ λ)
              (only racket/unit define-values/invoke-unit/infer)
@@ -1771,7 +1772,9 @@
           level
           (iter (raise current-instance)
                 (+ level 1))))
-    (iter 1 0))
+
+    (define instance-of-lowest-type-in-tower 1) ; i.e., racket-integer,
+    (iter instance-of-lowest-type-in-tower 0))
 
   ;; This version handles two arguments only (it is not used, I keep it as a reference)
   (define (raise-lower x y)
@@ -1880,7 +1883,7 @@
 
 (module Exercise/2.85 sicp
   (#%provide install-tower-of-types-drop)
-  (#%require (only racket/base module+ λ exn:fail?)
+  (#%require (only racket/base module+ λ)
              (only racket/unit define-values/invoke-unit/infer)
              (only (submod "sicp1.rkt" Exercise/1.43) repeated)
              (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
@@ -1897,7 +1900,7 @@
                    find-reference-type
                    raise-to-reference-type)
              (rename (submod ".." Exercise/2.84) apply-generic-original apply-generic)
-             (only (submod ".." Section/2.4.3) get put clear-op-type-table))
+             (only (submod ".." Section/2.4.3) get put clear-op-type-table get-op-type-table))
 
   (define (complex->racket-number x) (exact->inexact (real-part x)))
   (define (racket-number->rational x) (make-rational (inexact->exact (round x)) 1))
@@ -1976,6 +1979,7 @@
     (install-tower-of-types-raise)
     (install-tower-of-types-drop)
     (install-complex-numbers-add3)
+    ;; (get-op-type-table)
 
     (let ([c (make-complex-from-real-imag 2.1 1)])
       (check-equal? ((repeated project 1) c) (make-racket-number 2.1))
@@ -2029,6 +2033,386 @@
     (check-equal? (add 1 (make-complex-from-real-imag 5 1))
                   (make-complex-from-real-imag 6.0 1))))
 
+(module Exercise/2.86 sicp
+  (#%require (only racket/base module+ module local-require submod only-in λ exn:fail?)
+             (only racket/unit define-values/invoke-unit/infer)
+             (only (submod ".." Exercise/2.79)
+                   install-generic-arithmetic-package-equality)
+             (only (submod ".." Exercise/2.83)
+                   type-tag
+                   install-racket-integers-package
+                   install-tower-of-types-raise
+                   raise)
+             (only (submod ".." Exercise/2.85) install-tower-of-types-drop))
+
+  (module common-library sicp
+    (#%provide tolerance
+               ;; -------------
+               atan-generic
+               sin-generic
+               cos-generic
+               square-generic
+               sqrt-generic
+               ;; -------------
+               attach-tag
+               contents
+               get
+               put
+               apply-generic
+               clear-op-type-table
+               ;; -------------
+               add
+               sub
+               mul
+               div
+               make-racket-number
+               make-rational
+               make-complex-from-real-imag
+               make-complex-from-mag-ang
+               ;; -------------
+               install-racket-numbers-package
+               install-rational-numbers-package
+               install-functions-of-racket-number)
+    (#%require (only racket/base λ)
+               (only racket/unit define-values/invoke-unit/infer)
+               (only (submod "sicp1.rkt" common-utils) square tolerance)
+               (only (submod ".." ".." Section/2.4.3)
+                     get
+                     put
+                     clear-op-type-table)
+               (only (submod ".." ".." Exercise/2.78) contents attach-tag)
+               (only (submod ".." ".." Exercise/2.84) apply-generic)
+               (only (submod ".." ".." Section/2.5.1) generic-arithmetic-package@))
+
+    #|
+    There is no point in having all the functions below defined for all racket-integer,
+    rational and racket-number. All we need to do is define them for racket-number, as
+    racket-integer and rational (i.e., types below racket-number in the type tower)
+    would be coerced up as they don't have these operations defined.
+    |#
+    (define (install-functions-of-racket-number)
+      (put 'sqrt '(racket-number)
+           (λ (x) (sqrt x)))
+      (put 'square '(racket-number)
+           (λ (x) (square x)))
+      (put 'cos '(racket-number)
+           (λ (x) (cos x)))
+      (put 'sin '(racket-number)
+           (λ (x) (sin x)))
+      (put 'atan '(racket-number racket-number) (λ (y x) (atan y x))))
+
+    (define (sqrt-generic x) (apply-generic 'sqrt x))
+    (define (square-generic x) (apply-generic 'square x))
+    (define (cos-generic x) (apply-generic 'cos x))
+    (define (sin-generic x) (apply-generic 'sin x))
+    (define (atan-generic y x) (apply-generic 'atan y x))
+
+    (define-values/invoke-unit/infer generic-arithmetic-package@))
+
+  (#%require (only (submod "." common-library)
+                   tolerance
+                   ;; --------------
+                   atan-generic
+                   sin-generic
+                   cos-generic
+                   square-generic
+                   sqrt-generic
+                   ;; --------------
+                   attach-tag
+                   put
+                   get
+                   contents
+                   apply-generic
+                   clear-op-type-table
+                   ;; --------------
+                   add
+                   sub
+                   mul
+                   div
+                   make-rational
+                   make-complex-from-real-imag
+                   make-complex-from-mag-ang
+                   ;; --------------
+                   install-racket-numbers-package
+                   install-rational-numbers-package
+                   install-functions-of-racket-number))
+
+  #|
+  Next, we have to implement functionality related to the complex type in terms of add,
+  sub, mul, div instead of the builtin +, - , *, /.
+
+  NOTE: I don't protect against having nested complex numbers, i.e.,
+  (make-complex-from-real-imag (make-complex-from-real-imag 1 2) 3)
+  |#
+  (module rectangular-package sicp
+    (#%provide real-part
+               imag-part
+               magnitude
+               angle
+               make-from-real-imag
+               make-from-mag-ang)
+    (#%require (only racket/base module+)
+               (only (submod ".." common-library)
+                     atan-generic
+                     sin-generic
+                     cos-generic
+                     square-generic
+                     sqrt-generic
+                     mul))
+
+    (define (real-part z) (car z))
+    (define (imag-part z) (cdr z))
+    (define (magnitude z)
+      ;; we can keep using + because the output of square-generic is a racket-number
+      (sqrt-generic (+ (square-generic (real-part z))
+                       (square-generic (imag-part z)))))
+    (define (angle z)
+      (atan-generic (imag-part z) (real-part z)))
+
+    (define (make-from-real-imag x y) (cons x y))
+    (define (make-from-mag-ang r a)
+      ;; here we have to use mul instead of * since r could be rational
+      (cons (mul r (cos-generic a)) (mul r (sin-generic a)))))
+
+  (module polar-package sicp
+    (#%provide real-part
+               imag-part
+               magnitude
+               angle
+               make-from-real-imag
+               make-from-mag-ang)
+    (#%require (only racket/base module+)
+               (only (submod ".." common-library)
+                     atan-generic
+                     sin-generic
+                     cos-generic
+                     square-generic
+                     sqrt-generic
+                     mul))
+
+    ;; here we have to use mul instead of * since (magnitude z) could be rational
+    (define (real-part z) (mul (magnitude z) (cos-generic (angle z))))
+    (define (imag-part z) (mul (magnitude z) (sin-generic (angle z))))
+    (define (magnitude z) (car z))
+    (define (angle z) (cdr z))
+
+    (define (make-from-real-imag x y)
+      ;; we can keep using + because the output of square-generic is a racket-number
+      (cons (sqrt-generic (+ (square-generic x) (square-generic y)))
+            (atan-generic y x)))
+    (define (make-from-mag-ang r a) (cons r a)))
+
+  (define (install-rectangular-package)
+    (local-require (only-in (submod "." rectangular-package)
+                            real-part
+                            imag-part
+                            magnitude
+                            angle
+                            make-from-mag-ang
+                            make-from-real-imag))
+
+    ;; interface to the rest of the system
+    (define (tag x) (attach-tag 'rectangular x))
+    (put 'real-part '(rectangular) real-part)
+    (put 'imag-part '(rectangular) imag-part)
+    (put 'magnitude '(rectangular) magnitude)
+    (put 'angle '(rectangular) angle)
+    (put 'make-from-real-imag 'rectangular (λ (x y) (tag (make-from-real-imag x y))))
+    (put 'make-from-mag-ang 'rectangular (λ (r a) (tag (make-from-mag-ang r a))))
+    'rectangular-package-installed)
+
+  (define (install-polar-package)
+    (local-require (only-in (submod "." polar-package)
+                            real-part
+                            imag-part
+                            magnitude
+                            angle
+                            make-from-mag-ang
+                            make-from-real-imag))
+
+    (define (tag x) (attach-tag 'polar x))
+    (put 'real-part '(polar) real-part)
+    (put 'imag-part '(polar) imag-part)
+    (put 'magnitude '(polar) magnitude)
+    (put 'angle '(polar) angle)
+    (put 'make-from-real-imag 'polar (λ (x y) (tag (make-from-real-imag x y))))
+    (put 'make-from-mag-ang 'polar (λ (r a) (tag (make-from-mag-ang r a))))
+    'polar-package-installed)
+
+  (define (install-complex-numbers-package)
+    ;; install dependencies
+    (install-rectangular-package)
+    (install-polar-package)
+
+    #|
+    Since we have assumed a tower of types (and not a general tree), we cannot handle
+    rectangular and polar representations of complex numbers as "native types" (i.e.,
+    types that participate in the coercion mechanism), so we use a dedicated
+    apply-generic procedure here (in the previous exercises this was done implicitly).
+    A better model than the tower would be the following tree:
+              complex
+             /   |   \
+        number polar rectangular
+          |
+       rational
+          |
+       integer
+    |#
+    (define (apply-generic-no-coercion op . args)
+      (let* ([type-tags (map type-tag args)]
+             [proc (get op type-tags)])
+        (if proc
+            (apply proc (map contents args))
+            (error "No method for these types: APPLY-GENERIC"
+                   (list op type-tags)))))
+
+    (define (make-from-real-imag x y)
+      ((get 'make-from-real-imag 'rectangular) x y))
+    (define (make-from-mag-ang r a)
+      ((get 'make-from-mag-ang 'polar) r a))
+
+    ;; interface for types 'rectangular or 'polar
+    (define (real-part z) (apply-generic-no-coercion 'real-part z))
+    (define (imag-part z) (apply-generic-no-coercion 'imag-part z))
+    (define (magnitude z) (apply-generic-no-coercion 'magnitude z))
+    (define (angle z) (apply-generic-no-coercion 'angle z))
+
+    (define (add-complex z1 z2)
+      (make-from-real-imag (add (real-part z1) (real-part z2))
+                           (add (imag-part z1) (imag-part z2))))
+    (define (sub-complex z1 z2)
+      (make-from-real-imag (sub (real-part z1) (real-part z2))
+                           (sub (imag-part z1) (imag-part z2))))
+    (define (mul-complex z1 z2)
+      (make-from-mag-ang (mul (magnitude z1) (magnitude z2))
+                         (add (angle z1) (angle z2))))
+    (define (div-complex z1 z2)
+      (make-from-mag-ang (div (magnitude z1) (magnitude z2))
+                         (sub (angle z1) (angle z2))))
+
+    (define (tag z) (attach-tag 'complex z))
+    (put 'add '(complex complex) (λ (z1 z2) (tag (add-complex z1 z2))))
+    (put 'sub '(complex complex) (λ (z1 z2) (tag (sub-complex z1 z2))))
+    (put 'mul '(complex complex) (λ (z1 z2) (tag (mul-complex z1 z2))))
+    (put 'div '(complex complex) (λ (z1 z2) (tag (div-complex z1 z2))))
+    (put 'make-from-real-imag 'complex (λ (x y) (tag (make-from-real-imag x y))))
+    (put 'make-from-mag-ang 'complex (λ (r a) (tag (make-from-mag-ang r a))))
+
+    (put 'real-part '(complex) (λ (z) (apply-generic-no-coercion 'real-part z)))
+    (put 'imag-part '(complex) (λ (z) (apply-generic-no-coercion 'imag-part z)))
+    (put 'magnitude '(complex) (λ (z) (apply-generic-no-coercion 'magnitude z)))
+    (put 'angle '(complex) (λ (z) (apply-generic-no-coercion 'angle z)))
+    'complex-numbers-package-installed)
+
+  (define (install-generic-arithmetic-package)
+    (install-racket-numbers-package)
+    (install-rational-numbers-package)
+    (install-complex-numbers-package)
+    'generic-arithmetic-package-installed)
+
+  ;; interface for type 'complex
+  (define (real-part z) (apply-generic 'real-part z))
+  (define (imag-part z) (apply-generic 'imag-part z))
+  (define (magnitude z) (apply-generic 'magnitude z))
+  (define (angle z) (apply-generic 'angle z))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.86\n")
+
+    (clear-op-type-table)
+    (install-generic-arithmetic-package)
+    (install-generic-arithmetic-package-equality)
+    (install-racket-integers-package)
+    (install-tower-of-types-raise)
+    (install-tower-of-types-drop)
+    (install-functions-of-racket-number)
+
+    ;; ------------------------------------------------------------------
+    (check-equal? (add (make-complex-from-real-imag 1 2)
+                       (make-complex-from-real-imag 3 4))
+                  (make-complex-from-real-imag 4 6))
+    (check-equal? (add 1
+                       (make-complex-from-real-imag 3 4))
+                  (make-complex-from-real-imag 4.0 4))
+    (check-equal? (add 1.0
+                       (make-complex-from-real-imag 3 4))
+                  (make-complex-from-real-imag 4.0 4))
+    (check-equal? (add (make-rational 4 2)
+                       (make-complex-from-real-imag 3 4))
+                  (make-complex-from-real-imag 5.0 4))
+    (check-equal? (add (make-rational 5 2)
+                       (make-complex-from-real-imag (make-rational 3 2) 4))
+                  ;; (make-rational 5 2) is coerced to (complex rectangular 2.5 . 0)
+                  (make-complex-from-real-imag 4.0 4))
+    (check-equal? (add (make-complex-from-real-imag (make-rational 5 2) 4.2)
+                       (make-complex-from-real-imag (make-rational 1 2) 4))
+                  (make-complex-from-real-imag (make-rational 6 2) 8.2))
+    (check-equal? (add (make-complex-from-real-imag 2 4.2)
+                       (make-complex-from-real-imag (make-rational 1 2) 4))
+                  (make-complex-from-real-imag (make-rational 5 2) 8.2))
+    ;; not meaningul but demonstrates the expected behavior
+    (check-equal? (add (make-complex-from-real-imag
+                        (make-complex-from-real-imag (make-rational 1 1) 2)
+                        (make-rational 3 4))
+                       (make-complex-from-real-imag (make-complex-from-real-imag 5 6)
+                                                    7))
+                  (make-complex-from-real-imag
+                   (make-complex-from-real-imag (make-rational 6 1) 8)
+                   (make-rational 31 4)))
+    ;; ------------------------------------------------------------------
+    (check-equal?
+     (sub (make-rational 4 2) (make-complex-from-real-imag 3 4))
+     (make-complex-from-real-imag -1.0 -4))
+    (check-equal?
+     (sub (make-complex-from-real-imag (make-rational 6 3) 4)
+          (make-complex-from-real-imag (make-rational 4 3) 4))
+     (make-complex-from-real-imag (make-rational 2 3) 0))
+    ;; ------------------------------------------------------------------
+    (let ([c (mul (make-complex-from-real-imag (make-rational 1 2) 3)
+                  (make-complex-from-real-imag (make-rational 4 5) 6))])
+      (check-within (magnitude c) 18.409780 tolerance)
+      (check-within (angle c) 2.84389 tolerance))
+    ;; ------------------------------------------------------------------
+    (let ([c (div (make-complex-from-real-imag (make-rational 1 2) 3)
+                  (make-complex-from-real-imag (make-rational 4 5) 6))])
+      (check-within (magnitude c) 0.502450 tolerance)
+      (check-within (angle c) -0.032597 tolerance))
+    ;; ------------------------------------------------------------------
+    (check-equal? (real-part (make-complex-from-real-imag 1 2)) 1)
+    (check-equal? (imag-part (make-complex-from-real-imag 1 2)) 2)
+    (check-equal? (magnitude (make-complex-from-real-imag 4 3)) 5.0)
+    (check-within (angle (make-complex-from-real-imag 4 3)) 0.64350 tolerance)
+    ;; ------------------------------------------------------------------
+    (check-equal? (real-part (make-complex-from-real-imag
+                              (make-rational 1 1)
+                              (make-rational 4 2)))
+                  (make-rational 1 1))
+    (check-equal? (imag-part (make-complex-from-real-imag
+                              (make-rational 1 1)
+                              (make-rational 4 2)))
+                  (make-rational 2 1))
+    (check-equal? (magnitude (make-complex-from-real-imag
+                              (make-rational 8 2)
+                              (make-rational 6 2))) 5.0)
+    (check-within (angle (make-complex-from-real-imag
+                          (make-rational 8 2)
+                          (make-rational 6 2))) 0.64350 tolerance)
+    ;; ------------------------------------------------------------------
+    (check-equal? (real-part (make-complex-from-real-imag 1.0 2.0)) 1.0)
+    (check-equal? (imag-part (make-complex-from-real-imag 1.0 2.0)) 2.0)
+    (check-equal? (magnitude (make-complex-from-real-imag 4.0 3.0)) 5.0)
+    (check-within (angle (make-complex-from-real-imag
+                          4.0
+                          3.0)) 0.64350 tolerance)
+    ;; ------------------------------------------------------------------
+    (check-exn
+     exn:fail?
+     (λ ()
+       (magnitude (make-complex-from-real-imag
+                   (make-complex-from-real-imag 1.0 2.0)
+                   3.0))))))
+
 (module+ test
   (require (submod ".." Section/2.4.1 rectangular-package test)
            (submod ".." Section/2.4.1 polar-package test)
@@ -2050,4 +2434,5 @@
            (submod ".." Exercise/2.82 test)
            (submod ".." Exercise/2.83 test)
            (submod ".." Exercise/2.84 test)
-           (submod ".." Exercise/2.85 test)))
+           (submod ".." Exercise/2.85 test)
+           (submod ".." Exercise/2.86 test)))
