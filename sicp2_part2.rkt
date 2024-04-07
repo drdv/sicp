@@ -929,6 +929,7 @@
 (module Example/symbolic-differentiation sicp
   (#%provide variable?
              same-variable?
+             variable?
              sum?
              addend
              augend

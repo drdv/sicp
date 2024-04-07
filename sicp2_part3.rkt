@@ -206,8 +206,16 @@
              get-op-type-table
              clear-op-type-table
              apply-generic)
-  (#%require (only racket/base module+ λ hash-set! hash-ref make-hash hash-clear!)
-             (only racket/base local-require submod only-in)
+  (#%require (only racket/base
+                   module+
+                   λ
+                   hash-set!
+                   hash-ref
+                   make-hash
+                   hash-clear!
+                   local-require
+                   submod
+                   only-in)
              (only (submod "sicp1.rkt" common-utils) square tolerance)
              (only (submod ".." Section/2.4.2) attach-tag type-tag contents))
 
@@ -2070,6 +2078,11 @@
                make-complex-from-real-imag
                make-complex-from-mag-ang
                ;; -------------
+               real-part
+               imag-part
+               magnitude
+               angle
+               ;; -------------
                install-racket-numbers-package
                install-rational-numbers-package
                install-functions-of-racket-number)
@@ -2132,6 +2145,11 @@
                    make-rational
                    make-complex-from-real-imag
                    make-complex-from-mag-ang
+                   ;; --------------
+                   real-part
+                   imag-part
+                   magnitude
+                   angle
                    ;; --------------
                    install-racket-numbers-package
                    install-rational-numbers-package
@@ -2240,15 +2258,11 @@
     'polar-package-installed)
 
   (define (install-complex-numbers-package)
-    ;; install dependencies
-    (install-rectangular-package)
-    (install-polar-package)
-
     #|
     Since we have assumed a tower of types (and not a general tree), we cannot handle
     rectangular and polar representations of complex numbers as "native types" (i.e.,
-    types that participate in the coercion mechanism), so we use a dedicated
-    apply-generic procedure here (in the previous exercises this was done implicitly).
+    types that participate in the coercion mechanism), so we use an apply-generic
+    without coercion here (in the previous exercises this was done implicitly).
     A better model than the tower would be the following tree:
               complex
              /   |   \
@@ -2258,13 +2272,10 @@
           |
        integer
     |#
-    (define (apply-generic-no-coercion op . args)
-      (let* ([type-tags (map type-tag args)]
-             [proc (get op type-tags)])
-        (if proc
-            (apply proc (map contents args))
-            (error "No method for these types: APPLY-GENERIC"
-                   (list op type-tags)))))
+    (local-require (only-in (submod ".." Section/2.4.3) apply-generic))
+    ;; install dependencies
+    (install-rectangular-package)
+    (install-polar-package)
 
     (define (make-from-real-imag x y)
       ((get 'make-from-real-imag 'rectangular) x y))
@@ -2272,10 +2283,10 @@
       ((get 'make-from-mag-ang 'polar) r a))
 
     ;; interface for types 'rectangular or 'polar
-    (define (real-part z) (apply-generic-no-coercion 'real-part z))
-    (define (imag-part z) (apply-generic-no-coercion 'imag-part z))
-    (define (magnitude z) (apply-generic-no-coercion 'magnitude z))
-    (define (angle z) (apply-generic-no-coercion 'angle z))
+    (define (real-part z) (apply-generic 'real-part z))
+    (define (imag-part z) (apply-generic 'imag-part z))
+    (define (magnitude z) (apply-generic 'magnitude z))
+    (define (angle z) (apply-generic 'angle z))
 
     (define (add-complex z1 z2)
       (make-from-real-imag (add (real-part z1) (real-part z2))
@@ -2298,10 +2309,10 @@
     (put 'make-from-real-imag 'complex (λ (x y) (tag (make-from-real-imag x y))))
     (put 'make-from-mag-ang 'complex (λ (r a) (tag (make-from-mag-ang r a))))
 
-    (put 'real-part '(complex) (λ (z) (apply-generic-no-coercion 'real-part z)))
-    (put 'imag-part '(complex) (λ (z) (apply-generic-no-coercion 'imag-part z)))
-    (put 'magnitude '(complex) (λ (z) (apply-generic-no-coercion 'magnitude z)))
-    (put 'angle '(complex) (λ (z) (apply-generic-no-coercion 'angle z)))
+    (put 'real-part '(complex) (λ (z) (apply-generic 'real-part z)))
+    (put 'imag-part '(complex) (λ (z) (apply-generic 'imag-part z)))
+    (put 'magnitude '(complex) (λ (z) (apply-generic 'magnitude z)))
+    (put 'angle '(complex) (λ (z) (apply-generic 'angle z)))
     'complex-numbers-package-installed)
 
   (define (install-generic-arithmetic-package)
@@ -2309,12 +2320,6 @@
     (install-rational-numbers-package)
     (install-complex-numbers-package)
     'generic-arithmetic-package-installed)
-
-  ;; interface for type 'complex
-  (define (real-part z) (apply-generic 'real-part z))
-  (define (imag-part z) (apply-generic 'imag-part z))
-  (define (magnitude z) (apply-generic 'magnitude z))
-  (define (angle z) (apply-generic 'angle z))
 
   (module+ test
     (#%require rackunit)
