@@ -1290,7 +1290,6 @@
              (only (submod ".." Exercise/2.79)
                    equ?
                    install-generic-arithmetic-package-equality)
-             ;; (only (submod "sicp2_part1.rkt" Exercise/2.1) numer)
              (only (submod ".." Section/2.5.1) generic-arithmetic-package@)
              (only (submod ".." Section/2.4.3) get put)
              (only (submod ".." Exercise/2.78) apply-generic attach-tag))
@@ -2042,10 +2041,38 @@
                   (make-complex-from-real-imag 6.0 1))))
 
 (module Exercise/2.86 sicp
+  (#%provide ; provide most things from this module for convenience
+   attach-tag
+   put
+   get
+   contents
+   apply-generic
+   clear-op-type-table
+   ;; --------------
+   add
+   sub
+   mul
+   div
+   make-rational
+   make-complex-from-real-imag
+   make-complex-from-mag-ang
+   ;; --------------
+   real-part
+   imag-part
+   magnitude
+   angle
+   ;; --------------
+   equ?
+   =zero?
+   install-generic-arithmetic-package-equality
+   install-generic-arithmetic-package-zero
+   install-generic-arithmetic-package)
   (#%require (only racket/base module+ module local-require submod only-in λ exn:fail?)
              (only racket/unit define-values/invoke-unit/infer)
-             (only (submod ".." Exercise/2.79)
-                   install-generic-arithmetic-package-equality)
+             (only (submod "sicp2_part1.rkt" Exercise/2.1) equal-rat?)
+             (only (submod ".." Exercise/2.80)
+                   install-generic-arithmetic-package-zero)
+             (only (submod ".." Exercise/2.80) =zero?)
              (only (submod ".." Exercise/2.83)
                    type-tag
                    install-racket-integers-package
@@ -2321,6 +2348,29 @@
     (install-complex-numbers-package)
     'generic-arithmetic-package-installed)
 
+  #|
+  Here I redefine equ? with apply-generic that supports coercion. I cannot redefine
+  approx-equ? in the same way because its third parameter (the tolerance) is
+  racket-number and it doesn't play well with the way coercion is implemented (I ignore
+  this issue as it is not a part of the exercises).
+
+  I need to update install-generic-arithmetic-package-equality as well in order to
+  recursively compare complex numbers whose coefficients are rational numbers.
+  |#
+  (define (equ? x y) (apply-generic 'equ? x y))
+  (define (=zero? x) (apply-generic '=zero? x))
+
+  (define (install-generic-arithmetic-package-equality)
+    (put 'equ? '(racket-number racket-number) (λ (x y) (= x y)))
+    (put 'equ? '(rational rational) (λ (x y) (equal-rat? x y)))
+    (define (equ-complex x y)
+      (and (equ? (real-part x) (real-part y))
+           (equ? (imag-part x) (imag-part y))))
+    (put 'equ? '(complex complex) (λ (x y)
+                                    (equ-complex (attach-tag 'complex x)
+                                                 (attach-tag 'complex y))))
+    'generic-arithmetic-package-equality-installed)
+
   (module+ test
     (#%require rackunit)
     (display "--> Exercise/2.86\n")
@@ -2328,11 +2378,25 @@
     (clear-op-type-table)
     (install-generic-arithmetic-package)
     (install-generic-arithmetic-package-equality)
+    (install-generic-arithmetic-package-zero)
     (install-racket-integers-package)
     (install-tower-of-types-raise)
     (install-tower-of-types-drop)
     (install-functions-of-racket-number)
 
+    ;; ------------------------------------------------------------------
+    (check-true (equ? 2.0 2))
+    (check-false (equ? 2.1 2))
+    (check-true (equ? (make-rational 4 2) 2.0))
+    (check-true (equ? (make-complex-from-real-imag 2 0) 2.0))
+    (check-true (equ? (make-complex-from-real-imag (make-rational 4 2) 0) 2))
+    (check-true (equ? (make-complex-from-real-imag
+                       (make-complex-from-real-imag
+                        (make-rational 4 2) 0) 0) 2))
+    (check-true (=zero? (make-complex-from-real-imag (make-rational 0 1) 0)))
+    (check-true (=zero? (make-complex-from-real-imag
+                         (make-complex-from-real-imag
+                          (make-rational 0 2) 0) 0)))
     ;; ------------------------------------------------------------------
     (check-equal? (add (make-complex-from-real-imag 1 2)
                        (make-complex-from-real-imag 3 4))
