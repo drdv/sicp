@@ -1925,6 +1925,7 @@
 
 (module Exercise/2.85 sicp
   (#%provide drop
+             project
              install-tower-of-types-drop)
   (#%require (only racket/base module+ λ)
              (only racket/unit define-values/invoke-unit/infer)
