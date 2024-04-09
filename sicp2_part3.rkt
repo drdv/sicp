@@ -1755,9 +1755,10 @@
       (check-exn exn:fail? (λ () (add n x))))))
 
 (module Exercise/2.84 sicp
-  (#%provide find-reference-type
+  (#%provide find-arg-with-highest-type
              raise-to-reference-type
              type-level
+             highest-level?
              apply-generic)
   (#%require (only racket/base module+ λ)
              (only racket/unit define-values/invoke-unit/infer)
@@ -1796,18 +1797,20 @@
           [(< (type-level x) (type-level y))
            (list (successive-raise x (type-tag y)) y)]))
 
-  ;; find the highest type in the given arguments: return (level . type)
-  (define (find-reference-type args)
+  ;; find the highest type in the given arguments: return (level type instance)
+  (define (find-arg-with-highest-type args)
     (define (iter remaining-args result)
       (if (null? remaining-args)
           result
           (let* ([current-arg (car remaining-args)]
-                 [current-type-level (type-level current-arg)]
-                 [best-result (iter (cdr remaining-args) result)])
-            (if (> current-type-level (car best-result))
-                (cons current-type-level (type-tag current-arg))
-                best-result))))
-    (iter args (cons 0 'racket-integer)))
+                 [current-type-level (type-level current-arg)])
+            (iter (cdr remaining-args)
+                  (if (> current-type-level (car result))
+                      (list current-type-level (type-tag current-arg) current-arg)
+                      result)))))
+
+    ;; the lowest level is 0
+    (iter args (list -1 '() '())))
 
   ;; return a procedure that raises a given argument to the reference type
   (define (raise-to-reference-type reference-type)
@@ -1817,6 +1820,10 @@
           arg
           (successive-raise (raise arg))))
     successive-raise)
+
+  ;; check if the instance's type is at the top of the tower
+  (define (highest-level? x)
+    (not (get 'raise (list (type-tag x)))))
 
   #|
   First check whether there is an operation for the original arguments (which might be
@@ -1841,14 +1848,15 @@
            [proc (get op type-tags)])
       (if proc
           (apply proc (map contents args))
-          (let* ([reference-type (cdr (find-reference-type args))]
+          (let* ([reference (find-arg-with-highest-type args)]
+                 [reference-type (cadr reference)]
+                 [reference-arg (caddr reference)]
                  [coerced-args (map (raise-to-reference-type reference-type) args)]
                  [coerced-type-tags (map type-tag coerced-args)]
                  [proc-coerced (get op coerced-type-tags)])
             (if proc-coerced
                 (apply proc-coerced (map contents coerced-args))
-                ;; assume we know the highest type in the tower
-                (if (eq? reference-type 'complex)
+                (if (highest-level? reference-arg)
                     (error "No method for these types: APPLY-GENERIC"
                            (list op coerced-type-tags))
                     ;; raise one argument to explore procedures on super types
@@ -1885,10 +1893,20 @@
           [r (make-rational 2 1)]
           [n 2.0]
           [c (make-complex-from-real-imag 2.0 0)])
-      (check-eq? (cdr (find-reference-type (list i i i i))) 'racket-integer)
-      (check-eq? (cdr (find-reference-type (list i r i i))) 'rational)
-      (check-eq? (cdr (find-reference-type (list i r n i))) 'racket-number)
-      (check-eq? (cdr (find-reference-type (list i c n i))) 'complex))
+      (check-eq? (cadr (find-arg-with-highest-type (list i i i i))) 'racket-integer)
+      (check-eq? (cadr (find-arg-with-highest-type (list i r i i))) 'rational)
+      (check-eq? (cadr (find-arg-with-highest-type (list i r n i))) 'racket-number)
+      (check-eq? (cadr (find-arg-with-highest-type (list i c n i))) 'complex)
+      ;; -------------------------------------------------------------
+      (check-eq? (caddr (find-arg-with-highest-type (list i i i i))) i)
+      (check-eq? (caddr (find-arg-with-highest-type (list i r i i))) r)
+      (check-eq? (caddr (find-arg-with-highest-type (list i r n i))) n)
+      (check-eq? (caddr (find-arg-with-highest-type (list i c n i))) c)
+      ;; -------------------------------------------------------------
+      (check-false (highest-level? i))
+      (check-false (highest-level? r))
+      (check-false (highest-level? n))
+      (check-true (highest-level? c)))
 
     (let ([m 3]
           [n 2])
@@ -1922,8 +1940,9 @@
                    install-tower-of-types-raise
                    raise)
              (only (submod ".." Exercise/2.84)
-                   find-reference-type
-                   raise-to-reference-type)
+                   find-arg-with-highest-type
+                   raise-to-reference-type
+                   highest-level?)
              (rename (submod ".." Exercise/2.84) apply-generic-original apply-generic)
              (only (submod ".." Section/2.4.3) get put clear-op-type-table get-op-type-table))
 
@@ -1970,14 +1989,15 @@
            [proc (get op type-tags)])
       (if proc
           (drop (apply proc (map contents args)))
-          (let* ([reference-type (cdr (find-reference-type args))]
+          (let* ([reference (find-arg-with-highest-type args)]
+                 [reference-type (cadr reference)]
+                 [reference-arg (caddr reference)]
                  [coerced-args (map (raise-to-reference-type reference-type) args)]
                  [coerced-type-tags (map type-tag coerced-args)]
                  [proc-coerced (get op coerced-type-tags)])
             (if proc-coerced
                 (drop (apply proc-coerced (map contents coerced-args)))
-                ;; assume we know the highest type in the tower
-                (if (eq? reference-type 'complex)
+                (if (highest-level? reference-arg)
                     (error "No method for these types: APPLY-GENERIC"
                            (list op coerced-type-tags))
                     ;; raise one argument to explore procedures on super types
