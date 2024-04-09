@@ -2108,6 +2108,7 @@
    denom
    ;; --------------
    equ?
+   approx-equ?
    =zero?
    install-generic-arithmetic-package
    install-generic-arithmetic-package-equality

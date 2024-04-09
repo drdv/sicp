@@ -6,6 +6,7 @@
 (module Exercise/2.87 sicp
   (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" common-utils) tolerance)
+             (only (submod "sicp2_part1.rkt" Section/2.2.3) filter)
              (only (submod "sicp2_part2.rkt" Example/symbolic-differentiation)
                    variable?)
              (only (submod "sicp2_part3.rkt" Exercise/2.83) raise)
@@ -27,6 +28,8 @@
                    real-part
                    imag-part
                    ;; --------------
+                   equ?
+                   approx-equ?
                    =zero?
                    ;; --------------
                    install-generic-arithmetic-package
@@ -142,17 +145,44 @@
                                          (drop (attach-tag 'complex z)))))))))
 
   (define (install-generic-arithmetic-package-polynomial-zero)
-    ;; assuming sparse representation
-    (put '=zero? '(polynomial)
-         (λ (x) (let ([terms (term-list x)])
-                  (and (= (length terms) 1)
-                       (= (order (car terms)) 0)
-                       (=zero? (coeff (car terms)))))))
+    (define (zero-polynomial poly)
+      (define (terms-handler terms)
+        (if (null? terms)
+            #t
+            (and (=zero? (coeff (car terms)))
+                 (terms-handler (cdr terms)))))
+      (terms-handler (term-list poly)))
+
+    (put '=zero? '(polynomial) zero-polynomial)
     'generic-arithmetic-package-=zero-polynomial-installed)
 
-  (define (complex-approx-equ? x y tol)
-    (and (< (abs (- (real-part x) (real-part y))) tol)
-         (< (abs (- (imag-part x) (imag-part y))) tol)))
+  ;; ---------------------------------------------------------------------------------
+
+  #|
+  I implemented the following procedures because I wanted to use `drop` but then I
+  realized that `drop` was implemented in Exercise/2.85 where we still didn't have the
+  notion of nested types (e.g., a complex number with rational coefficients) - this was
+  implemented in Exercise/2.86 (so the `drop` functionality is a bit limited - anyway
+  this is not a part of the exercise).
+  |#
+  (define (polynomial-equality p1 p2)
+    (define (compare-terms terms1 terms2)
+      (cond [(not (= (length terms1) (length terms2))) #f]
+            [(null? terms1) #t]
+            [else (let ([h1 (car terms1)]
+                        [h2 (car terms2)])
+                    (and (and (= (order h1) (order h2))
+                              (equ? (coeff h1) (coeff h2)))
+                         (compare-terms (cdr terms1) (cdr terms2))))]))
+    (if (not (same-variable? (variable p1) (variable p2)))
+        #f
+        (let ([non-zero-terms (λ (term) (not (=zero? (coeff term))))])
+          (compare-terms (filter non-zero-terms (term-list p1))
+                         (filter non-zero-terms (term-list p2))))))
+
+  (define (install-generic-arithmetic-package-equality-polynomials)
+    (put 'equ? '(polynomial polynomial) polynomial-equality)
+    'generic-arithmetic-package-equality-polynomials-installed)
 
   (define (install-tower-of-types-drop-polynomial)
     (define (polynomial->complex poly)
@@ -162,17 +192,7 @@
                (make-complex-from-real-imag (coeff (car terms)) 0)]
               [else (iter (cdr terms))]))
       (iter (term-list poly)))
-    (put 'project '(polynomial)
-         (λ (p) (polynomial->complex p))))
-
-  ;; -----------------------------------------------------------------------------------
-  ;; WIP
-  ;; -----------------------------------------------------------------------------------
-  ;; FIXME: implement equality (to be able to use drop)
-  ;; (define (install-generic-arithmetic-package-equality-polynomials)
-  ;;   (put 'equ? '(polynomial polynomial) (λ (x y) x))
-  ;;   'generic-arithmetic-package-equality-polynomials-installed)
-  ;; -----------------------------------------------------------------------------------
+    (put 'project '(polynomial) (λ (p) (polynomial->complex p))))
 
   (module+ test
     (#%require rackunit)
@@ -187,18 +207,21 @@
     (install-tower-of-types-raise)
     (install-tower-of-types-raise-complex)
     (install-tower-of-types-drop)
-    (install-tower-of-types-drop-polynomial)
     (install-functions-of-racket-number)
     (install-polynomial-package)
+    (install-generic-arithmetic-package-equality-polynomials)
+    (install-tower-of-types-drop-polynomial)
 
     ;; --------------------------------------------------------------------------------
-    (define poly (make-polynomial 'x (list (make-term 2 3)
-                                           (make-term 1 2)
-                                           (make-term 0 7))))
-    (check-equal? (find-arg-with-highest-type (list poly)) (list 4 'polynomial poly))
-    (check-false (=zero? poly))
+
+    (define p0 (make-polynomial 'x (list (make-term 2 3)
+                                         (make-term 1 2)
+                                         (make-term 0 7))))
+    (check-equal? (find-arg-with-highest-type (list p0)) (list 4 'polynomial p0))
+    (check-false (=zero? p0))
 
     ;; --------------------------------------------------------------------------------
+
     (let* ([i 0]
            [r (raise i)]
            [n (raise r)]
@@ -221,9 +244,14 @@
       (check-false (=zero? c))
       (check-false (=zero? p)))
 
+    (check-true (=zero? (make-polynomial 'x (list (make-term 2 0)
+                                                  (make-term 1 0)
+                                                  (make-term 0 0)))))
+
     ;; --------------------------------------------------------------------------------
     ;; See footnote 57.
     ;; --------------------------------------------------------------------------------
+
     (define p1
       (make-polynomial
        'x
@@ -249,11 +277,10 @@
                                  (make-term 0 3))))
              (make-term 0 6))))
 
-    (check-equal? (add p1 p2) p1+p2)
-
     ;; --------------------------------------------------------------------------------
     ;; See page 281
     ;; --------------------------------------------------------------------------------
+
     (define p3
       (make-polynomial
        'x
@@ -285,6 +312,7 @@
     ;; --------------------------------------------------------------------------------
     ;; See page 280
     ;; --------------------------------------------------------------------------------
+
     (define p5
       (make-polynomial
        'x
@@ -312,22 +340,22 @@
     (define p5*p6
       (make-polynomial
        'x
-       (list (make-term 3 (make-polynomial 'y (list (make-term 2 1)
+       (list (make-term 3 (make-polynomial 'y (list (make-term 2  1)
                                                     (make-term 1 -1)
                                                     (make-term 0 -2))))
-             (make-term 2 (make-polynomial 'y (list (make-term 4 1)
-                                                    (make-term 3 2)
+             (make-term 2 (make-polynomial 'y (list (make-term 4  1)
+                                                    (make-term 3  2)
                                                     (make-term 2 -2)
-                                                    (make-term 1 8)
-                                                    (make-term 0 5))))
-             (make-term 1 (make-polynomial 'y (list (make-term 5 1)
-                                                    (make-term 3 1)
-                                                    (make-term 2 8)
+                                                    (make-term 1  8)
+                                                    (make-term 0  5))))
+             (make-term 1 (make-polynomial 'y (list (make-term 5  1)
+                                                    (make-term 3  1)
+                                                    (make-term 2  8)
                                                     (make-term 1 -3)
-                                                    (make-term 0 9))))
-             (make-term 0 (make-polynomial 'y (list (make-term 4 1)
+                                                    (make-term 0  9))))
+             (make-term 0 (make-polynomial 'y (list (make-term 4  1)
                                                     (make-term 3 -1)
-                                                    (make-term 1 7)
+                                                    (make-term 1  7)
                                                     (make-term 0 -7)))))))
 
     (check-equal? (mul p5 p6) p5*p6)
@@ -335,6 +363,7 @@
     ;; --------------------------------------------------------------------------------
     ;; See page 280 (rational and complex coefficients)
     ;; --------------------------------------------------------------------------------
+
     (define p7
       (make-polynomial
        'x
@@ -360,22 +389,42 @@
     (check-equal? (order (cadddr (cdddr terms))) 0)
 
     (check-equal? (coeff (car terms)) 3)
-    (check-true (complex-approx-equ? (coeff (cadr terms))
-                                     (make-complex-from-mag-ang 3.605551 0.982793)
-                                     tolerance))
+
+    (check-true (approx-equ? (coeff (cadr terms))
+                             (make-complex-from-mag-ang 3.605551 0.982793)))
+
     (check-equal? (coeff (caddr terms)) (make-rational 9 1))
-    (check-true (complex-approx-equ? (coeff (cadddr terms))
-                                     (make-complex-from-mag-ang 2.403700 0.982793)
-                                     tolerance))
-    (check-true (complex-approx-equ? (coeff (cadddr (cdr terms)))
-                                     (make-complex-from-real-imag 19.666666 9.0)
-                                     tolerance))
-    (check-true (complex-approx-equ? (coeff (cadddr (cddr terms)))
-                                     (make-complex-from-mag-ang 21.023796 1.523213)
-                                     tolerance))
-    (check-true (complex-approx-equ? (coeff (cadddr (cdddr terms)))
-                                     (make-complex-from-mag-ang 40.816663 0.5404195)
-                                     tolerance))))
+    (check-true (approx-equ? (coeff (cadddr terms))
+                             (make-complex-from-mag-ang 2.403700 0.982793)))
+    (check-true (approx-equ? (coeff (cadddr (cdr terms)))
+                             (make-complex-from-real-imag 19.666666 9.0)))
+    (check-true (approx-equ? (coeff (cadddr (cddr terms)))
+                             (make-complex-from-mag-ang 21.023796 1.523213)))
+    (check-true (approx-equ? (coeff (cadddr (cdddr terms)))
+                             (make-complex-from-mag-ang 40.816663 0.5404195)))
+
+    ;; --------------------------------------------------------------------------------
+    ;; equ?/drop
+    ;; --------------------------------------------------------------------------------
+
+    (check-equal? (add p1 p2) p1+p2)
+    (check-false (equ? p1 p2))
+    (check-true (equ? p1 p1))
+
+    (check-false (equ? (make-polynomial 'x (list (make-term 3 0)
+                                                 (make-term 2 1)
+                                                 (make-term 0 3)))
+                       (make-polynomial 'x (list (make-term 0 3)))))
+
+    (check-true (equ? (make-polynomial 'x (list (make-term 3 0)
+                                                (make-term 2 0)
+                                                (make-term 0 3)))
+                      (make-polynomial 'x (list (make-term 0 3)))))
+
+    (check-equal? (drop (make-polynomial 'x (list (make-term 3 0)
+                                                  (make-term 2 0)
+                                                  (make-term 0 3))))
+                  3)))
 
 (module+ test
   (require (submod ".." Exercise/2.87 test)))
