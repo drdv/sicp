@@ -172,7 +172,7 @@
   ;; (define (install-generic-arithmetic-package-equality-polynomials)
   ;;   (put 'equ? '(polynomial polynomial) (λ (x y) x))
   ;;   'generic-arithmetic-package-equality-polynomials-installed)
-  -----------------------------------------------------------------------------------
+  ;; -----------------------------------------------------------------------------------
 
   (module+ test
     (#%require rackunit)
