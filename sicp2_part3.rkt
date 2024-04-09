@@ -1819,23 +1819,40 @@
     successive-raise)
 
   #|
+  First check whether there is an operation for the original arguments (which might be
+  of different types). If not, coerce the arguments to the highest type and try again.
+
   When there is no operation defined for the highest type in the given arguments, I
   raise one of the arguments (after they have been coerced) and keep searching for the
   operation until we reach the highest type in the tower.
+
+  NOTE: the above strategy might miss some useful cases. For example my approx-equ?
+  procedure takes three arguments: the first two are to be compared within a tolerance
+  (which is given as the third argument). The tolerance is of type racket-number and it
+  is not meant to be coerced even if the first to arguments don't have the same type.
+  I could address this by adding a third group of inputs apart from the operation and
+  list of types of the operation's arguments. An alternative would be to coerce (if
+  necessary) the first two arguments of approx-equ? before passing them to the
+  registered procedure. Yet another alternative is to use dynamic scoping for the
+  tolerance (this is the approach I take in Exercise/2.86).
   |#
   (define (apply-generic op . args)
-    (let* ([reference-type (cdr (find-reference-type args))]
-           [coerced-args (map (raise-to-reference-type reference-type) args)]
-           [type-tags (map type-tag coerced-args)]
+    (let* ([type-tags (map type-tag args)]
            [proc (get op type-tags)])
       (if proc
-          (apply proc (map contents coerced-args))
-          ;; assume we know the highest type in the tower
-          (if (eq? reference-type 'complex)
-              (error "No method for these types: APPLY-GENERIC"
-                     (list op type-tags))
-              ;; raise one argument to explore procedures on super types
-              (apply apply-generic op (cons (raise (car args)) (cdr args)))))))
+          (apply proc (map contents args))
+          (let* ([reference-type (cdr (find-reference-type args))]
+                 [coerced-args (map (raise-to-reference-type reference-type) args)]
+                 [coerced-type-tags (map type-tag coerced-args)]
+                 [proc-coerced (get op coerced-type-tags)])
+            (if proc-coerced
+                (apply proc-coerced (map contents coerced-args))
+                ;; assume we know the highest type in the tower
+                (if (eq? reference-type 'complex)
+                    (error "No method for these types: APPLY-GENERIC"
+                           (list op coerced-type-tags))
+                    ;; raise one argument to explore procedures on super types
+                    (apply apply-generic op (cons (raise (car args)) (cdr args)))))))))
 
   (define-values/invoke-unit/infer generic-arithmetic-package@)
 
@@ -1889,7 +1906,8 @@
                       (make-complex-from-mag-ang (exact->inexact p) 0))))))
 
 (module Exercise/2.85 sicp
-  (#%provide install-tower-of-types-drop)
+  (#%provide drop
+             install-tower-of-types-drop)
   (#%require (only racket/base module+ λ)
              (only racket/unit define-values/invoke-unit/infer)
              (only (submod "sicp1.rkt" Exercise/1.43) repeated)
@@ -1948,18 +1966,22 @@
   from Exercise/2.84 and manually applying drop whenever necessary.
   |#
   (define (apply-generic op . args)
-    (let* ([reference-type (cdr (find-reference-type args))]
-           [coerced-args (map (raise-to-reference-type reference-type) args)]
-           [type-tags (map type-tag coerced-args)]
+    (let* ([type-tags (map type-tag args)]
            [proc (get op type-tags)])
       (if proc
-          (drop (apply proc (map contents coerced-args)))
-          ;; assume we know the highest type in the tower
-          (if (eq? reference-type 'complex)
-              (error "No method for these types: APPLY-GENERIC"
-                     (list op type-tags))
-              ;; raise one argument to explore procedures on super types
-              (apply apply-generic op (cons (raise (car args)) (cdr args)))))))
+          (drop (apply proc (map contents args)))
+          (let* ([reference-type (cdr (find-reference-type args))]
+                 [coerced-args (map (raise-to-reference-type reference-type) args)]
+                 [coerced-type-tags (map type-tag coerced-args)]
+                 [proc-coerced (get op coerced-type-tags)])
+            (if proc-coerced
+                (drop (apply proc-coerced (map contents coerced-args)))
+                ;; assume we know the highest type in the tower
+                (if (eq? reference-type 'complex)
+                    (error "No method for these types: APPLY-GENERIC"
+                           (list op coerced-type-tags))
+                    ;; raise one argument to explore procedures on super types
+                    (apply apply-generic op (cons (raise (car args)) (cdr args)))))))))
 
   (define-values/invoke-unit/infer generic-arithmetic-package@)
 
@@ -2061,13 +2083,28 @@
    imag-part
    magnitude
    angle
+   numer
+   denom
    ;; --------------
    equ?
    =zero?
+   install-generic-arithmetic-package
    install-generic-arithmetic-package-equality
    install-generic-arithmetic-package-zero
-   install-generic-arithmetic-package)
-  (#%require (only racket/base module+ module local-require submod only-in λ exn:fail?)
+   install-racket-integers-package
+   install-tower-of-types-raise
+   install-tower-of-types-drop
+   install-functions-of-racket-number)
+  (#%require (only racket/base
+                   module+
+                   module
+                   local-require
+                   submod
+                   only-in
+                   λ
+                   exn:fail?
+                   make-parameter
+                   parameterize)
              (only racket/unit define-values/invoke-unit/infer)
              (only (submod "sicp2_part1.rkt" Exercise/2.1) equal-rat?)
              (only (submod ".." Exercise/2.80)
@@ -2109,6 +2146,8 @@
                imag-part
                magnitude
                angle
+               numer
+               denom
                ;; -------------
                install-racket-numbers-package
                install-rational-numbers-package
@@ -2177,6 +2216,8 @@
                    imag-part
                    magnitude
                    angle
+                   numer
+                   denom
                    ;; --------------
                    install-racket-numbers-package
                    install-rational-numbers-package
@@ -2349,15 +2390,17 @@
     'generic-arithmetic-package-installed)
 
   #|
-  Here I redefine equ? with apply-generic that supports coercion. I cannot redefine
-  approx-equ? in the same way because its third parameter (the tolerance) is
-  racket-number and it doesn't play well with the way coercion is implemented (I ignore
-  this issue as it is not a part of the exercises).
+  Here I redefine equ? with apply-generic that supports coercion.
 
   I need to update install-generic-arithmetic-package-equality as well in order to
   recursively compare complex numbers whose coefficients are rational numbers.
   |#
   (define (equ? x y) (apply-generic 'equ? x y))
+
+  (define tolerance-param (make-parameter tolerance))
+  (define (approx-equ? x y)
+    (apply-generic 'approx-equ? x y))
+
   (define (=zero? x) (apply-generic '=zero? x))
 
   (define (install-generic-arithmetic-package-equality)
@@ -2369,6 +2412,18 @@
     (put 'equ? '(complex complex) (λ (x y)
                                     (equ-complex (attach-tag 'complex x)
                                                  (attach-tag 'complex y))))
+    (put 'approx-equ? '(racket-number racket-number)
+         (λ (x y)
+           (< (abs (- x y)) (tolerance-param))))
+    (put 'approx-equ? '(rational rational)
+         (λ (x y)
+           (and (< (abs (- (numer x) (numer y))) (tolerance-param))
+                (< (abs (- (denom x) (denom y))) (tolerance-param)))))
+    (put 'approx-equ? '(complex complex)
+         (λ (x y)
+           (and (< (abs (- (real-part x) (real-part y))) (tolerance-param))
+                (< (abs (- (imag-part x) (imag-part y))) (tolerance-param)))))
+
     'generic-arithmetic-package-equality-installed)
 
   (module+ test
@@ -2393,6 +2448,14 @@
     (check-true (equ? (make-complex-from-real-imag
                        (make-complex-from-real-imag
                         (make-rational 4 2) 0) 0) 2))
+
+    ;; change tolerance-param to verify that all works as expected
+    (check-true (parameterize ([tolerance-param 1e-2])
+                  (approx-equ? (make-complex-from-real-imag 2 0)
+                               (make-complex-from-real-imag 2 1e-3))))
+
+    (check-true (approx-equ? 2 (make-complex-from-real-imag 2 1e-6)))
+
     (check-true (=zero? (make-complex-from-real-imag (make-rational 0 1) 0)))
     (check-true (=zero? (make-complex-from-real-imag
                          (make-complex-from-real-imag

@@ -22,6 +22,7 @@ test-2: clean ## Run tests for exercises in Chapter 2
 	raco test sicp2_part1.rkt
 	raco test sicp2_part2.rkt
 	raco test sicp2_part3.rkt
+	raco test sicp2_part4.rkt
 
 .PHONY: docs
 docs: ## Generate docs
