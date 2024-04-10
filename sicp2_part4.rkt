@@ -497,6 +497,9 @@
              (make-term 0 (+ 5 a)))))))
 
 (module Exercise/2.88 sicp
+  (#%provide negate
+             install-generic-arithmetic-package-negation
+             install-generic-arithmetic-package-sub-polynomial)
   (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" common-utils) tolerance)
              (only (submod "sicp2_part3.rkt" Exercise/2.83) type-tag)
@@ -577,6 +580,13 @@
                        (term-list poly)))))
     'generic-arithmetic-package-negation-installed)
 
+  (define (install-generic-arithmetic-package-sub-polynomial)
+    (put 'sub '(polynomial polynomial)
+         (λ (p1 p2) (let ([p1-tag (attach-tag 'polynomial p1)]
+                          [p2-tag (attach-tag 'polynomial p2)])
+                      (add p1-tag (negate p2-tag)))))
+    'generic-arithmetic-package-sub-polynomial-installed)
+
   (module+ test
     (#%require rackunit)
     (display "--> Exercise/2.88\n")
@@ -595,6 +605,7 @@
     (install-generic-arithmetic-package-equality-polynomials)
     (install-tower-of-types-drop-polynomial)
     (install-generic-arithmetic-package-negation)
+    (install-generic-arithmetic-package-sub-polynomial)
 
     (check-equal? (negate 1) -1)
     (check-equal? (negate (make-rational 1 2)) (make-rational -1 2))
@@ -626,9 +637,11 @@
                                                    (make-term 0 -3))))
             (make-term 0 -7))))
 
-    (check-equal? (sub (make-complex-from-real-imag 2 7)
-                       (negate (make-complex-from-real-imag 3 5)))
-                  (make-complex-from-real-imag 5 12))))
+    (let ([c1 (make-complex-from-real-imag 2 7)]
+          [c2 (make-complex-from-real-imag 3 5)]
+          [result (make-complex-from-real-imag -1 2)])
+      (check-equal? (add c1 (negate c2)) result)
+      (check-equal? (sub c1 c2) result))))
 
 (module+ test
   (require (submod ".." Exercise/2.87 test)
