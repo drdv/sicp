@@ -450,7 +450,7 @@
                              (make-complex-from-mag-ang 40.816663 0.5404195)))
 
     ;; --------------------------------------------------------------------------------
-    ;; equ?/drop
+    ;; equ? / drop
     ;; --------------------------------------------------------------------------------
 
     (check-equal? (add p1 p2) p1+p2)
@@ -470,7 +470,32 @@
     (check-equal? (drop (make-polynomial 'x (list (make-term 3 0)
                                                   (make-term 2 0)
                                                   (make-term 0 3))))
-                  3)))
+                  3)
+
+    ;; --------------------------------------------------------------------------------
+    ;; filter-terms / map-terms
+    ;; --------------------------------------------------------------------------------
+
+    (define poly-coeff (make-polynomial 'y (list (make-term 1 0) (make-term 0 0))))
+    (define poly
+      (make-polynomial
+       'x
+       (list (make-term 2 1)
+             (make-term 1 poly-coeff)
+             (make-term 0 5))))
+
+    (check-equal?
+     (filter-terms (λ (term) (not (=zero? (coeff term))))
+                   (term-list (contents poly)))
+     (list (make-term 2 1) (make-term 0 5)))
+
+    (let ([a 10])
+      (check-equal?
+       (map-terms (λ (term) (make-term (order term) (add (coeff term) a)))
+                  (term-list (contents poly)))
+       (list (make-term 2 (+ 1 a))
+             (make-term 1 (add poly-coeff a))
+             (make-term 0 (+ 5 a)))))))
 
 (module Exercise/2.88 sicp
   (#%require (only racket/base module+ λ)
