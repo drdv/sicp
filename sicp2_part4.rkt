@@ -15,6 +15,8 @@
              adjoin-term
              first-term
              rest-terms
+             filter-terms
+             map-terms
              ;; ------------------
              install-polynomial-package
              install-generic-arithmetic-package-polynomial-zero
@@ -23,7 +25,6 @@
              install-tower-of-types-drop-polynomial)
   (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" common-utils) tolerance)
-             (only (submod "sicp2_part1.rkt" Section/2.2.3) filter)
              (only (submod "sicp2_part2.rkt" Example/symbolic-differentiation)
                    variable?)
              (only (submod "sicp2_part3.rkt" Exercise/2.83) raise)
@@ -84,6 +85,25 @@
     (if (=zero? (coeff term))
         term-list
         (cons term term-list)))
+
+  ;; ---------------------------------------------------------------------------------
+  ;; implement map/filter of terms (for convenience)
+  ;; ---------------------------------------------------------------------------------
+  ;; see filter in Section/2.2.3
+  (define (filter-terms predicate terms)
+    (cond [(null? terms) nil]
+          [(predicate (first-term terms))
+           (adjoin-term (first-term terms)
+                        (filter-terms predicate (rest-terms terms)))]
+          [else (filter-terms predicate (rest-terms terms))]))
+
+  ;; see map in Section/2.2.1
+  (define (map-terms proc terms)
+    (if (null? terms)
+        nil
+        (adjoin-term (proc (first-term terms))
+                     (map-terms proc (rest-terms terms)))))
+  ;; ---------------------------------------------------------------------------------
 
   (define (install-polynomial-package)
     (define (add-poly p1 p2)
@@ -191,9 +211,13 @@
     (if (not (same-variable? (variable p1) (variable p2)))
         #f
         (let ([non-zero-terms (λ (term) (not (=zero? (coeff term))))])
-          ;; FIXME: shoudn't use filter (can only use first-term and rest-terms)
-          (compare-terms (filter non-zero-terms (term-list p1))
-                         (filter non-zero-terms (term-list p2))))))
+          #|
+          I shouldn't use directly filter from Section/2.2.3 because it uses cons and
+          car/cdr of the given sequence (in this case the terms) but I have to use the
+          terms through the data abstraction: first-term, rest-terms, adjoin-term.
+          |#
+          (compare-terms (filter-terms non-zero-terms (term-list p1))
+                         (filter-terms non-zero-terms (term-list p2))))))
 
   (define (install-generic-arithmetic-package-equality-polynomials)
     (put 'equ? '(polynomial polynomial) polynomial-equality)
@@ -448,5 +472,143 @@
                                                   (make-term 0 3))))
                   3)))
 
+(module Exercise/2.88 sicp
+  (#%require (only racket/base module+ λ)
+             (only (submod "sicp1.rkt" common-utils) tolerance)
+             (only (submod "sicp2_part3.rkt" Exercise/2.83) type-tag)
+             (only (submod "sicp2_part3.rkt" Exercise/2.86)
+                   attach-tag
+                   put
+                   apply-generic
+                   clear-op-type-table
+                   ;; --------------
+                   add
+                   sub
+                   make-rational
+                   make-complex-from-real-imag
+                   make-complex-from-mag-ang
+                   ;; --------------
+                   real-part
+                   imag-part
+                   magnitude
+                   angle
+                   numer
+                   denom
+                   ;; --------------
+                   install-generic-arithmetic-package
+                   install-generic-arithmetic-package-equality
+                   install-generic-arithmetic-package-zero
+                   install-racket-integers-package
+                   install-tower-of-types-raise
+                   install-tower-of-types-drop
+                   install-functions-of-racket-number)
+             (only (submod ".." Exercise/2.87)
+                   make-polynomial
+                   make-term
+                   ;; --------------
+                   variable
+                   term-list
+                   the-empty-termlist
+                   order
+                   coeff
+                   adjoin-term
+                   map-terms
+                   ;; --------------
+                   install-polynomial-package
+                   install-generic-arithmetic-package-polynomial-zero
+                   install-tower-of-types-raise-complex
+                   install-generic-arithmetic-package-equality-polynomials
+                   install-tower-of-types-drop-polynomial))
+
+  (define (negate x) (apply-generic 'negate x))
+  (define (install-generic-arithmetic-package-negation)
+    (put 'negate '(racket-integer) (λ (x) (- x)))
+    (put 'negate '(rational)
+         (λ (x) (let ([x-tag (attach-tag 'rational x)])
+                  (make-rational (- (numer x-tag)) (denom x-tag)))))
+    (put 'negate '(racket-number) (λ (x) (- x)))
+    #|
+    A more consistent way to implement negation of complex numbers would be to dispatch
+    (put 'negate '(complex) (λ (x) (apply-generic 'negate x)))
+    and implement (put 'negate '(rectangular) ...) and (put 'negate '(polar) ...).
+    This requires some boilerplate in the rectangular and polar packages which I avoid
+    here (as I am being sloppy).
+    |#
+    (put 'negate '(complex)
+         (λ (x) (let ([x-tag (attach-tag 'complex x)])
+                  (let ([rect (make-complex-from-real-imag
+                               (negate (real-part x-tag))
+                               (negate (imag-part x-tag)))])
+                    (if (eq? (type-tag x) 'rectangular)
+                        rect
+                        (make-complex-from-mag-ang (magnitude rect)
+                                                   (angle rect)))))))
+
+    (put 'negate '(polynomial)
+         (λ (poly)
+           (make-polynomial
+            (variable poly)
+            #|
+            As with filter in Exercise/2.87, here I shouldn't use directly map (as I
+            have access to the terms only through first-term and rest-terms).
+            |#
+            (map-terms (λ (x) (make-term (order x) (negate (coeff x))))
+                       (term-list poly)))))
+    'generic-arithmetic-package-negation-installed)
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.88\n")
+
+    (clear-op-type-table)
+    (install-generic-arithmetic-package)
+    (install-generic-arithmetic-package-equality)
+    (install-generic-arithmetic-package-zero)
+    (install-generic-arithmetic-package-polynomial-zero)
+    (install-racket-integers-package)
+    (install-tower-of-types-raise)
+    (install-tower-of-types-raise-complex)
+    (install-tower-of-types-drop)
+    (install-functions-of-racket-number)
+    (install-polynomial-package)
+    (install-generic-arithmetic-package-equality-polynomials)
+    (install-tower-of-types-drop-polynomial)
+    (install-generic-arithmetic-package-negation)
+
+    (check-equal? (negate 1) -1)
+    (check-equal? (negate (make-rational 1 2)) (make-rational -1 2))
+    (check-equal? (negate 1.0) -1.0)
+    (check-equal? (negate (make-complex-from-real-imag 1 2))
+                  (make-complex-from-real-imag -1 -2))
+
+    (let ([c (negate (make-complex-from-mag-ang 1 2))])
+      (check-equal? (magnitude c) 1.0)
+      (check-within (angle c) -1.141592 tolerance))
+
+    (check-equal? (negate (make-complex-from-real-imag (make-rational 1 2) 3))
+                  (make-complex-from-real-imag (make-rational -1 2) -3))
+
+    (check-equal?
+     (negate
+      (make-polynomial
+       'x
+       (list (make-term 2 3)
+             (make-term 1 (make-polynomial 'y (list (make-term 2 1)
+                                                    (make-term 1 (make-rational 2 3))
+                                                    (make-term 0 3))))
+             (make-term 0 7))))
+     (make-polynomial
+      'x
+      (list (make-term 2 -3)
+            (make-term 1 (make-polynomial 'y (list (make-term 2 -1)
+                                                   (make-term 1 (make-rational -2 3))
+                                                   (make-term 0 -3))))
+            (make-term 0 -7))))
+
+    (check-equal? (sub (make-complex-from-real-imag 2 7)
+                       (negate (make-complex-from-real-imag 3 5)))
+                  (make-complex-from-real-imag 5 12))))
+
 (module+ test
-  (require (submod ".." Exercise/2.87 test)))
+  (require (submod ".." Exercise/2.87 test)
+           (submod ".." Exercise/2.88 test)))
