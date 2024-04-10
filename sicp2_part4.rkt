@@ -4,6 +4,23 @@
 #lang racket/base
 
 (module Exercise/2.87 sicp
+  (#%provide make-polynomial
+             make-term
+             variable
+             term-list
+             the-empty-termlist
+             empty-termlist?
+             order
+             coeff
+             adjoin-term
+             first-term
+             rest-terms
+             ;; ------------------
+             install-polynomial-package
+             install-generic-arithmetic-package-polynomial-zero
+             install-tower-of-types-raise-complex
+             install-generic-arithmetic-package-equality-polynomials
+             install-tower-of-types-drop-polynomial)
   (#%require (only racket/base module+ λ)
              (only (submod "sicp1.rkt" common-utils) tolerance)
              (only (submod "sicp2_part1.rkt" Section/2.2.3) filter)
@@ -63,15 +80,12 @@
   (define (make-term order coeff) (list order coeff))
   (define (order term) (car term))
   (define (coeff term) (cadr term))
+  (define (adjoin-term term term-list)
+    (if (=zero? (coeff term))
+        term-list
+        (cons term term-list)))
 
   (define (install-polynomial-package)
-    (define (adjoin-term term term-list)
-      (if (=zero? (coeff term))
-          term-list
-          (cons term term-list)))
-
-    ;; ---------------------------------------------------------------------------------
-
     (define (add-poly p1 p2)
       (if (same-variable? (variable p1) (variable p2))
           (make-poly (variable p1)
@@ -140,17 +154,17 @@
          (λ (z)
            (attach-tag 'polynomial
                        (make-poly 'no-variable
-                                  (list (make-term
-                                         0
-                                         (drop (attach-tag 'complex z)))))))))
+                                  (adjoin-term
+                                   (make-term 0 (drop (attach-tag 'complex z)))
+                                   (the-empty-termlist)))))))
 
   (define (install-generic-arithmetic-package-polynomial-zero)
     (define (zero-polynomial poly)
       (define (terms-handler terms)
-        (if (null? terms)
+        (if (empty-termlist? terms)
             #t
-            (and (=zero? (coeff (car terms)))
-                 (terms-handler (cdr terms)))))
+            (and (=zero? (coeff (first-term terms)))
+                 (terms-handler (rest-terms terms)))))
       (terms-handler (term-list poly)))
 
     (put '=zero? '(polynomial) zero-polynomial)
@@ -168,15 +182,16 @@
   (define (polynomial-equality p1 p2)
     (define (compare-terms terms1 terms2)
       (cond [(not (= (length terms1) (length terms2))) #f]
-            [(null? terms1) #t]
-            [else (let ([h1 (car terms1)]
-                        [h2 (car terms2)])
+            [(empty-termlist? terms1) #t]
+            [else (let ([h1 (first-term terms1)]
+                        [h2 (first-term terms2)])
                     (and (and (= (order h1) (order h2))
                               (equ? (coeff h1) (coeff h2)))
-                         (compare-terms (cdr terms1) (cdr terms2))))]))
+                         (compare-terms (rest-terms terms1) (rest-terms terms2))))]))
     (if (not (same-variable? (variable p1) (variable p2)))
         #f
         (let ([non-zero-terms (λ (term) (not (=zero? (coeff term))))])
+          ;; FIXME: shoudn't use filter (can only use first-term and rest-terms)
           (compare-terms (filter non-zero-terms (term-list p1))
                          (filter non-zero-terms (term-list p2))))))
 
@@ -187,15 +202,16 @@
   (define (install-tower-of-types-drop-polynomial)
     (define (polynomial->complex poly)
       (define (iter terms)
-        (cond [(null? terms) (make-complex-from-real-imag 0 0)]
-              [(= (order (car terms)) 0)
-               (make-complex-from-real-imag (coeff (car terms)) 0)]
-              [else (iter (cdr terms))]))
+        (cond [(empty-termlist? terms) (make-complex-from-real-imag 0 0)]
+              [(= (order (first-term terms)) 0)
+               (make-complex-from-real-imag (coeff (first-term terms)) 0)]
+              [else (iter (rest-terms terms))]))
       (iter (term-list poly)))
     (put 'project '(polynomial) (λ (p) (polynomial->complex p))))
 
   (module+ test
-    (#%require rackunit)
+    (#%require rackunit
+               (only (submod "sicp1.rkt" Exercise/1.43) repeated))
     (display "--> Exercise/2.87\n")
 
     (clear-op-type-table)
@@ -276,6 +292,13 @@
                            (list (make-term 1 1)
                                  (make-term 0 3))))
              (make-term 0 6))))
+
+    (define p2-y
+      (make-polynomial
+       'y
+       (list (make-term 2 1)
+             (make-term 1 2)
+             (make-term 0 1))))
 
     ;; --------------------------------------------------------------------------------
     ;; See page 281
@@ -380,27 +403,26 @@
 
     (define result:p7*p8 (mul p7 p8))
     (define terms (term-list (contents result:p7*p8)))
-    (check-equal? (order (car terms)) 6)
-    (check-equal? (order (cadr terms)) 5)
-    (check-equal? (order (caddr terms)) 4)
-    (check-equal? (order (cadddr terms)) 3)
-    (check-equal? (order (cadddr (cdr terms))) 2)
-    (check-equal? (order (cadddr (cddr terms))) 1)
-    (check-equal? (order (cadddr (cdddr terms))) 0)
+    (check-equal? (order (first-term terms)) 6)
+    (check-equal? (order (first-term ((repeated rest-terms 1) terms))) 5)
+    (check-equal? (order (first-term ((repeated rest-terms 2) terms))) 4)
+    (check-equal? (order (first-term ((repeated rest-terms 3) terms))) 3)
+    (check-equal? (order (first-term ((repeated rest-terms 4) terms))) 2)
+    (check-equal? (order (first-term ((repeated rest-terms 5) terms))) 1)
+    (check-equal? (order (first-term ((repeated rest-terms 6) terms))) 0)
 
-    (check-equal? (coeff (car terms)) 3)
-
-    (check-true (approx-equ? (coeff (cadr terms))
+    (check-equal? (coeff (first-term terms)) 3)
+    (check-true (approx-equ? (coeff (first-term ((repeated rest-terms 1) terms)))
                              (make-complex-from-mag-ang 3.605551 0.982793)))
-
-    (check-equal? (coeff (caddr terms)) (make-rational 9 1))
-    (check-true (approx-equ? (coeff (cadddr terms))
+    (check-equal? (coeff (first-term ((repeated rest-terms 2) terms)))
+                  (make-rational 9 1))
+    (check-true (approx-equ? (coeff (first-term ((repeated rest-terms 3) terms)))
                              (make-complex-from-mag-ang 2.403700 0.982793)))
-    (check-true (approx-equ? (coeff (cadddr (cdr terms)))
+    (check-true (approx-equ? (coeff (first-term ((repeated rest-terms 4) terms)))
                              (make-complex-from-real-imag 19.666666 9.0)))
-    (check-true (approx-equ? (coeff (cadddr (cddr terms)))
+    (check-true (approx-equ? (coeff (first-term ((repeated rest-terms 5) terms)))
                              (make-complex-from-mag-ang 21.023796 1.523213)))
-    (check-true (approx-equ? (coeff (cadddr (cdddr terms)))
+    (check-true (approx-equ? (coeff (first-term ((repeated rest-terms 6) terms)))
                              (make-complex-from-mag-ang 40.816663 0.5404195)))
 
     ;; --------------------------------------------------------------------------------
