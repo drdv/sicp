@@ -23,7 +23,7 @@
              install-tower-of-types-raise-complex
              install-generic-arithmetic-package-equality-polynomials
              install-tower-of-types-drop-polynomial)
-  (#%require (only racket/base module+ λ)
+  (#%require (only racket/base module+ λ exn:fail?)
              (only (submod "sicp1.rkt" common-utils) tolerance)
              (only (submod "sicp2_part2.rkt" Example/symbolic-differentiation)
                    variable?)
@@ -87,11 +87,16 @@
         (cons term term-list)))
 
   ;; ---------------------------------------------------------------------------------
-  ;; implement map/filter of terms (for convenience)
-  ;; ---------------------------------------------------------------------------------
+
+  #|
+  I shouldn't use directly filter and map when working with polynomial terms because
+  they use cons, car, cdr, null?, while I have access to the terms only through the data
+  abstraction: first-term, rest-terms, empty-termlist?, adjoin-term.
+  |#
+
   ;; see filter in Section/2.2.3
   (define (filter-terms predicate terms)
-    (cond [(null? terms) nil]
+    (cond [(empty-termlist? terms) nil]
           [(predicate (first-term terms))
            (adjoin-term (first-term terms)
                         (filter-terms predicate (rest-terms terms)))]
@@ -99,10 +104,11 @@
 
   ;; see map in Section/2.2.1
   (define (map-terms proc terms)
-    (if (null? terms)
+    (if (empty-termlist? terms)
         nil
         (adjoin-term (proc (first-term terms))
                      (map-terms proc (rest-terms terms)))))
+
   ;; ---------------------------------------------------------------------------------
 
   (define (install-polynomial-package)
@@ -166,6 +172,9 @@
   (define (make-polynomial var terms)
     ((get 'make 'polynomial) var terms))
 
+  (define (change-polynomial-variable poly new-variable)
+    (make-polynomial new-variable (term-list (contents poly))))
+
   ;; ---------------------------------------------------------------------------------
 
   ;; tower: racket-integer -> rational -> racket-number -> complex -> polynomial
@@ -193,9 +202,9 @@
   ;; ---------------------------------------------------------------------------------
 
   #|
-  I implemented the following procedures because I wanted to use `drop` but then I
+  I implemented the following procedures because I wanted to use `drop`. Later, I
   realized that `drop` was implemented in Exercise/2.85 where we still didn't have the
-  notion of nested types (e.g., a complex number with rational coefficients) - this was
+  notion of nested types (e.g., a complex number with rational coefficients) whick was
   implemented in Exercise/2.86 (so the `drop` functionality is a bit limited - anyway
   this is not a part of the exercise).
   |#
@@ -211,11 +220,6 @@
     (if (not (same-variable? (variable p1) (variable p2)))
         #f
         (let ([non-zero-terms (λ (term) (not (=zero? (coeff term))))])
-          #|
-          I shouldn't use directly filter from Section/2.2.3 because it uses cons and
-          car/cdr of the given sequence (in this case the terms) but I have to use the
-          terms through the data abstraction: first-term, rest-terms, adjoin-term.
-          |#
           (compare-terms (filter-terms non-zero-terms (term-list p1))
                          (filter-terms non-zero-terms (term-list p2))))))
 
@@ -317,12 +321,8 @@
                                  (make-term 0 3))))
              (make-term 0 6))))
 
-    (define p2-y
-      (make-polynomial
-       'y
-       (list (make-term 2 1)
-             (make-term 1 2)
-             (make-term 0 1))))
+    (check-equal? (add p1 p2) p1+p2)
+    (check-exn exn:fail? (λ () (add p1 (change-polynomial-variable p1 'z))))
 
     ;; --------------------------------------------------------------------------------
     ;; See page 281
@@ -453,7 +453,6 @@
     ;; equ? / drop
     ;; --------------------------------------------------------------------------------
 
-    (check-equal? (add p1 p2) p1+p2)
     (check-false (equ? p1 p2))
     (check-true (equ? p1 p1))
 
@@ -564,19 +563,16 @@
                   (let ([rect (make-complex-from-real-imag
                                (negate (real-part x-tag))
                                (negate (imag-part x-tag)))])
-                    (if (eq? (type-tag x) 'rectangular)
-                        rect
-                        (make-complex-from-mag-ang (magnitude rect)
-                                                   (angle rect)))))))
+                    (cond [(eq? (type-tag x) 'rectangular) rect]
+                          [(eq? (type-tag x) 'polar) (make-complex-from-mag-ang
+                                                      (magnitude rect)
+                                                      (angle rect))]
+                          [else (error "Unknown complex representation:" x)])))))
 
     (put 'negate '(polynomial)
          (λ (poly)
            (make-polynomial
             (variable poly)
-            #|
-            As with filter in Exercise/2.87, here I shouldn't use directly map (as I
-            have access to the terms only through first-term and rest-terms).
-            |#
             (map-terms (λ (x) (make-term (order x) (negate (coeff x))))
                        (term-list poly)))))
     'generic-arithmetic-package-negation-installed)
