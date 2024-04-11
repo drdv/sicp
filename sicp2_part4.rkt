@@ -74,14 +74,15 @@
   (define (variable p) (car p))
   (define (term-list p) (cdr p))
 
-  (define (the-empty-termlist) '())
-  (define (first-term term-list) (car term-list))
-  (define (rest-terms term-list) (cdr term-list))
-  (define (empty-termlist? term-list) (null? term-list))
   (define (make-term order coeff) (list order coeff))
   (define (order term) (car term))
   (define (coeff term) (cadr term))
-  (define (adjoin-term term term-list)
+
+  (define (the-empty-termlist) '())
+  (define (empty-termlist? term-list) (null? term-list))
+  (define (first-term term-list) (car term-list))
+  (define (rest-terms term-list) (cdr term-list))
+  (define (adjoin-term term term-list) ;; regarding order, see footnote 59 (page 282)
     (if (=zero? (coeff term))
         term-list
         (cons term term-list)))
@@ -102,7 +103,12 @@
                         (filter-terms predicate (rest-terms terms)))]
           [else (filter-terms predicate (rest-terms terms))]))
 
-  ;; see map in Section/2.2.1
+  #|
+  See map in Section/2.2.1. I assume that the `proc` argument is such that the orders of
+  terms are not modified (or at least are kept in decreasing order). An example of a
+  "valid" `proc` is (λ (x) (make-term (order x) (negate (coeff x)))) - it simply
+  negates the coefficient of each term but doesn't modify its order (i.e., power).
+  |#
   (define (map-terms proc terms)
     (if (empty-termlist? terms)
         nil
@@ -538,7 +544,6 @@
                    the-empty-termlist
                    order
                    coeff
-                   adjoin-term
                    map-terms
                    ;; --------------
                    install-polynomial-package
@@ -643,6 +648,104 @@
       (check-equal? (add c1 (negate c2)) result)
       (check-equal? (sub c1 c2) result))))
 
+(module Exercise/2.89 sicp
+  (#%require (only racket/base module+ λ exn:fail?)
+             (only (submod "sicp2_part3.rkt" Exercise/2.86)
+                   =zero?
+                   ;; --------------
+                   clear-op-type-table
+                   ;; --------------
+                   install-generic-arithmetic-package
+                   install-generic-arithmetic-package-equality
+                   install-generic-arithmetic-package-zero
+                   install-racket-integers-package
+                   install-tower-of-types-raise
+                   install-tower-of-types-drop
+                   install-functions-of-racket-number)
+             (only (submod ".." Exercise/2.87)
+                   make-term
+                   ;; --------------
+                   the-empty-termlist
+                   order
+                   coeff
+                   empty-termlist?
+                   rest-terms
+                   ;; --------------
+                   install-polynomial-package
+                   install-generic-arithmetic-package-polynomial-zero
+                   install-tower-of-types-raise-complex
+                   install-generic-arithmetic-package-equality-polynomials
+                   install-tower-of-types-drop-polynomial)
+             (only (submod ".." Exercise/2.88)
+                   install-generic-arithmetic-package-negation
+                   install-generic-arithmetic-package-sub-polynomial))
+
+  #|
+  My modelling is as follows:
+  1. In the dense representation, terms are stored as a list of coefficients and the
+  position in the list determines the order of each term. But a term by itself (i.e.,
+  without the context of how it is stored) should explicitly contain its order and
+  coefficient, so I preserve as is the existing make-term, order and coeff procedures.
+  2. We have two selectors: first-term and rest-terms. The former returns an actual term
+  (i.e., an object with an order and a coefficient), while the latter returns our
+  representation (dense or sparse) of the remaining terms.
+  3. For the adjoin-term we make the same assumption as in footnote 59 (page 282) i.e.,
+  it is allways called with a term of higher order than the existing terms.
+  4. In this way, the existing implementation of add-terms and mul-terms can be reused
+  as is.
+  |#
+
+  (define (first-term term-list)
+    (list (- (length term-list) 1)
+          (car term-list)))
+
+  (define (adjoin-term term term-list)
+    (if (=zero? (coeff term))
+        term-list
+        (let ([next-order (if (empty-termlist? term-list)
+                              0
+                              (+ (order (first-term term-list)) 1))])
+          (cond [(= (order term) next-order) (cons (coeff term) term-list)]
+                [(> (order term) next-order) (adjoin-term term (cons 0 term-list))]
+                [else (error "Order to new term should be at least:" next-order)]))))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.89\n")
+
+    ;; not all packages need to be installed
+    (clear-op-type-table)
+    (install-generic-arithmetic-package)
+    (install-generic-arithmetic-package-equality)
+    (install-generic-arithmetic-package-zero)
+    (install-generic-arithmetic-package-polynomial-zero)
+    (install-racket-integers-package)
+    (install-tower-of-types-raise)
+    (install-tower-of-types-raise-complex)
+    (install-tower-of-types-drop)
+    (install-functions-of-racket-number)
+    (install-polynomial-package)
+    (install-generic-arithmetic-package-equality-polynomials)
+    (install-tower-of-types-drop-polynomial)
+    (install-generic-arithmetic-package-negation)
+    (install-generic-arithmetic-package-sub-polynomial)
+
+    (define t0 (the-empty-termlist))
+    (check-true (empty-termlist? t0))
+
+    (define t1 (adjoin-term (make-term 0 1) t0))
+    (check-equal? t1 '(1))
+
+    (define t2 (adjoin-term (make-term 5 2) t1))
+    (check-equal? t2 '(2 0 0 0 0 1))
+    (check-equal? (adjoin-term (make-term 7 0) t2) t2)
+
+    (check-exn exn:fail? (λ () (adjoin-term (make-term 3 1) t2)))
+
+    (check-equal? (first-term t2) '(5 2))
+    (check-equal? (rest-terms t2) '(0 0 0 0 1))))
+
 (module+ test
   (require (submod ".." Exercise/2.87 test)
-           (submod ".." Exercise/2.88 test)))
+           (submod ".." Exercise/2.88 test)
+           (submod ".." Exercise/2.89 test)))
