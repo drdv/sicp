@@ -5,6 +5,7 @@
 
 (module Exercise/2.87 sicp
   (#%provide make-polynomial
+             make-poly
              make-term
              variable
              term-list
@@ -17,6 +18,9 @@
              rest-terms
              filter-terms
              map-terms
+             add-terms
+             same-variable?
+             equ?
              ;; ------------------
              install-polynomial-package
              install-generic-arithmetic-package-polynomial-zero
@@ -82,10 +86,15 @@
   (define (empty-termlist? term-list) (null? term-list))
   (define (first-term term-list) (car term-list))
   (define (rest-terms term-list) (cdr term-list))
-  (define (adjoin-term term term-list) ;; regarding order, see footnote 59 (page 282)
-    (if (=zero? (coeff term))
-        term-list
-        (cons term term-list)))
+  (define (adjoin-term term term-list)
+    (let ([next-order (if (empty-termlist? term-list)
+                          0
+                          (+ (order (first-term term-list)) 1))])
+      (if (< (order term) next-order) ; verify assumption see footnote 59 (page 282)
+          (error "Order to new term should be at least" next-order)
+          (if (=zero? (coeff term))
+              term-list
+              (cons term term-list)))))
 
   ;; ---------------------------------------------------------------------------------
 
@@ -97,7 +106,7 @@
 
   ;; see filter in Section/2.2.3
   (define (filter-terms predicate terms)
-    (cond [(empty-termlist? terms) nil]
+    (cond [(empty-termlist? terms) (the-empty-termlist)]
           [(predicate (first-term terms))
            (adjoin-term (first-term terms)
                         (filter-terms predicate (rest-terms terms)))]
@@ -111,9 +120,45 @@
   |#
   (define (map-terms proc terms)
     (if (empty-termlist? terms)
-        nil
+        (the-empty-termlist)
         (adjoin-term (proc (first-term terms))
                      (map-terms proc (rest-terms terms)))))
+
+  ;; ---------------------------------------------------------------------------------
+
+  (define (add-terms L1 L2)
+    (cond [(empty-termlist? L1) L2]
+          [(empty-termlist? L2) L1]
+          [else (let ([t1 (first-term L1)]
+                      [t2 (first-term L2)])
+                  (cond [(> (order t1) (order t2))
+                         (adjoin-term t1
+                                      (add-terms (rest-terms L1) L2))]
+                        [(< (order t1) (order t2))
+                         (adjoin-term t2
+                                      (add-terms L1 (rest-terms L2)))]
+                        [else
+                         (adjoin-term (make-term (order t1)
+                                                 (add (coeff t1) (coeff t2)))
+                                      (add-terms (rest-terms L1)
+                                                 (rest-terms L2)))]))]))
+
+  ;; ---------------------------------------------------------------------------------
+
+  (define (mul-terms L1 L2)
+    (if (empty-termlist? L1)
+        (the-empty-termlist)
+        (add-terms (mul-term-by-all-terms (first-term L1) L2)
+                   (mul-terms (rest-terms L1) L2))))
+
+  (define (mul-term-by-all-terms t1 L)
+    (if (empty-termlist? L)
+        (the-empty-termlist)
+        (let ([t2 (first-term L)])
+          (adjoin-term
+           (make-term (+ (order t1) (order t2))
+                      (mul (coeff t1) (coeff t2)))
+           (mul-term-by-all-terms t1 (rest-terms L))))))
 
   ;; ---------------------------------------------------------------------------------
 
@@ -124,23 +169,6 @@
                      (add-terms (term-list p1) (term-list p2)))
           (error "Polys not in same var: ADD-POLY" (list p1 p2))))
 
-    (define (add-terms L1 L2)
-      (cond [(empty-termlist? L1) L2]
-            [(empty-termlist? L2) L1]
-            [else (let ([t1 (first-term L1)]
-                        [t2 (first-term L2)])
-                    (cond [(> (order t1) (order t2))
-                           (adjoin-term t1
-                                        (add-terms (rest-terms L1) L2))]
-                          [(< (order t1) (order t2))
-                           (adjoin-term t2
-                                        (add-terms L1 (rest-terms L2)))]
-                          [else
-                           (adjoin-term (make-term (order t1)
-                                                   (add (coeff t1) (coeff t2)))
-                                        (add-terms (rest-terms L1)
-                                                   (rest-terms L2)))]))]))
-
     ;; ---------------------------------------------------------------------------------
 
     (define (mul-poly p1 p2)
@@ -148,21 +176,6 @@
           (make-poly (variable p1)
                      (mul-terms (term-list p1) (term-list p2)))
           (error "Polys not in same var: MUL-POLY" (list p1 p2))))
-
-    (define (mul-terms L1 L2)
-      (if (empty-termlist? L1)
-          (the-empty-termlist)
-          (add-terms (mul-term-by-all-terms (first-term L1) L2)
-                     (mul-terms (rest-terms L1) L2))))
-
-    (define (mul-term-by-all-terms t1 L)
-      (if (empty-termlist? L)
-          (the-empty-termlist)
-          (let ([t2 (first-term L)])
-            (adjoin-term
-             (make-term (+ (order t1) (order t2))
-                        (mul (coeff t1) (coeff t2)))
-             (mul-term-by-all-terms t1 (rest-terms L))))))
 
     ;; ---------------------------------------------------------------------------------
 
@@ -187,11 +200,9 @@
   (define (install-tower-of-types-raise-complex)
     (put 'raise '(complex)
          (λ (z)
-           (attach-tag 'polynomial
-                       (make-poly 'no-variable
-                                  (adjoin-term
-                                   (make-term 0 (drop (attach-tag 'complex z)))
-                                   (the-empty-termlist)))))))
+           (make-polynomial 'no-variable (adjoin-term
+                                          (make-term 0 (drop (attach-tag 'complex z)))
+                                          (the-empty-termlist))))))
 
   (define (install-generic-arithmetic-package-polynomial-zero)
     (define (zero-polynomial poly)
@@ -214,22 +225,22 @@
   implemented in Exercise/2.86 (so the `drop` functionality is a bit limited - anyway
   this is not a part of the exercise).
   |#
-  (define (polynomial-equality p1 p2)
-    (define (compare-terms terms1 terms2)
-      (cond [(not (= (length terms1) (length terms2))) #f]
-            [(empty-termlist? terms1) #t]
-            [else (let ([h1 (first-term terms1)]
-                        [h2 (first-term terms2)])
-                    (and (and (= (order h1) (order h2))
-                              (equ? (coeff h1) (coeff h2)))
-                         (compare-terms (rest-terms terms1) (rest-terms terms2))))]))
-    (if (not (same-variable? (variable p1) (variable p2)))
-        #f
-        (let ([non-zero-terms (λ (term) (not (=zero? (coeff term))))])
-          (compare-terms (filter-terms non-zero-terms (term-list p1))
-                         (filter-terms non-zero-terms (term-list p2))))))
-
   (define (install-generic-arithmetic-package-equality-polynomials)
+    (define (polynomial-equality p1 p2)
+      (define (compare-terms terms1 terms2)
+        (cond [(not (= (length terms1) (length terms2))) #f]
+              [(empty-termlist? terms1) #t]
+              [else (let ([h1 (first-term terms1)]
+                          [h2 (first-term terms2)])
+                      (and (and (= (order h1) (order h2))
+                                (equ? (coeff h1) (coeff h2)))
+                           (compare-terms (rest-terms terms1) (rest-terms terms2))))]))
+      (if (not (same-variable? (variable p1) (variable p2)))
+          #f
+          (let ([non-zero-terms (λ (term) (not (=zero? (coeff term))))])
+            (compare-terms (filter-terms non-zero-terms (term-list p1))
+                           (filter-terms non-zero-terms (term-list p2))))))
+
     (put 'equ? '(polynomial polynomial) polynomial-equality)
     'generic-arithmetic-package-equality-polynomials-installed)
 
@@ -649,8 +660,12 @@
       (check-equal? (sub c1 c2) result))))
 
 (module Exercise/2.89 sicp
+  (#%provide first-term
+             adjoin-term
+             add-terms)
   (#%require (only racket/base module+ λ exn:fail?)
              (only (submod "sicp2_part3.rkt" Exercise/2.86)
+                   add
                    =zero?
                    ;; --------------
                    clear-op-type-table
@@ -692,7 +707,7 @@
   3. For the adjoin-term we make the same assumption as in footnote 59 (page 282) i.e.,
   it is allways called with a term of higher order than the existing terms.
   4. In this way, the existing implementation of add-terms and mul-terms can be reused
-  as is.
+  as is (but I have to copy/paste them here).
   |#
 
   (define (first-term term-list)
@@ -707,7 +722,24 @@
                               (+ (order (first-term term-list)) 1))])
           (cond [(= (order term) next-order) (cons (coeff term) term-list)]
                 [(> (order term) next-order) (adjoin-term term (cons 0 term-list))]
-                [else (error "Order to new term should be at least:" next-order)]))))
+                [else (error "Order to new term should be at least" next-order)]))))
+
+  (define (add-terms L1 L2)
+    (cond [(empty-termlist? L1) L2]
+          [(empty-termlist? L2) L1]
+          [else (let ([t1 (first-term L1)]
+                      [t2 (first-term L2)])
+                  (cond [(> (order t1) (order t2))
+                         (adjoin-term t1
+                                      (add-terms (rest-terms L1) L2))]
+                        [(< (order t1) (order t2))
+                         (adjoin-term t2
+                                      (add-terms L1 (rest-terms L2)))]
+                        [else
+                         (adjoin-term (make-term (order t1)
+                                                 (add (coeff t1) (coeff t2)))
+                                      (add-terms (rest-terms L1)
+                                                 (rest-terms L2)))]))]))
 
   (module+ test
     (#%require rackunit)
@@ -743,9 +775,386 @@
     (check-exn exn:fail? (λ () (adjoin-term (make-term 3 1) t2)))
 
     (check-equal? (first-term t2) '(5 2))
-    (check-equal? (rest-terms t2) '(0 0 0 0 1))))
+    (check-equal? (rest-terms t2) '(0 0 0 0 1))
+
+    (check-equal? (add-terms t2 t2) '(4 0 0 0 0 2))))
+
+(module Exercise/2.90 sicp
+  (#%require (only racket/base module+ module λ local-require submod only-in)
+             (only (submod "sicp2_part3.rkt" Exercise/2.83) type-tag)
+             (only (submod "sicp2_part3.rkt" Exercise/2.85) drop)
+             (only (submod "sicp2_part3.rkt" Exercise/2.86)
+                   =zero?
+                   equ?
+                   ;; --------------
+                   make-complex-from-real-imag
+                   make-complex-from-mag-ang
+                   make-rational
+                   ;; --------------
+                   add
+                   sub
+                   mul
+                   ;; --------------
+                   real-part
+                   imag-part
+                   magnitude
+                   angle
+                   numer
+                   denom
+                   ;; --------------
+                   clear-op-type-table
+                   get
+                   put
+                   apply-generic
+                   contents
+                   attach-tag
+                   ;; --------------
+                   install-generic-arithmetic-package
+                   install-generic-arithmetic-package-equality
+                   install-generic-arithmetic-package-zero
+                   install-racket-integers-package
+                   install-tower-of-types-raise
+                   install-tower-of-types-drop
+                   install-functions-of-racket-number)
+             (only (submod ".." Exercise/2.87)
+                   variable
+                   make-term
+                   make-polynomial
+                   same-variable?
+                   make-poly
+                   ;; --------------
+                   term-list
+                   order
+                   coeff
+                   empty-termlist?)
+             (rename (submod ".." Exercise/2.87)
+                     the-empty-termlist-no-tag the-empty-termlist))
+
+  #|
+  Design notes:
+  1. adjoin-term takes two arguments. The second one is a list of terms and it would
+  have a tag depending on the (dense or sparse) representation. The first one, however,
+  is a single term to adjoin and I don't want to tag it (there is no point as no
+  dispatch would be done on it). To achieve this, the adjoin-term interface would return
+  a procedure.
+  2. I want for arithmetic operations (add, sub, mul) to be able to handle both sparse
+  and dense polynomials transparently. To achieve this I define them in terms of generic
+  versions of adjoin-term, first-term, rest-terms and empty-termlist?. In this way we
+  can e.g., add two polynomials with different representation.
+  3. I have chosen the-empty-termlist to create a sparse termlist by default. As a
+  result, multiplying two polynomials with different representation always leads to a
+  sparse polynomial. In the case of addition, however, the type of the output depends
+  not only on the type of the operands but on the particular polynomial terms. I have
+  added a procedure that converts between polynomial types (for fun).
+  4. Apart from the arithmetic operations, I reimplemented equ? and =zero? in term of
+  the generic versions of adjoin-term, first-term, rest-terms and empty-termlist?.
+  |#
+
+  (define (install-sparse-terms-representation)
+    (local-require (only-in (submod ".." Exercise/2.87)
+                            first-term
+                            rest-terms
+                            adjoin-term
+                            empty-termlist?
+                            add-terms))
+    (define (tag term) (attach-tag 'sparse-terms term))
+    (put 'adjoin-term '(sparse-terms) (λ (terms)
+                                        (λ (term)
+                                          (tag (adjoin-term term terms)))))
+    (put 'first-term '(sparse-terms) first-term)
+    (put 'rest-terms '(sparse-terms) (λ (terms) (tag (rest-terms terms))))
+    (put 'empty-termlist? '(sparse-terms) empty-termlist?))
+
+  (define (install-dense-terms-representation)
+    (local-require (only-in (submod ".." Exercise/2.87) rest-terms empty-termlist?))
+    (local-require (only-in (submod ".." Exercise/2.89)
+                            first-term
+                            adjoin-term
+                            add-terms))
+    (define (tag term) (attach-tag 'dense-terms term))
+    (put 'adjoin-term '(dense-terms) (λ (terms)
+                                       (λ (term)
+                                         (tag (adjoin-term term terms)))))
+    (put 'first-term '(dense-terms) first-term)
+    (put 'rest-terms '(dense-terms) (λ (terms) (tag (rest-terms terms))))
+    (put 'empty-termlist? '(dense-terms) empty-termlist?))
+
+  (define (the-empty-termlist) (sparse-empty-termlist))
+  (define (sparse-empty-termlist)
+    (attach-tag 'sparse-terms (the-empty-termlist-no-tag)))
+  (define (dense-empty-termlist) (attach-tag 'dense-terms (the-empty-termlist-no-tag)))
+  (define (adjoin-term term terms) ((apply-generic 'adjoin-term terms) term))
+  (define (first-term terms) (apply-generic 'first-term terms))
+  (define (rest-terms terms) (apply-generic 'rest-terms terms))
+  (define (empty-termlist? terms) (apply-generic 'empty-termlist? terms))
+
+  (define (convert-poly poly terms-type)
+    (define (convert-terms terms)
+      (if (empty-termlist? terms)
+          (attach-tag terms-type (the-empty-termlist-no-tag))
+          (adjoin-term (first-term terms) (convert-terms (rest-terms terms)))))
+    (make-polynomial (variable (contents poly))
+                     (convert-terms (term-list (contents poly)))))
+
+  (define (install-polynomial-package)
+    ;; ---------------------------------------------------------------------------------
+    ;; Copy/paste add-terms, add-poly, mul-terms ... from Exercise/2.87
+    ;; ---------------------------------------------------------------------------------
+    (define (add-terms L1 L2)
+      (cond [(empty-termlist? L1) L2]
+            [(empty-termlist? L2) L1]
+            [else (let ([t1 (first-term L1)]
+                        [t2 (first-term L2)])
+                    (cond [(> (order t1) (order t2))
+                           (adjoin-term t1
+                                        (add-terms (rest-terms L1) L2))]
+                          [(< (order t1) (order t2))
+                           (adjoin-term t2
+                                        (add-terms L1 (rest-terms L2)))]
+                          [else
+                           (adjoin-term (make-term (order t1)
+                                                   (add (coeff t1) (coeff t2)))
+                                        (add-terms (rest-terms L1)
+                                                   (rest-terms L2)))]))]))
+
+    (define (add-poly p1 p2)
+      (if (same-variable? (variable p1) (variable p2))
+          (make-poly (variable p1)
+                     (add-terms (term-list p1)
+                                (term-list p2)))
+          (error "Polys not in same var: ADD-POLY" (list p1 p2))))
+
+    (define (mul-terms L1 L2)
+      (if (empty-termlist? L1)
+          (the-empty-termlist)
+          (add-terms (mul-term-by-all-terms (first-term L1) L2)
+                     (mul-terms (rest-terms L1) L2))))
+
+    (define (mul-term-by-all-terms t1 L)
+      (if (empty-termlist? L)
+          (the-empty-termlist)
+          (let ([t2 (first-term L)])
+            (adjoin-term
+             (make-term (+ (order t1) (order t2))
+                        (mul (coeff t1) (coeff t2)))
+             (mul-term-by-all-terms t1 (rest-terms L))))))
+
+    (define (mul-poly p1 p2)
+      (if (same-variable? (variable p1) (variable p2))
+          (make-poly (variable p1)
+                     (mul-terms (term-list p1) (term-list p2)))
+          (error "Polys not in same var: MUL-POLY" (list p1 p2))))
+    ;; --------------------------------------------------------------------------------
+
+    (define (tag poly) (attach-tag 'polynomial poly))
+    (put 'add '(polynomial polynomial)
+         (lambda (p1 p2) (tag (add-poly p1 p2))))
+    (put 'mul '(polynomial polynomial)
+         (lambda (p1 p2) (tag (mul-poly p1 p2))))
+    (put 'make 'polynomial
+         (lambda (var terms) (tag (make-poly var terms)))))
+
+  ;; ----------------------------------------------------------------------------------
+  ;; equ? / =zero?
+  ;; ----------------------------------------------------------------------------------
+  (define (install-generic-arithmetic-package-equality-polynomials)
+    (define (filter-terms predicate terms)
+      (cond [(empty-termlist? terms) (the-empty-termlist)]
+            [(predicate (first-term terms))
+             (adjoin-term (first-term terms)
+                          (filter-terms predicate (rest-terms terms)))]
+            [else (filter-terms predicate (rest-terms terms))]))
+
+    (define (polynomial-equality p1 p2)
+      (define (compare-terms terms1 terms2)
+        (cond [(not (= (length terms1) (length terms2))) #f]
+              [(empty-termlist? terms1) #t]
+              [else (let ([h1 (first-term terms1)]
+                          [h2 (first-term terms2)])
+                      (and (and (= (order h1) (order h2))
+                                (equ? (coeff h1) (coeff h2)))
+                           (compare-terms (rest-terms terms1) (rest-terms terms2))))]))
+      (if (not (same-variable? (variable p1) (variable p2)))
+          #f
+          (let ([non-zero-terms (λ (term) (not (=zero? (coeff term))))])
+            (compare-terms (filter-terms non-zero-terms (term-list p1))
+                           (filter-terms non-zero-terms (term-list p2))))))
+
+    (put 'equ? '(polynomial polynomial) polynomial-equality)
+    'generic-arithmetic-package-equality-polynomials-installed)
+
+  (define (install-generic-arithmetic-package-polynomial-zero)
+    (define (zero-polynomial poly)
+      (define (terms-handler terms)
+        (if (empty-termlist? terms)
+            #t
+            (and (=zero? (coeff (first-term terms)))
+                 (terms-handler (rest-terms terms)))))
+      (terms-handler (term-list poly)))
+
+    (put '=zero? '(polynomial) zero-polynomial)
+    'generic-arithmetic-package-=zero-polynomial-installed)
+
+  ;; -----------------------------------------------------------------------------------
+  ;; to be able to (add 1 some-polynomial)
+  ;; -----------------------------------------------------------------------------------
+  (define (install-tower-of-types-raise-complex)
+    (put 'raise '(complex)
+         (λ (z)
+           (make-polynomial 'no-variable (adjoin-term
+                                          (make-term 0 (drop (attach-tag 'complex z)))
+                                          (the-empty-termlist))))))
+
+  ;; -----------------------------------------------------------------------------------
+  ;; drop
+  ;; -----------------------------------------------------------------------------------
+  (define (install-tower-of-types-drop-polynomial)
+    (define (polynomial->complex poly)
+      (define (iter terms)
+        (cond [(empty-termlist? terms) (make-complex-from-real-imag 0 0)]
+              [(= (order (first-term terms)) 0)
+               (make-complex-from-real-imag (coeff (first-term terms)) 0)]
+              [else (iter (rest-terms terms))]))
+      (iter (term-list poly)))
+    (put 'project '(polynomial) (λ (p) (polynomial->complex p))))
+
+  ;; -----------------------------------------------------------------------------------
+  ;; sub
+  ;; -----------------------------------------------------------------------------------
+  (define (map-terms proc terms)
+    (if (empty-termlist? terms)
+        (the-empty-termlist)
+        (adjoin-term (proc (first-term terms))
+                     (map-terms proc (rest-terms terms)))))
+
+  (define (negate x) (apply-generic 'negate x))
+  (define (install-generic-arithmetic-package-negation)
+    (put 'negate '(racket-integer) (λ (x) (- x)))
+    (put 'negate '(rational)
+         (λ (x) (let ([x-tag (attach-tag 'rational x)])
+                  (make-rational (- (numer x-tag)) (denom x-tag)))))
+    (put 'negate '(racket-number) (λ (x) (- x)))
+    (put 'negate '(complex)
+         (λ (x) (let ([x-tag (attach-tag 'complex x)])
+                  (let ([rect (make-complex-from-real-imag
+                               (negate (real-part x-tag))
+                               (negate (imag-part x-tag)))])
+                    (cond [(eq? (type-tag x) 'rectangular) rect]
+                          [(eq? (type-tag x) 'polar) (make-complex-from-mag-ang
+                                                      (magnitude rect)
+                                                      (angle rect))]
+                          [else (error "Unknown complex representation:" x)])))))
+
+    (put 'negate '(polynomial)
+         (λ (poly)
+           (make-polynomial
+            (variable poly)
+            (map-terms (λ (x) (make-term (order x) (negate (coeff x))))
+                       (term-list poly)))))
+    'generic-arithmetic-package-negation-installed)
+
+  (define (install-generic-arithmetic-package-sub-polynomial)
+    (put 'sub '(polynomial polynomial)
+         (λ (p1 p2) (let ([p1-tag (attach-tag 'polynomial p1)]
+                          [p2-tag (attach-tag 'polynomial p2)])
+                      (add p1-tag (negate p2-tag)))))
+    'generic-arithmetic-package-sub-polynomial-installed)
+  ;; -----------------------------------------------------------------------------------
+
+  (define (make-typed-polynomial var type terms)
+    ((get 'make 'polynomial) var (attach-tag type terms)))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.90\n")
+
+    (clear-op-type-table)
+    (install-generic-arithmetic-package)
+    (install-generic-arithmetic-package-equality)
+    (install-generic-arithmetic-package-zero)
+    (install-generic-arithmetic-package-polynomial-zero)
+    (install-racket-integers-package)
+    (install-tower-of-types-raise)
+    (install-tower-of-types-raise-complex)
+    (install-tower-of-types-drop)
+    (install-functions-of-racket-number)
+    (install-polynomial-package)
+    (install-generic-arithmetic-package-equality-polynomials)
+    (install-tower-of-types-drop-polynomial)
+    (install-generic-arithmetic-package-negation)
+    (install-generic-arithmetic-package-sub-polynomial)
+
+    (install-sparse-terms-representation)
+    (install-dense-terms-representation)
+
+    (define s1 (make-typed-polynomial 'x 'sparse-terms '((3 13) (2 12) (0 10))))
+    (define d1 (make-typed-polynomial 'x 'dense-terms '(13 12 0 10)))
+
+    (define s2 (make-typed-polynomial 'x 'sparse-terms '((7 17) (5 15) (2 12) (0 10))))
+    (define d2 (make-typed-polynomial 'x 'dense-terms '(17 0 15 0 0 12 0 10)))
+
+    (define d1+d2 (make-typed-polynomial 'x 'dense-terms '(17 0 15 0 13 24 0 20)))
+    (define d1*d2 (make-typed-polynomial 'x 'dense-terms
+                                         '(221 204 195 350 0 306 144 130 240 0 100)))
+
+    (check-true (equ? (add s1 d2) d1+d2))
+    (check-true (equ? (add d1 s2) d1+d2))
+
+    (check-true (equ? (mul s1 d2) d1*d2))
+    (check-true (equ? (mul d1 s2) d1*d2))
+
+    ;; ---------------------------------------------------------------------------------
+    ;; output polynomial depends on the actual terms and not only on arguments types
+    (check-equal? (add (make-typed-polynomial 'x 'dense-terms '(1))
+                       (make-typed-polynomial 'x 'sparse-terms '()))
+                  (make-typed-polynomial 'x 'dense-terms '(1)))
+
+    (check-equal? (add (make-typed-polynomial 'x 'dense-terms '(1))
+                       (make-typed-polynomial 'x 'sparse-terms '((0 1))))
+                  (make-typed-polynomial 'x 'sparse-terms '((0 2))))
+    ;; ---------------------------------------------------------------------------------
+
+    (let ([sparse-poly
+           (make-typed-polynomial 'x 'sparse-terms (the-empty-termlist-no-tag))]
+          [dense-poly
+           (make-typed-polynomial 'x 'dense-terms (the-empty-termlist-no-tag))])
+      (check-equal? (convert-poly sparse-poly 'dense-terms) dense-poly)
+      (check-equal? (convert-poly dense-poly 'sparse-terms) sparse-poly))
+
+    (let ([sparse-poly s2]
+          [dense-poly d2])
+      (check-equal? sparse-poly (convert-poly dense-poly 'sparse-terms))
+      (check-equal? dense-poly (convert-poly sparse-poly 'dense-terms))
+      (check-equal? sparse-poly (convert-poly sparse-poly 'sparse-terms))
+      (check-equal? dense-poly (convert-poly dense-poly 'dense-terms)))
+
+    (check-true (equ? s1 s1))
+    (check-true (equ? s1 d1))
+    (check-false (equ? s1 s2))
+    (check-false (equ? s1 d2))
+
+    (check-true (=zero? (make-typed-polynomial 'x 'sparse-terms '())))
+    (check-true (=zero? (make-typed-polynomial 'x 'dense-terms '())))
+    (check-false (=zero? s1))
+    (check-false (=zero? d1))
+
+    (check-equal? (add 1 d1)
+                  (make-typed-polynomial 'no-variable 'dense-terms '(13 12 0 11)))
+
+    #|
+    The `drop` procedure doesn't support nested types. See the note above
+    install-generic-arithmetic-package-equality-polynomials in Exercise/2.87.
+    |#
+    (check-equal? (drop (make-typed-polynomial 'x 'dense-terms (list 1.5))) 1.5)
+
+    (check-true (equ? (sub s1 s1) 0))
+    (check-true (equ? (sub d1 d1) 0))
+    (check-false (equ? (sub d2 d1) 0))
+    (check-false (equ? (sub s1 s2) 0))
+    (check-true (=zero? (add s1 (negate s1))))))
 
 (module+ test
   (require (submod ".." Exercise/2.87 test)
            (submod ".." Exercise/2.88 test)
-           (submod ".." Exercise/2.89 test)))
+           (submod ".." Exercise/2.89 test)
+           (submod ".." Exercise/2.90 test)))
