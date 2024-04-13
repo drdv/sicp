@@ -780,7 +780,7 @@
     (check-equal? (add-terms t2 t2) '(4 0 0 0 0 2))))
 
 (module Exercise/2.90 sicp
-  (#%require (only racket/base module+ module λ local-require submod only-in)
+  (#%require (only racket/base module+ λ local-require submod only-in)
              (only (submod "sicp2_part3.rkt" Exercise/2.83) type-tag)
              (only (submod "sicp2_part3.rkt" Exercise/2.85) drop)
              (only (submod "sicp2_part3.rkt" Exercise/2.86)
@@ -818,9 +818,9 @@
                    install-functions-of-racket-number)
              (only (submod ".." Exercise/2.87)
                    variable
+                   same-variable?
                    make-term
                    make-polynomial
-                   same-variable?
                    make-poly
                    ;; --------------
                    term-list
@@ -828,7 +828,8 @@
                    coeff
                    empty-termlist?)
              (rename (submod ".." Exercise/2.87)
-                     the-empty-termlist-no-tag the-empty-termlist))
+                     the-empty-termlist-no-tag the-empty-termlist)
+             (only (submod ".." Exercise/2.88) negate))
 
   #|
   Design notes:
@@ -848,6 +849,8 @@
   added a procedure that converts between polynomial types (for fun).
   4. Apart from the arithmetic operations, I reimplemented equ? and =zero? in term of
   the generic versions of adjoin-term, first-term, rest-terms and empty-termlist?.
+  Unfortunately, in the process, I had to copy/paste quite some code from previous
+  exercises (it seems like an overkill to use racket's units as I did in Section/2.5.1).
   |#
 
   (define (install-sparse-terms-representation)
@@ -896,10 +899,8 @@
     (make-polynomial (variable (contents poly))
                      (convert-terms (term-list (contents poly)))))
 
+  ;; below I mostly copy/paste stuff to take the new functionality into account
   (define (install-polynomial-package)
-    ;; ---------------------------------------------------------------------------------
-    ;; Copy/paste add-terms, add-poly, mul-terms ... from Exercise/2.87
-    ;; ---------------------------------------------------------------------------------
     (define (add-terms L1 L2)
       (cond [(empty-termlist? L1) L2]
             [(empty-termlist? L2) L1]
@@ -919,9 +920,9 @@
 
     (define (add-poly p1 p2)
       (if (same-variable? (variable p1) (variable p2))
-          (make-poly (variable p1)
-                     (add-terms (term-list p1)
-                                (term-list p2)))
+          (make-polynomial (variable p1)
+                           (add-terms (term-list p1)
+                                      (term-list p2)))
           (error "Polys not in same var: ADD-POLY" (list p1 p2))))
 
     (define (mul-terms L1 L2)
@@ -941,18 +942,15 @@
 
     (define (mul-poly p1 p2)
       (if (same-variable? (variable p1) (variable p2))
-          (make-poly (variable p1)
-                     (mul-terms (term-list p1) (term-list p2)))
+          (make-polynomial (variable p1)
+                           (mul-terms (term-list p1) (term-list p2)))
           (error "Polys not in same var: MUL-POLY" (list p1 p2))))
     ;; --------------------------------------------------------------------------------
 
     (define (tag poly) (attach-tag 'polynomial poly))
-    (put 'add '(polynomial polynomial)
-         (lambda (p1 p2) (tag (add-poly p1 p2))))
-    (put 'mul '(polynomial polynomial)
-         (lambda (p1 p2) (tag (mul-poly p1 p2))))
-    (put 'make 'polynomial
-         (lambda (var terms) (tag (make-poly var terms)))))
+    (put 'add '(polynomial polynomial) add-poly)
+    (put 'mul '(polynomial polynomial) mul-poly)
+    (put 'make 'polynomial (lambda (var terms) (tag (make-poly var terms)))))
 
   ;; ----------------------------------------------------------------------------------
   ;; equ? / =zero?
@@ -998,6 +996,7 @@
   ;; -----------------------------------------------------------------------------------
   ;; to be able to (add 1 some-polynomial)
   ;; -----------------------------------------------------------------------------------
+
   (define (install-tower-of-types-raise-complex)
     (put 'raise '(complex)
          (λ (z)
@@ -1027,7 +1026,6 @@
         (adjoin-term (proc (first-term terms))
                      (map-terms proc (rest-terms terms)))))
 
-  (define (negate x) (apply-generic 'negate x))
   (define (install-generic-arithmetic-package-negation)
     (put 'negate '(racket-integer) (λ (x) (- x)))
     (put 'negate '(rational)
@@ -1062,7 +1060,7 @@
   ;; -----------------------------------------------------------------------------------
 
   (define (make-typed-polynomial var type terms)
-    ((get 'make 'polynomial) var (attach-tag type terms)))
+    (make-polynomial var (attach-tag type terms)))
 
   (module+ test
     (#%require rackunit)
