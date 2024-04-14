@@ -780,6 +780,26 @@
     (check-equal? (add-terms t2 t2) '(4 0 0 0 0 2))))
 
 (module Exercise/2.90 sicp
+  (#%provide install-sparse-terms-representation
+             install-dense-terms-representation
+             install-polynomial-package
+             install-generic-arithmetic-package-equality-polynomials
+             install-generic-arithmetic-package-polynomial-zero
+             install-tower-of-types-raise-complex
+             install-tower-of-types-drop-polynomial
+             install-generic-arithmetic-package-negation
+             install-generic-arithmetic-package-sub-polynomial
+             ;;------------------
+             the-empty-termlist
+             sparse-empty-termlist
+             dense-empty-termlist
+             adjoin-term
+             first-term
+             rest-terms
+             empty-termlist?
+             convert-poly
+             ;;------------------
+             make-typed-polynomial)
   (#%require (only racket/base module+ λ local-require submod only-in)
              (only (submod "sicp2_part3.rkt" Exercise/2.83) type-tag)
              (only (submod "sicp2_part3.rkt" Exercise/2.85) drop)
@@ -825,8 +845,7 @@
                    ;; --------------
                    term-list
                    order
-                   coeff
-                   empty-termlist?)
+                   coeff)
              (rename (submod ".." Exercise/2.87)
                      the-empty-termlist-no-tag the-empty-termlist)
              (only (submod ".." Exercise/2.88) negate))
@@ -1020,13 +1039,13 @@
   ;; -----------------------------------------------------------------------------------
   ;; sub
   ;; -----------------------------------------------------------------------------------
-  (define (map-terms proc terms)
-    (if (empty-termlist? terms)
-        (the-empty-termlist)
-        (adjoin-term (proc (first-term terms))
-                     (map-terms proc (rest-terms terms)))))
-
   (define (install-generic-arithmetic-package-negation)
+    (define (map-terms proc terms)
+      (if (empty-termlist? terms)
+          (the-empty-termlist)
+          (adjoin-term (proc (first-term terms))
+                       (map-terms proc (rest-terms terms)))))
+
     (put 'negate '(racket-integer) (λ (x) (- x)))
     (put 'negate '(rational)
          (λ (x) (let ([x-tag (attach-tag 'rational x)])
@@ -1070,20 +1089,20 @@
     (install-generic-arithmetic-package)
     (install-generic-arithmetic-package-equality)
     (install-generic-arithmetic-package-zero)
-    (install-generic-arithmetic-package-polynomial-zero)
     (install-racket-integers-package)
     (install-tower-of-types-raise)
-    (install-tower-of-types-raise-complex)
     (install-tower-of-types-drop)
     (install-functions-of-racket-number)
-    (install-polynomial-package)
-    (install-generic-arithmetic-package-equality-polynomials)
-    (install-tower-of-types-drop-polynomial)
-    (install-generic-arithmetic-package-negation)
-    (install-generic-arithmetic-package-sub-polynomial)
 
     (install-sparse-terms-representation)
     (install-dense-terms-representation)
+    (install-polynomial-package)
+    (install-generic-arithmetic-package-equality-polynomials)
+    (install-generic-arithmetic-package-polynomial-zero)
+    (install-tower-of-types-raise-complex)
+    (install-tower-of-types-drop-polynomial)
+    (install-generic-arithmetic-package-negation)
+    (install-generic-arithmetic-package-sub-polynomial)
 
     (define s1 (make-typed-polynomial 'x 'sparse-terms '((3 13) (2 12) (0 10))))
     (define d1 (make-typed-polynomial 'x 'dense-terms '(13 12 0 10)))
