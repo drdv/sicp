@@ -790,6 +790,9 @@
              install-generic-arithmetic-package-negation
              install-generic-arithmetic-package-sub-polynomial
              ;;------------------
+             add-terms
+             mul-term-by-all-terms
+             ;;------------------
              the-empty-termlist
              sparse-empty-termlist
              dense-empty-termlist
@@ -797,6 +800,7 @@
              first-term
              rest-terms
              empty-termlist?
+             convert-terms
              convert-poly
              ;;------------------
              make-typed-polynomial)
@@ -910,33 +914,44 @@
   (define (rest-terms terms) (apply-generic 'rest-terms terms))
   (define (empty-termlist? terms) (apply-generic 'empty-termlist? terms))
 
+  (define (convert-terms terms terms-type)
+    (if (empty-termlist? terms)
+        (attach-tag terms-type (the-empty-termlist-no-tag))
+        (adjoin-term (first-term terms) (convert-terms (rest-terms terms)
+                                                       terms-type))))
+
   (define (convert-poly poly terms-type)
-    (define (convert-terms terms)
-      (if (empty-termlist? terms)
-          (attach-tag terms-type (the-empty-termlist-no-tag))
-          (adjoin-term (first-term terms) (convert-terms (rest-terms terms)))))
     (make-polynomial (variable (contents poly))
-                     (convert-terms (term-list (contents poly)))))
+                     (convert-terms (term-list (contents poly)) terms-type)))
 
   ;; below I mostly copy/paste stuff to take the new functionality into account
-  (define (install-polynomial-package)
-    (define (add-terms L1 L2)
-      (cond [(empty-termlist? L1) L2]
-            [(empty-termlist? L2) L1]
-            [else (let ([t1 (first-term L1)]
-                        [t2 (first-term L2)])
-                    (cond [(> (order t1) (order t2))
-                           (adjoin-term t1
-                                        (add-terms (rest-terms L1) L2))]
-                          [(< (order t1) (order t2))
-                           (adjoin-term t2
-                                        (add-terms L1 (rest-terms L2)))]
-                          [else
-                           (adjoin-term (make-term (order t1)
-                                                   (add (coeff t1) (coeff t2)))
-                                        (add-terms (rest-terms L1)
-                                                   (rest-terms L2)))]))]))
+  (define (add-terms L1 L2)
+    (cond [(empty-termlist? L1) L2]
+          [(empty-termlist? L2) L1]
+          [else (let ([t1 (first-term L1)]
+                      [t2 (first-term L2)])
+                  (cond [(> (order t1) (order t2))
+                         (adjoin-term t1
+                                      (add-terms (rest-terms L1) L2))]
+                        [(< (order t1) (order t2))
+                         (adjoin-term t2
+                                      (add-terms L1 (rest-terms L2)))]
+                        [else
+                         (adjoin-term (make-term (order t1)
+                                                 (add (coeff t1) (coeff t2)))
+                                      (add-terms (rest-terms L1)
+                                                 (rest-terms L2)))]))]))
 
+  (define (mul-term-by-all-terms t1 L)
+    (if (empty-termlist? L)
+        (the-empty-termlist)
+        (let ([t2 (first-term L)])
+          (adjoin-term
+           (make-term (+ (order t1) (order t2))
+                      (mul (coeff t1) (coeff t2)))
+           (mul-term-by-all-terms t1 (rest-terms L))))))
+
+  (define (install-polynomial-package)
     (define (add-poly p1 p2)
       (if (same-variable? (variable p1) (variable p2))
           (make-polynomial (variable p1)
@@ -949,15 +964,6 @@
           (the-empty-termlist)
           (add-terms (mul-term-by-all-terms (first-term L1) L2)
                      (mul-terms (rest-terms L1) L2))))
-
-    (define (mul-term-by-all-terms t1 L)
-      (if (empty-termlist? L)
-          (the-empty-termlist)
-          (let ([t2 (first-term L)])
-            (adjoin-term
-             (make-term (+ (order t1) (order t2))
-                        (mul (coeff t1) (coeff t2)))
-             (mul-term-by-all-terms t1 (rest-terms L))))))
 
     (define (mul-poly p1 p2)
       (if (same-variable? (variable p1) (variable p2))
@@ -1037,12 +1043,12 @@
     (put 'project '(polynomial) (λ (p) (polynomial->complex p))))
 
   ;; -----------------------------------------------------------------------------------
-  ;; sub
+  ;; sub (I added as well a negation of a sparse/dense term list)
   ;; -----------------------------------------------------------------------------------
   (define (install-generic-arithmetic-package-negation)
     (define (map-terms proc terms)
       (if (empty-termlist? terms)
-          (the-empty-termlist)
+          (convert-terms (the-empty-termlist) (type-tag terms))
           (adjoin-term (proc (first-term terms))
                        (map-terms proc (rest-terms terms)))))
 
@@ -1062,12 +1068,18 @@
                                                       (angle rect))]
                           [else (error "Unknown complex representation:" x)])))))
 
+    (define (negate-terms terms)
+      (map-terms (λ (x) (make-term (order x) (negate (coeff x)))) terms))
+
     (put 'negate '(polynomial)
-         (λ (poly)
-           (make-polynomial
-            (variable poly)
-            (map-terms (λ (x) (make-term (order x) (negate (coeff x))))
-                       (term-list poly)))))
+         (λ (poly) (make-polynomial (variable poly)
+                                    (negate (term-list poly)))))
+    (put 'negate '(dense-terms)
+         (λ (untyped-terms)
+           (negate-terms (attach-tag 'dense-terms untyped-terms))))
+    (put 'negate '(sparse-terms)
+         (λ (untyped-terms)
+           (negate-terms (attach-tag 'sparse-terms untyped-terms))))
     'generic-arithmetic-package-negation-installed)
 
   (define (install-generic-arithmetic-package-sub-polynomial)
@@ -1168,7 +1180,13 @@
     (check-true (equ? (sub d1 d1) 0))
     (check-false (equ? (sub d2 d1) 0))
     (check-false (equ? (sub s1 s2) 0))
-    (check-true (=zero? (add s1 (negate s1))))))
+    (check-true (=zero? (add s1 (negate s1))))
+
+    ;; preserve the termlist type when negating
+    (check-equal? (negate (term-list (contents s1)))
+                  (attach-tag 'sparse-terms '((3 -13) (2 -12) (0 -10))))
+    (check-equal? (negate (term-list (contents d1)))
+                  (attach-tag 'dense-terms '(-13 -12 0 -10)))))
 
 (module+ test
   (require (submod ".." Exercise/2.87 test)
