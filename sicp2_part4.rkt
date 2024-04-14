@@ -865,11 +865,11 @@
   and dense polynomials transparently. To achieve this I define them in terms of generic
   versions of adjoin-term, first-term, rest-terms and empty-termlist?. In this way we
   can e.g., add two polynomials with different representation.
-  3. I have chosen the-empty-termlist to create a sparse termlist by default. As a
-  result, multiplying two polynomials with different representation always leads to a
-  sparse polynomial. In the case of addition, however, the type of the output depends
-  not only on the type of the operands but on the particular polynomial terms. I have
-  added a procedure that converts between polynomial types (for fun).
+  3. When adding two polynomials with different representation, the type of the output
+  depends not only on the type of the operands but on the particular polynomial terms.
+  I have added a procedure that converts between polynomial types (for fun). When
+  multiplying two polynomials with different representation the type of the second
+  operand determines the type of the output.
   4. Apart from the arithmetic operations, I reimplemented equ? and =zero? in term of
   the generic versions of adjoin-term, first-term, rest-terms and empty-termlist?.
   Unfortunately, in the process, I had to copy/paste quite some code from previous
@@ -944,7 +944,8 @@
 
   (define (mul-term-by-all-terms t1 L)
     (if (empty-termlist? L)
-        (the-empty-termlist)
+        ;; makes sense to preserve the term-list type
+        (convert-terms (the-empty-termlist) (type-tag L))
         (let ([t2 (first-term L)])
           (adjoin-term
            (make-term (+ (order t1) (order t2))
@@ -961,7 +962,7 @@
 
     (define (mul-terms L1 L2)
       (if (empty-termlist? L1)
-          (the-empty-termlist)
+          (convert-terms (the-empty-termlist) (type-tag L2))
           (add-terms (mul-term-by-all-terms (first-term L1) L2)
                      (mul-terms (rest-terms L1) L2))))
 
@@ -1188,8 +1189,172 @@
     (check-equal? (negate (term-list (contents d1)))
                   (attach-tag 'dense-terms '(-13 -12 0 -10)))))
 
+(module Exercise/2.91 sicp
+  (#%provide install-polynomial-division)
+  (#%require (only racket/base module+ λ)
+             (only (submod "sicp2_part3.rkt" Exercise/2.83) type-tag)
+             (only (submod "sicp2_part3.rkt" Exercise/2.86)
+                   install-generic-arithmetic-package
+                   install-generic-arithmetic-package-equality
+                   install-generic-arithmetic-package-zero
+                   install-racket-integers-package
+                   install-tower-of-types-raise
+                   install-tower-of-types-drop
+                   install-functions-of-racket-number
+                   clear-op-type-table
+                   ;;------------------
+                   attach-tag
+                   contents
+                   put
+                   ;;------------------
+                   add
+                   mul
+                   sub
+                   div)
+             (only (submod ".." Exercise/2.87)
+                   variable
+                   same-variable?
+                   make-term
+                   make-polynomial
+                   make-poly
+                   term-list
+                   order
+                   coeff)
+             (only (submod ".." Exercise/2.88) negate)
+             (only (submod ".." Exercise/2.90)
+                   install-sparse-terms-representation
+                   install-dense-terms-representation
+                   install-polynomial-package
+                   install-generic-arithmetic-package-equality-polynomials
+                   install-generic-arithmetic-package-polynomial-zero
+                   install-tower-of-types-raise-complex
+                   install-tower-of-types-drop-polynomial
+                   install-generic-arithmetic-package-negation
+                   install-generic-arithmetic-package-sub-polynomial
+                   ;;------------------
+                   the-empty-termlist
+                   sparse-empty-termlist
+                   dense-empty-termlist
+                   adjoin-term
+                   first-term
+                   rest-terms
+                   empty-termlist?
+                   convert-poly
+                   ;;------------------
+                   add-terms
+                   mul-term-by-all-terms
+                   convert-terms
+                   convert-poly
+                   ;;------------------
+                   make-typed-polynomial))
+
+  (define (install-polynomial-division)
+    #|
+    L1: terms of numerator
+    L2: terms of denominator
+    |#
+    (define (div-terms L1 L2)
+      (if (empty-termlist? L1)
+          (list (convert-terms (the-empty-termlist) (type-tag L1))
+                (convert-terms (the-empty-termlist) (type-tag L1)))
+          (let ([t1 (first-term L1)]
+                [t2 (first-term L2)])
+            (if (> (order t2) (order t1))
+                (list (convert-terms (the-empty-termlist) (type-tag L1)) L1)
+                (let ([new-coeff (div (coeff t1) (coeff t2))]
+                      [new-order (- (order t1) (order t2))])
+                  (let* ([new-term (make-term new-order new-coeff)]
+                         [rest-of-result
+                          (div-terms
+                           (add-terms
+                            (rest-terms L1)
+                            (negate (mul-term-by-all-terms new-term (rest-terms L2))))
+                           L2)])
+                    (list
+                     (adjoin-term new-term (car rest-of-result))
+                     (cadr rest-of-result))))))))
+
+    (define (div-poly p1 p2)
+      (if (same-variable? (variable p1) (variable p2))
+          (let ([quotient-and-remainder (div-terms (term-list p1) (term-list p2))])
+            (list (make-poly (variable p1) (car quotient-and-remainder))
+                  (make-poly (variable p1) (cadr quotient-and-remainder))))
+          (error "Polys not in same var: DIV-POLY" (list p1 p2))))
+
+    (put 'div '(polynomial polynomial)
+         (λ (p1 p2)
+           (let ([quotient-and-remainder (div-poly p1 p2)])
+             (list (attach-tag 'polynomial (car quotient-and-remainder))
+                   (attach-tag 'polynomial (cadr quotient-and-remainder))))))
+    'polynomial-division-installed)
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/2.91\n")
+
+    (clear-op-type-table)
+    (install-generic-arithmetic-package)
+    (install-generic-arithmetic-package-equality)
+    (install-generic-arithmetic-package-zero)
+    (install-racket-integers-package)
+    (install-tower-of-types-raise)
+    (install-tower-of-types-drop)
+    (install-functions-of-racket-number)
+
+    (install-sparse-terms-representation)
+    (install-dense-terms-representation)
+    (install-polynomial-package)
+    (install-generic-arithmetic-package-equality-polynomials)
+    (install-generic-arithmetic-package-polynomial-zero)
+    (install-tower-of-types-raise-complex)
+    (install-tower-of-types-drop-polynomial)
+    (install-generic-arithmetic-package-negation)
+    (install-generic-arithmetic-package-sub-polynomial)
+
+    (install-polynomial-division)
+
+    (define numer-sparse (make-typed-polynomial 'x 'sparse-terms '((5 1) (0 -1))))
+    (define denom-sparse (make-typed-polynomial 'x 'sparse-terms '((2 1) (0 -1))))
+    (define numer-dense (make-typed-polynomial 'x 'dense-terms '(1 0 0 0 0 -1)))
+    (define denom-dense (make-typed-polynomial 'x 'dense-terms '(1 0 -1)))
+
+    ;; example in the exercise
+    (let ([quotient-and-remainder (div numer-sparse denom-sparse)])
+      (check-equal? (car quotient-and-remainder)
+                    (make-typed-polynomial 'x 'sparse-terms '((3 1) (1 1))))
+      (check-equal? (cadr quotient-and-remainder)
+                    (make-typed-polynomial 'x 'sparse-terms '((1 1) (0 -1)))))
+
+    (let ([quotient-and-remainder (div numer-dense denom-dense)])
+      (check-equal? (car quotient-and-remainder)
+                    (make-typed-polynomial 'x 'dense-terms '(1 0 1 0)))
+      (check-equal? (cadr quotient-and-remainder)
+                    (make-typed-polynomial 'x 'dense-terms '(1 -1))))
+
+    (let ([quotient-and-remainder (div numer-sparse denom-dense)])
+      (check-equal? (car quotient-and-remainder)
+                    (make-typed-polynomial 'x 'dense-terms '(1 0 1 0)))
+      (check-equal? (cadr quotient-and-remainder)
+                    (make-typed-polynomial 'x 'dense-terms '(1 -1))))
+
+    (let ([quotient-and-remainder (div numer-dense denom-sparse)])
+      (check-equal? (car quotient-and-remainder)
+                    (make-typed-polynomial 'x 'dense-terms '(1 0 1 0)))
+      (check-equal? (cadr quotient-and-remainder)
+                    (make-typed-polynomial 'x 'dense-terms '(1 -1))))
+
+    ;; https://en.wikipedia.org/wiki/Polynomial_long_division#Example_2
+    (let ([quotient-and-remainder
+           (div (make-typed-polynomial 'x 'dense-terms '(1 -12 0 -42))
+                (make-typed-polynomial 'x 'dense-terms '(1 -2 1)))])
+      (check-equal? (car quotient-and-remainder)
+                    (make-typed-polynomial 'x 'dense-terms '(1 -10)))
+      (check-equal? (cadr quotient-and-remainder)
+                    (make-typed-polynomial 'x 'dense-terms '(-21 -32))))))
+
 (module+ test
   (require (submod ".." Exercise/2.87 test)
            (submod ".." Exercise/2.88 test)
            (submod ".." Exercise/2.89 test)
-           (submod ".." Exercise/2.90 test)))
+           (submod ".." Exercise/2.90 test)
+           (submod ".." Exercise/2.91 test)))
