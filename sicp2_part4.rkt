@@ -1248,19 +1248,20 @@
                    ;;------------------
                    make-typed-polynomial))
 
+  ;; I use these to group/select both term lists and polynomials
+  (define (make-quotient-remainder q r) (cons q r))
+  (define (quotient-poly quotient-and-remainder) (car quotient-and-remainder))
+  (define (remainder-poly quotient-and-remainder) (cdr quotient-and-remainder))
+
   (define (install-polynomial-division)
-    #|
-    L1: terms of numerator
-    L2: terms of denominator
-    |#
-    (define (div-terms L1 L2)
+    (define (div-terms L1 L2) ; L1 / L2
+      (define empty-terms (convert-terms (the-empty-termlist) (type-tag L1)))
       (if (empty-termlist? L1)
-          (list (convert-terms (the-empty-termlist) (type-tag L1))
-                (convert-terms (the-empty-termlist) (type-tag L1)))
+          (make-quotient-remainder empty-terms empty-terms)
           (let ([t1 (first-term L1)]
                 [t2 (first-term L2)])
             (if (> (order t2) (order t1))
-                (list (convert-terms (the-empty-termlist) (type-tag L1)) L1)
+                (make-quotient-remainder empty-terms L1)
                 (let ([new-coeff (div (coeff t1) (coeff t2))]
                       [new-order (- (order t1) (order t2))])
                   (let* ([new-term (make-term new-order new-coeff)]
@@ -1270,22 +1271,24 @@
                             (rest-terms L1)
                             (negate (mul-term-by-all-terms new-term (rest-terms L2))))
                            L2)])
-                    (list
-                     (adjoin-term new-term (car rest-of-result))
-                     (cadr rest-of-result))))))))
+                    (make-quotient-remainder
+                     (adjoin-term new-term (quotient-poly rest-of-result))
+                     (remainder-poly rest-of-result))))))))
 
     (define (div-poly p1 p2)
       (if (same-variable? (variable p1) (variable p2))
           (let ([quotient-and-remainder (div-terms (term-list p1) (term-list p2))])
-            (list (make-poly (variable p1) (car quotient-and-remainder))
-                  (make-poly (variable p1) (cadr quotient-and-remainder))))
+            (make-quotient-remainder
+             (make-poly (variable p1) (quotient-poly quotient-and-remainder))
+             (make-poly (variable p1) (remainder-poly quotient-and-remainder))))
           (error "Polys not in same var: DIV-POLY" (list p1 p2))))
 
     (put 'div '(polynomial polynomial)
          (λ (p1 p2)
            (let ([quotient-and-remainder (div-poly p1 p2)])
-             (list (attach-tag 'polynomial (car quotient-and-remainder))
-                   (attach-tag 'polynomial (cadr quotient-and-remainder))))))
+             (make-quotient-remainder
+              (attach-tag 'polynomial (quotient-poly quotient-and-remainder))
+              (attach-tag 'polynomial (remainder-poly quotient-and-remainder))))))
     'polynomial-division-installed)
 
   (module+ test
@@ -1318,38 +1321,42 @@
     (define numer-dense (make-typed-polynomial 'x 'dense-terms '(1 0 0 0 0 -1)))
     (define denom-dense (make-typed-polynomial 'x 'dense-terms '(1 0 -1)))
 
-    ;; example in the exercise
+    ;; ---------------------------------------------------------------------------------
+    ;; example from the exercise
+    ;; ---------------------------------------------------------------------------------
     (let ([quotient-and-remainder (div numer-sparse denom-sparse)])
-      (check-equal? (car quotient-and-remainder)
+      (check-equal? (quotient-poly quotient-and-remainder)
                     (make-typed-polynomial 'x 'sparse-terms '((3 1) (1 1))))
-      (check-equal? (cadr quotient-and-remainder)
+      (check-equal? (remainder-poly quotient-and-remainder)
                     (make-typed-polynomial 'x 'sparse-terms '((1 1) (0 -1)))))
 
     (let ([quotient-and-remainder (div numer-dense denom-dense)])
-      (check-equal? (car quotient-and-remainder)
+      (check-equal? (quotient-poly quotient-and-remainder)
                     (make-typed-polynomial 'x 'dense-terms '(1 0 1 0)))
-      (check-equal? (cadr quotient-and-remainder)
+      (check-equal? (remainder-poly quotient-and-remainder)
                     (make-typed-polynomial 'x 'dense-terms '(1 -1))))
 
     (let ([quotient-and-remainder (div numer-sparse denom-dense)])
-      (check-equal? (car quotient-and-remainder)
+      (check-equal? (quotient-poly quotient-and-remainder)
                     (make-typed-polynomial 'x 'dense-terms '(1 0 1 0)))
-      (check-equal? (cadr quotient-and-remainder)
+      (check-equal? (remainder-poly quotient-and-remainder)
                     (make-typed-polynomial 'x 'dense-terms '(1 -1))))
 
     (let ([quotient-and-remainder (div numer-dense denom-sparse)])
-      (check-equal? (car quotient-and-remainder)
+      (check-equal? (quotient-poly quotient-and-remainder)
                     (make-typed-polynomial 'x 'dense-terms '(1 0 1 0)))
-      (check-equal? (cadr quotient-and-remainder)
+      (check-equal? (remainder-poly quotient-and-remainder)
                     (make-typed-polynomial 'x 'dense-terms '(1 -1))))
 
-    ;; https://en.wikipedia.org/wiki/Polynomial_long_division#Example_2
+    ;; ---------------------------------------------------------------------------------
+    ;; example from https://en.wikipedia.org/wiki/Polynomial_long_division#Example_2
+    ;; ---------------------------------------------------------------------------------
     (let ([quotient-and-remainder
            (div (make-typed-polynomial 'x 'dense-terms '(1 -12 0 -42))
                 (make-typed-polynomial 'x 'dense-terms '(1 -2 1)))])
-      (check-equal? (car quotient-and-remainder)
+      (check-equal? (quotient-poly quotient-and-remainder)
                     (make-typed-polynomial 'x 'dense-terms '(1 -10)))
-      (check-equal? (cadr quotient-and-remainder)
+      (check-equal? (remainder-poly quotient-and-remainder)
                     (make-typed-polynomial 'x 'dense-terms '(-21 -32))))))
 
 (module+ test
