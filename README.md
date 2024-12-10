@@ -3,8 +3,14 @@
 ## Install racket
 
 + Download scrypt from [here](https://download.racket-lang.org)
-+ I install it in `~/.local/racket`
-  + `racket --version` gives `Welcome to Racket v8.11.1 [cs]`
++ Installation
+  + `chmod +x racket-8.15-x86_64-linux-cs.sh`
+  + `./racket-8.15-x86_64-linux-cs.sh`
+  + I answer `no` to the `Do you want a Unix-style distribution?` question and choose to
+    install it in `~/.local/racket`
+  + skip the creation of system links.
++ Check
+  + `racket --version` gives `Welcome to Racket v8.15 [cs].`
   + `raco pkg install sicp`
   + `raco pkg install sdraw`(for visualizing lists)
 

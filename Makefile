@@ -12,6 +12,7 @@ test-1:
 
 ## Run tests for exercises in Chapter 2
 test-2: clean
+	mkdir -p out #  FIXME: create from the code
 	raco test sicp2_part1.rkt
 	raco test sicp2_part2.rkt
 	raco test sicp2_part3.rkt
