@@ -1244,7 +1244,7 @@
   (#%require (only racket/base module+ format for set!)
              (only (submod ".." common-utils) square))
   #|
-  the version of Louis Reasoner has complexity O(log(2^n)) = O(n*log(2)) = O(n),
+  The version of Louis Reasoner has complexity O(log(2^n)) = O(n*log(2)) = O(n),
   note that the linear recursion becomes tree recursion with two branches at each step.
   The following test confirms this by counting number of iterations:
   |#
@@ -1327,6 +1327,9 @@
 
 (module Exercise/1.28 sicp
   (#%require (only racket/base module+ for)
+             ;; I can use random-integer to generate huge random numbers
+             ;; while I could use random to generate numbers only in [0, 4294967087]
+             (only math random-integer)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.22) prime-numbers)
              (only (submod ".." Exercise/1.27) carmichael-numbers))
@@ -1353,7 +1356,7 @@
   (define (miller-rabin-test n)
     (define (try-it a)
       (= (expmod-miller-rabin a (- n 1) n) 1))
-    (try-it (+ 2 (random (- n 2)))))
+    (try-it (random-integer 2 (- n 2))))
 
   (define (fast-prime? n times)
     (cond ((= times 0) #t)
@@ -1368,7 +1371,27 @@
       (check-false (fast-prime? n 100)))
 
     (for ([n prime-numbers])
-      (check-true (fast-prime? n 100)))))
+      (check-true (fast-prime? n 100)))
+
+
+    #|
+    I simply needed a nice prime number to test with ...
+
+    poetry-prime below is most probably a prime number which corresponds to the
+    utf-16-be encoding of a part of the poem "Хайдути" (Христо Ботев):
+    "Кой не знай Чавдар войвода,\nкой не е слушал за него?\nЧорбаджия ли изедник,\nили турските сердари?\nОвчар ли по планината,\nили пък клети сюрмаси!"
+    See https://chitanka.info/text/3232I
+
+    friend-prime prime number corresponds to the utf-16-be encoding of "Приятел"
+
+    In python we can use `int.from_bytes(our_string.encode("utf-16-be"))` to get a
+    number corresponding to a given string. FIXME: how to do this in Racket?
+    |#
+    (define poetry-prime 13959387758140901550572515198362752643501962710657052311331574239112837465019286144429445852154657560370608861199528851549169843264388017512000144268504219236185619302773783939401956099421726662968820447195011902792235238958573761156023848751492692462190075816360812858637545011607498752755086582015888374245320195205524010991767023797691352280422023461071666730611862286981285684588734147250495432270872406434945850940772638046593828902125105795634820105310303149383227968877579998674222948961832454227192465398542406482881301541720146177819992695643618622609584368072470443464463292290594876799823405229948540841242512018520953347543289875122143197015464576922877158400860368666657)
+    (define friend-prime 83587026783763410948918160458811)
+
+    (check-true (fast-prime? poetry-prime 100))
+    (check-true (fast-prime? friend-prime 100))))
 
 (module Lecture/1B sicp
   (#%require (only racket/base module+ format hash-set! hash-ref make-hash))
