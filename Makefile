@@ -1,34 +1,27 @@
-_BLUE=\033[34m
-_END=\033[0m
+## Show this help
+help:
+	-@awk -f makefile-help-target.awk $(MAKEFILE_LIST)
 
-# canned recipe
-define show =
-echo -e "${_BLUE}============================================================${_END}" && \
-echo -e "${_BLUE}[$@] ${1}${_END}" && \
-echo -e "${_BLUE}============================================================${_END}"
-endef
-
-.PHONY: help
-help: ## Show this help
-	@grep -h '\s##\s' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "${_BLUE}%-15s${_END} %s\n", $$1, $$2}'
-
-tex: ## Generate latex note
+## Generate latex note
+tex:
 	tectonic notes.tex
 
-test-1: ## Run tests for exercises in Chapter 1
+## Run tests for exercises in Chapter 1
+test-1:
 	raco test sicp1.rkt
 
-test-2: clean ## Run tests for exercises in Chapter 2
+## Run tests for exercises in Chapter 2
+test-2: clean
 	raco test sicp2_part1.rkt
 	raco test sicp2_part2.rkt
 	raco test sicp2_part3.rkt
 	raco test sicp2_part4.rkt
 
-.PHONY: docs
-docs: ## Generate docs
+## Generate docs
+docs:
 	cd docs && scribble mouse.scrbl
 
-.PHONY: clean
+## Clean generated output
 clean:
 	rm -rf out/*.png
 	rm -rf out/*.svg
