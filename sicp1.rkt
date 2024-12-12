@@ -1107,10 +1107,16 @@
   #|
   We could have used fast-expt-iterative.v2 to compute p = x^n and then find p%n.
   In this way we would have an iterative procedure but we would be dealing with huge
-  numbers p. The idea behind the expmod procedure is that by using the following
-  transformations we don't need to deal with huge numbers (see latex note for proof):
+  numbers p. In the latex note I included a proof for the following two transformations
+  as initially I thought that we need them:
     1. (x*y)%n = ((x%n)*(y%n))%n
     2. (x*y)%n = (x*(y%n))%n
+
+  The reduction step for an even exponent e is:
+  (x^e)%n = (x^{e/2} * x^{e/2})%n = ((x^{e/2})^2)%n
+
+  The reduction step for an odd exponent e is:
+  (x^e)%n = (x*x^{e-1})%n, where x^{e-1} is even ...
   |#
   (define (expmod base exp m)
     (cond ((= exp 0) 1)
@@ -1122,6 +1128,16 @@
            (remainder
             (* base (expmod base (- exp 1) m))
             m))))
+
+  ;; implement as an iterative process
+  (define (expmod-iter base exp m)
+    (define (expmod-iter-helper base exp acc)
+      (cond ((= exp 0) acc)
+            ((even? exp)
+             (expmod-iter-helper (remainder (square base) m) (/ exp 2) acc))
+            (else
+             (expmod-iter-helper base (- exp 1) (remainder (* acc base) m)))))
+    (expmod-iter-helper base exp 1))
 
   ;; here n > 1 is assumed: (random 0) raises a contract violation
   (define (fermat-test n)
@@ -1143,7 +1159,16 @@
     (start-prime-test n (runtime)))
 
   (module+ test
+    (#%require rackunit)
     (display "--> Exercise/1.24\n")
+
+    (for ([x '(2 5 9 19 7 6 3 123 5 17)]
+          [p '(3 3 7 4 6 4 7 456 100 5)]
+          [m '(5 13 17 7 11 13 10 1234 9 19)])
+      (let ([res1 (expmod x p m)]
+            [res2 (expmod-iter x p m)])
+        (display (format "~a, ~a, ~a: ~a\n" x p m res1))
+        (check-equal? res1 res2)))
 
     (let ([numb-evals 1000])
       (for ([prime-number prime-numbers])
@@ -1340,6 +1365,9 @@
           ((even? exp)
            (let* ([u (expmod-miller-rabin base (/ exp 2) m)]
                   [v (remainder (square u) m)])
+             ;; a nontrivial square root of 1 modulo m is a number that is
+             ;; not equal to 1 or m - 1 whose square root is equal to 1 modulo m
+             ;; (if we find such a nontrivial square root then m is surely not prime)
              (cond [(and
                      (not (= u 1))
                      (not (= u (- m 1)))
@@ -1347,10 +1375,7 @@
                    [else v])))
           (else
            (remainder
-            ;; I am a bit confused about the odd case
-            ;; there seems to be no need of special handling as in the even case
-            ;; I don't quite understand why
-            (* base (remainder (* base (expmod-miller-rabin base (- exp 1) m)) m))
+            (* base (expmod-miller-rabin base (- exp 1) m))
             m))))
 
   (define (miller-rabin-test n)
