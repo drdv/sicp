@@ -1350,6 +1350,62 @@
     (for ([n carmichael-numbers])
       (check-false (test-carmichael-numbers prime? (list n))))))
 
+
+(module Exercise/1.28/byte-utils racket/base
+  (#%provide poetry-prime
+             friend-prime)
+
+  ;; See my discord discussion:
+  ;; discord.com/channels/571040468092321801/1018246159208288366/1317083898114605107
+
+  ;; big-endian assumed
+  (define (bytes-be->int xs)
+    (for/fold ([acc 0])
+              ([x (in-bytes xs)])
+      (+ x (* acc 256))))
+
+  (define (bytes-convert-encoding
+           bytes-seq
+           #:in-encoding [in-encoding "UTF-8"]
+           #:out-encoding [out-encoding "UTF-16be"])
+    (let-values ([(encoded-bytes _ status)
+                  (bytes-convert
+                   (bytes-open-converter in-encoding out-encoding)
+                   bytes-seq)])
+      (unless (eq? status 'complete)
+        (raise "Conversion not complete."))
+      encoded-bytes))
+
+  (define (str->int text #:out-encoding [out-encoding "UTF-8"])
+    (let ([text-as-bytes (string->bytes/utf-8 text)]
+          [no-conversion (equal? out-encoding "UTF-8")])
+      (bytes-be->int
+       (if no-conversion
+           text-as-bytes
+           (bytes-convert-encoding text-as-bytes #:out-encoding out-encoding)))))
+
+  ;; A part of the poem "Хайдути" (Христо Ботев) https://chitanka.info/text/3232I
+  ;; The integer corresponding to its utf-16-be encoding is a prime number
+  (define poetry-prime-text "Кой не знай Чавдар войвода,
+кой не е слушал за него?
+Чорбаджия ли изедник,
+или турските сердари?
+Овчар ли по планината,
+или пък клети сюрмаси!")
+
+  ;; In python we can use `int.from_bytes(our_string.encode("utf-16-be"))`
+  (define poetry-prime (str->int poetry-prime-text #:out-encoding "UTF-16be"))
+  (define friend-prime (str->int "Приятел" #:out-encoding "UTF-16be"))
+
+  (module+ test
+    (#%require rackunit)
+    (display "--> Exercise/1.28/byte-utils\n")
+
+    (check-equal? (str->int "Genius lasts longer than beauty" #:out-encoding "UTF-8")
+                  126146194680531155813303888168799649264643087982681371548542387524568708217)
+    (check-equal? (str->int "Приятел" #:out-encoding "UTF-8")
+                  4231403313494534579515183733264571)))
+
 (module Exercise/1.28 sicp
   (#%require (only racket/base module+ for)
              ;; I can use random-integer to generate huge random numbers
@@ -1357,7 +1413,8 @@
              (only math random-integer)
              (only (submod ".." common-utils) square)
              (only (submod ".." Exercise/1.22) prime-numbers)
-             (only (submod ".." Exercise/1.27) carmichael-numbers))
+             (only (submod ".." Exercise/1.27) carmichael-numbers)
+             (only (submod ".." Exercise/1.28/byte-utils) poetry-prime friend-prime))
 
   ;; see latex note for details
   (define (expmod-miller-rabin base exp m)
@@ -1398,23 +1455,7 @@
     (for ([n prime-numbers])
       (check-true (fast-prime? n 100)))
 
-
-    #|
-    I simply needed a nice prime number to test with ...
-
-    poetry-prime below is most probably a prime number which corresponds to the
-    utf-16-be encoding of a part of the poem "Хайдути" (Христо Ботев):
-    "Кой не знай Чавдар войвода,\nкой не е слушал за него?\nЧорбаджия ли изедник,\nили турските сердари?\nОвчар ли по планината,\nили пък клети сюрмаси!"
-    See https://chitanka.info/text/3232I
-
-    friend-prime prime number corresponds to the utf-16-be encoding of "Приятел"
-
-    In python we can use `int.from_bytes(our_string.encode("utf-16-be"))` to get a
-    number corresponding to a given string. FIXME: how to do this in Racket?
-    |#
-    (define poetry-prime 13959387758140901550572515198362752643501962710657052311331574239112837465019286144429445852154657560370608861199528851549169843264388017512000144268504219236185619302773783939401956099421726662968820447195011902792235238958573761156023848751492692462190075816360812858637545011607498752755086582015888374245320195205524010991767023797691352280422023461071666730611862286981285684588734147250495432270872406434945850940772638046593828902125105795634820105310303149383227968877579998674222948961832454227192465398542406482881301541720146177819992695643618622609584368072470443464463292290594876799823405229948540841242512018520953347543289875122143197015464576922877158400860368666657)
-    (define friend-prime 83587026783763410948918160458811)
-
+    ;; I simply needed a nice prime number to test with ...
     (check-true (fast-prime? poetry-prime 100))
     (check-true (fast-prime? friend-prime 100))))
 
