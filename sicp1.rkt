@@ -2236,6 +2236,7 @@
            (submod ".." Exercise/1.26 test)
            (submod ".." Exercise/1.27 test)
            (submod ".." Exercise/1.28 test)
+           (submod ".." Exercise/1.28/byte-utils test)
            (submod ".." Lecture/1B test)
            (submod ".." Exercise/1.29 test)
            (submod ".." Exercise/1.30 test)
