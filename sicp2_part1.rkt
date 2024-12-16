@@ -992,6 +992,35 @@
 (module Exercise/2.20 sicp
   (#%require (only racket/base module+ λ format))
 
+  #|
+  This exercise introduces a way to define a procedure with variable number of arguments
+  using the "dotted-tail notation" (i.e. a variadic procedure). The Racket Guide has a
+  nice section on this and more (docs.racket-lang.org/guide/lambda.html) with a very
+  clear summary of all the options:
+
+  (lambda gen-formals
+    body ...+)
+
+    gen-formals	= (arg ...)
+                | rest-id
+                | (arg ...+ . rest-id)
+
+            arg	= arg-id
+                | [arg-id default-expr]
+                | arg-keyword arg-id
+                | arg-keyword [arg-id default-expr]
+
+  I found the Curried Function Shorthand quite nice as well and it plays nicely with
+  kwargs: docs.racket-lang.org/guide/define.html#(part._.Curried_.Function_.Shorthand)
+
+  (define (head args) body ...+)
+
+           head = id
+                | (head args)
+
+           args = arg ...
+                | arg ... . rest-id
+  |#
   (define (f1 . x) (display (format "~a\n" x)))
   (define f2 (λ x (display (format "~a\n" x)))) ; rather peculiar!
   (define (f3 x . y) (display (format "~a\n~a\n" x y)))
