@@ -1,6 +1,6 @@
 ## Show this help
 help:
-	-@awk -f makefile-help-target.awk $(MAKEFILE_LIST)
+	-@awk -f makefile-doc.awk $(MAKEFILE_LIST)
 
 ## Generate latex note
 tex:
