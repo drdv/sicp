@@ -1824,14 +1824,23 @@
                 (cdr rest))))
     (iter initial sequence))
 
+  (define (fold-left-recursive op initial sequence)
+    (if (null? sequence)
+        initial
+        (fold-left-recursive op
+                             (op initial (car sequence))
+                             (cdr sequence))))
+
   (module+ test
     (#%require rackunit)
     (display "--> Exercise/2.38\n")
 
     (check-equal? (fold-right / 1 (list 1 2 3)) (/ 1 (/ 2 3))) ; 1/(2/(3/1)) -> 1/(2/3) -> 3/2
     (check-equal? (fold-left / 1 (list 1 2 3)) (/ (/ 1 2) 3)) ; ((1/1)/2)/3 -> (1/2)/3
+    (check-equal? (fold-left-recursive / 1 (list 1 2 3)) (/ (/ 1 2) 3))
     (check-equal? (fold-right list nil (list 1 2 3)) '(1 (2 (3 ()))))
-    (check-equal? (fold-left list nil (list 1 2 3)) '(((() 1) 2) 3)))
+    (check-equal? (fold-left list nil (list 1 2 3)) '(((() 1) 2) 3))
+    (check-equal? (fold-left-recursive list nil (list 1 2 3)) '(((() 1) 2) 3)))
 
   ;; fold-right and fold-left would produce the same result if (op x y) = (op y x)
   (module+ test
