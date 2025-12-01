@@ -312,6 +312,9 @@
   (#%require (only racket/base module+ λ))
 
   (define zero (λ (f) (λ (x) x)))
+  ;; in python notation this would be:
+  ;; add-1 = lambda n: lambda f: lambda x: f(n(f)(x))
+  ;; where n(f)(x) is simply our number and f(.) is its successor
   (define (add-1 n)
     (λ (f) (λ (x) (f ((n f) x)))))
 
