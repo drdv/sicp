@@ -3,7 +3,7 @@
 ## Install racket
 
 + Download scrypt from [here](https://download.racket-lang.org)
-+ Installation
++ Installation (v8.15)
   + `chmod +x racket-8.15-x86_64-linux-cs.sh`
   + `./racket-8.15-x86_64-linux-cs.sh`
   + I answer `no` to the `Do you want a Unix-style distribution?` question and choose to

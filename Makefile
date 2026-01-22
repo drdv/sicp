@@ -27,9 +27,9 @@ test-2: clean | $(OUT_DIR)
 	$(RACO_TEST) sicp2_part3.rkt
 	$(RACO_TEST) sicp2_part4.rkt
 
-## Generate docs
+##% Generate docs (WIP)
 docs:
-	@mkdir -p $(OUT_DIR)
+	@mkdir -p $(DOCS_DIR)
 	@cd $(DOCS_DIR) && scribble mouse.scrbl
 
 ## Generate logo for meetup
