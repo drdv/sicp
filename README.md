@@ -22,7 +22,3 @@
 + 2B: Compound Data
 + 3A: Henderson Escher Example
 + 3B: Symbolic Differentiation; Quotation
-
-## Misc
-
-+ I have used the PDF version of the second edition (FIXME: to commit).
