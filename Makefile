@@ -16,6 +16,14 @@ help: ## Show this help
 notes.tex:
 	@tectonic notes.tex
 
+## Run a selected EXERCISE from a selected SECTION
+# There doesn't seem to be a way to run the tests in a specific submodule using raco test
+# `raco test -s Exercise/1.10 sicp1.rkt` runs `Exercise/1.10` but not its nested test submodule
+test: SECTION := sicp1
+test: EXERCISE := 1.1
+test:
+	racket -e '(require (submod "$(SECTION).rkt" Exercise/$(EXERCISE) test))'
+
 ## Run tests for exercises in Chapter 1
 test-1:
 	$(RACO_TEST) sicp1.rkt
@@ -28,9 +36,10 @@ test-2: clean | $(OUT_DIR)
 	$(RACO_TEST) sicp2_part4.rkt
 
 ##% Generate docs (WIP)
+docs: DOCS_OUT_DIR := $(OUT_DIR)/docs
 docs:
-	@mkdir -p $(DOCS_DIR)
-	@cd $(DOCS_DIR) && scribble mouse.scrbl
+	@rm -rf $(DOCS_OUT_DIR)
+	@scribble --html --dest $(DOCS_OUT_DIR) $(DOCS_DIR)/mouse.scrbl
 
 ## Generate logo for meetup
 $(OUT_DIR)/meetup-logo.png: | $(OUT_DIR)
