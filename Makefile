@@ -36,10 +36,12 @@ test-2: clean | $(OUT_DIR)
 	$(RACO_TEST) sicp2_part4.rkt
 
 ##% Generate docs (WIP)
-docs: DOCS_OUT_DIR := $(OUT_DIR)/docs
-docs:
-	@rm -rf $(DOCS_OUT_DIR)
-	@scribble --html --dest $(DOCS_OUT_DIR) $(DOCS_DIR)/mouse.scrbl
+docs: DOCS_NAME := sicp-drdv
+docs: | $(OUT_DIR)
+	@scribble --htmls \
+		+m --redirect-main https://docs.racket-lang.org/ \
+		--dest $(OUT_DIR) \
+		$(DOCS_DIR)/$(DOCS_NAME).scrbl
 
 ## Generate logo for meetup
 $(OUT_DIR)/meetup-logo.png: | $(OUT_DIR)
