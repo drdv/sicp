@@ -1,8 +1,8 @@
 RACO_TEST := raco test
 OUT_DIR := out
-DOCS_DIR := docs
+RACKET_PKG_NAME := sicp-drdv
 
-.PHONY: help test-1 test-2 docs clean
+.PHONY: help test-1 test-2 clean package-register package-update package-docs
 
 help: URL := github.com/drdv/makefile-doc/releases/latest/download/makefile-doc.awk
 help: DIR := $(HOME)/.local/share/makefile-doc
@@ -35,14 +35,6 @@ test-2: clean | $(OUT_DIR)
 	$(RACO_TEST) sicp2_part3.rkt
 	$(RACO_TEST) sicp2_part4.rkt
 
-##% Generate docs (WIP)
-docs: DOCS_NAME := sicp-drdv
-docs: | $(OUT_DIR)
-	@scribble --htmls \
-		+m --redirect-main https://docs.racket-lang.org/ \
-		--dest $(OUT_DIR) \
-		$(DOCS_DIR)/$(DOCS_NAME).scrbl
-
 ## Generate logo for meetup
 $(OUT_DIR)/meetup-logo.png: | $(OUT_DIR)
 	@magick img/front.png -set page 2600x1467+100+0 -background '#0055aa' -flatten \
@@ -50,6 +42,20 @@ $(OUT_DIR)/meetup-logo.png: | $(OUT_DIR)
 		-gravity center -annotate +600-300 "Let's study\nthe Wizard Book\ntogether" \
 		-gravity center -pointsize 80 -annotate +600+400 "exercise by exercise ..." \
 	$(OUT_DIR)/meetup-logo.png
+
+## Register racket package
+# This is like python's editable install (see ~/.local/share/racket/9.1/links.rktd)
+# I don't want to rename the repo from sicp to sicp-drdv so I pass a custom --name
+package-register:
+	@raco pkg install --link --name $(RACKET_PKG_NAME)
+
+## Update package docs
+package-update:
+	@raco setup -l $(RACKET_PKG_NAME)
+
+## Show docs
+package-docs:
+	@raco docs $(RACKET_PKG_NAME)
 
 ## Clean generated output
 clean:
