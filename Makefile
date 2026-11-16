@@ -1,16 +1,12 @@
+-include $(HOME)/help.mk
+
 RACO_TEST := raco test
 OUT_DIR := out
 RACKET_PKG_NAME := sicp-drdv
 
-.PHONY: help test-1 test-2 clean package-register package-update package-docs
+MAKEFILE_DOC_FLAGS := -v SUB='$$(OUT_DIR)/meetup-logo.png:$(OUT_DIR)/meetup-logo.png:'
 
-help: URL := github.com/drdv/makefile-doc/releases/latest/download/makefile-doc.awk
-help: DIR := $(HOME)/.local/share/makefile-doc
-help: SCR := $(DIR)/makefile-doc.awk
-help: VFLAG := -v SUB='$$(OUT_DIR)/meetup-logo.png:$(OUT_DIR)/meetup-logo.png:'
-help: ## Show this help
-	@test -f $(SCR) || wget -q -P $(DIR) $(URL)
-	@awk $(VFLAG) -f $(SCR) $(MAKEFILE_LIST)
+.PHONY: test-1 test-2 clean package-register package-update package-docs
 
 ## Generate latex note
 notes.tex:
